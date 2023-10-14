@@ -1,8 +1,14 @@
 {
   "homeServer": "1144324605599830086",
   "clientId": "1161428778682155078",
+  "boosterRole": "1151239952651255849",
   "devs": [
     "135206040080744448"
   ],
-  "expScale": 0.065
+  "boosterExpBonus": 3,
+  "boosterCashBonus": 3,
+  "cashPerMessage": 5,
+  "expScale": 0.065,
+  "minExp": 1,
+  "maxExp": 15
 }
