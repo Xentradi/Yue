@@ -2,7 +2,7 @@ require('dotenv').config();
 const {REST, Routes} = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-const config = require('./config.json');
+const config = require('../config.json');
 const clientId = config.clientId;
 const guildId = config.homeServer;
 

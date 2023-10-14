@@ -1,17 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const getAllFiles = require('../utils/getAllFiles');
-
 module.exports = client => {
-  const eventFolders = getAllFiles(path.join(__dirname, '..', 'events'), true);
-  console.log(eventFolders);
-
-  for (const eventFolder of eventFolders) {
-    const eventFiles = getAllFiles(eventFolder, false);
-    console.log(eventFiles);
-  }
-  /*
   // Event Handler
   const eventsPath = path.join(__dirname, '../events');
   const eventFiles = fs
@@ -27,5 +17,4 @@ module.exports = client => {
       client.on(event.name, (...args) => event.execute(...args));
     }
   }
-*/
 };
