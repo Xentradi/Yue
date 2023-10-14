@@ -2,15 +2,26 @@
   "name": "bailan",
   "version": "1.0.0",
   "description": "",
-  "main": "bot.js",
+  "main": "src/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "gts lint",
+    "clean": "gts clean",
+    "compile": "tsc",
+    "fix": "gts fix",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run lint"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "eslint": "^8.51.0"
+    "@types/node": "20.8.2",
+    "eslint": "^8.51.0",
+    "gts": "^5.2.0",
+    "nodemon": "^3.0.1",
+    "typescript": "~5.2.0"
   },
   "dependencies": {
     "discord.js": "^14.13.0",
