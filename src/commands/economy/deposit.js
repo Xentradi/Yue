@@ -23,14 +23,24 @@ module.exports = {
       amount
     );
 
-    const embedOptions = {
-      title: `💰 Deposit Statement for ${interaction.user.displayName}`,
-      description: `Your deposit of $${data.amount} is completed.`,
-      fields: [
-        {name: '💵 Cash', value: `$${data.cash.toLocaleString()}`},
-        {name: '🏦 Bank', value: `$${data.bank.toLocaleString()}`},
-      ],
-    };
+    let embedOptions;
+
+    if (data.success) {
+      embedOptions = {
+        title: `💰 Deposit Statement for ${interaction.user.displayName}`,
+        description: `Your deposit of $${data.amount} is completed.`,
+        fields: [
+          {name: '💵 Cash', value: `$${data.cash.toLocaleString()}`},
+          {name: '🏦 Bank', value: `$${data.bank.toLocaleString()}`},
+        ],
+      };
+    } else {
+      embedOptions = {
+        title: '⚠️ Deposit Failed!',
+        description: data.message,
+      };
+    }
+
     const responseEmbed = createEmbed(embedOptions);
     interaction.editReply({embeds: [responseEmbed]});
   },
