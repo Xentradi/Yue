@@ -1,36 +1,43 @@
-const {SlashCommandBuilder, permissions, MessageEmbed} = require('discord.js');
+const {SlashCommandBuilder} = require('discord.js');
 const restockLake = require('../../modules/economy/games/restockLake');
+const {convertToSeconds} = require('../../utils/calculate');
+const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
+  cooldown: convertToSeconds('10m'), // Set a cooldown of 10 minutes for this command
   data: new SlashCommandBuilder()
     .setName('restocklake')
-    .setDescription('Restock the virtual lake with fish. (Admin Only)'),
+    .setDescription('Restock the virtual lake with new fish.'),
 
   async execute(interaction) {
-    await interaction.deferReply({ephemeral: true});
-
-    // Check if the user has administrator permissions
-    const member = interaction.member;
-    if (!member.permissions.has(permissions.FLAGS.ADMINISTRATOR)) {
-      const embed = new MessageEmbed()
-        .setTitle('Permission Denied')
-        .setDescription(
-          'You need administrator permissions to execute this command.'
-        )
-        .setColor('RED');
-      return interaction.editReply({embeds: [embed]});
+    await interaction.deferReply();
+    if (!interaction.member.permissions.has('ADMINISTRATOR')) {
+      const responseEmbed = createEmbed({
+        title: '❌ Permission Denied',
+        description:
+          'You need administrator permissions to execute this command.',
+        color: '#FF0000',
+      });
+      return interaction.editReply({embeds: [responseEmbed]});
     }
 
-    // Execute the restocking function and get the result
-    const restockResult = await restockLake(interaction.guildId);
+    const restockResult = await restockLake(interaction.guildId, 2000);
 
-    const embed = new MessageEmbed()
-      .setTitle('🐟 Lake Restocked!')
-      .setDescription(
-        `The lake has been restocked with **${restockResult.totalFish}** fish.`
-      )
-      .setColor('GREEN');
+    let embedOptions = {
+      title: '🐟 Lake Restocked!',
+      description: `The lake has been restocked successfully! ${restockResult.newFishCount} new fish have been added.`,
+      color: '#00FF00',
+    };
 
-    interaction.editReply({embeds: [embed]});
+    if (!restockResult.success) {
+      embedOptions = {
+        title: '❌ Restock Failed',
+        description: restockResult.message,
+        color: '#FF0000',
+      };
+    }
+
+    const responseEmbed = createEmbed(embedOptions);
+    interaction.editReply({embeds: [responseEmbed]});
   },
 };

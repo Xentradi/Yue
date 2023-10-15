@@ -1,7 +1,7 @@
 const {SlashCommandBuilder} = require('discord.js');
 const fishing = require('../../modules/economy/games/fishing');
 const {convertToSeconds} = require('../../utils/calculate');
-const {MessageEmbed} = require('discord.js');
+const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
   cooldown: convertToSeconds('5s'),
@@ -13,7 +13,7 @@ module.exports = {
     await interaction.deferReply();
     const catchResult = await fishing(interaction.user.id, interaction.guildId);
 
-    const embed = new MessageEmbed();
+    let embedOptions = {};
 
     switch (catchResult.type) {
       case 'Tilapia':
@@ -21,54 +21,51 @@ module.exports = {
       case 'Carp':
       case 'Catfish':
       case 'Bass':
-        embed
-          .setTitle('🎣 Success!')
-          .setDescription(
-            `You caught a **${catchResult.type}** and earned $${catchResult.reward}!`
-          )
-          .setColor('GREEN');
+        embedOptions = {
+          title: '🎣 Success!',
+          description: `You caught a **${catchResult.type}** and earned $${catchResult.reward}!`,
+          color: '#00FF00',
+        };
         break;
       case 'Magic Koi':
       case 'Silverfin Tuna':
       case 'Neon Tetra':
       case 'Dragonfish':
-        embed
-          .setTitle('🌟 A Magical Catch!')
-          .setDescription(
-            `Wow! You caught a magical **${catchResult.type}** and earned $${catchResult.reward}!`
-          )
-          .setColor('BLUE');
+        embedOptions = {
+          title: '🌟 A Magical Catch!',
+          description: `Wow! You caught a magical **${catchResult.type}** and earned $${catchResult.reward}!`,
+          color: '#0000FF',
+        };
         break;
       case 'Hostile Crab':
       case 'Angry Lobster':
-        embed
-          .setTitle('😱 Attack!')
-          .setDescription(
-            `Oh no! A **${
-              catchResult.type
-            }** attacked you and you lost $${Math.abs(catchResult.reward)}!`
-          )
-          .setColor('RED');
+        embedOptions = {
+          title: '😱 Attack!',
+          description: `Oh no! A **${
+            catchResult.type
+          }** attacked you and you lost $${Math.abs(catchResult.reward)}!`,
+          color: '#FF0000',
+        };
         break;
       case 'Line Broke':
-        embed
-          .setTitle('😞 Unlucky!')
-          .setDescription(
-            `Your line broke and you lost $${Math.abs(
-              catchResult.reward
-            )}. Better luck next time!`
-          )
-          .setColor('GREY');
+        embedOptions = {
+          title: '😞 Unlucky!',
+          description: `Your line broke and you lost $${Math.abs(
+            catchResult.reward
+          )}. Better luck next time!`,
+          color: '#808080',
+        };
         break;
       default:
-        embed
-          .setTitle('🐟 No Luck!')
-          .setDescription(
-            'Seems like the fish are not biting today. Try again later!'
-          )
-          .setColor('GREY');
+        embedOptions = {
+          title: '🐟 No Luck!',
+          description:
+            'Seems like the fish are not biting today. Try again later!',
+          color: '#808080',
+        };
     }
 
-    interaction.editReply({embeds: [embed]});
+    const responseEmbed = createEmbed(embedOptions);
+    interaction.editReply({embeds: [responseEmbed]});
   },
 };
