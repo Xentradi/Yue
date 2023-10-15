@@ -8,19 +8,20 @@ const config = require('../../../config.json');
  * @function
  * @param {string} userId - The ID of the user.
  * @param {string} guildId - The ID of the guild (server).
- * @returns {Promise<Object|null>}
- *  - An object containing the transaction result if the bonus was granted successfully.
- *  - `null` if the player is not found.
- * @returns {boolean} success - Indicates if the bonus was granted successfully.
- * @returns {number} amount - The bonus amount.
- * @returns {number} cash - The updated cash balance after the bonus is granted.
+ * @returns {Promise<Object>} An object containing the transaction result.
+ * @throws Will log an error if there's an issue with database access.
  */
-
 module.exports.dailyBonus = async function dailyBonus(userId, guildId) {
   const player = await Player.findOne({userId, guildId});
-  if (!player) return null; // Handle player not found
 
-  const bonusAmount = config.dailyWage ?? 500; // Or any other amount
+  if (!player) {
+    return {
+      success: false,
+      message: 'Player not found.',
+    };
+  }
+
+  const bonusAmount = config.dailyWage ?? 500; // Default to 500 if dailyWage isn't set in the config
   player.cash += bonusAmount;
 
   try {

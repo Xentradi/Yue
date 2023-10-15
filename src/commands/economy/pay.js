@@ -1,55 +1,47 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  BaseInteraction,
-} = require('discord.js');
-const economy = require('../../modules/economy');
+const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
+const {giveCash} = require('../../modules/economy/tranfers/giveCash');
 const {convertToSeconds} = require('../../utils/calculate');
+const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
   cooldown: convertToSeconds('1s'),
   data: new SlashCommandBuilder()
     .setName('pay')
     .setDescription('Send cash to another user.')
+    .addUserOption(option =>
+      option
+        .setName('recipient')
+        .setDescription('Person to receive the cash')
+        .setRequired(true)
+    )
     .addIntegerOption(option =>
       option
         .setName('amount')
         .setDescription('Amount of cash to send')
         .setRequired(true)
     ),
+
   async execute(interaction) {
     await interaction.deferReply();
+
+    const recipient = interaction.options.getUser('recipient');
     const amount = interaction.options.getInteger('amount');
-    const data = await economy.deposit(
+    const data = await giveCash(
       interaction.user.id,
+      recipient.id,
       interaction.guildId,
       amount
     );
-    data.username = interaction.user.displayName;
-    interaction.editReply({embeds: [responseEmbed(data)]});
+
+    const embedOptions = {
+      title: '💸 Transfer Details',
+      description: `${
+        interaction.user.username
+      } has sent $${data.transferredAmount.toLocaleString()} to ${
+        recipient.username
+      }.`,
+    };
+    const responseEmbed = createEmbed(embedOptions);
+    interaction.editReply({embeds: [responseEmbed]});
   },
 };
-
-/**
- * Create a embed for the output
- *
- * @param {Object} data - The user's account data.
- * @returns {MessageEmbed} - The embed to send.
- */
-function responseEmbed(data) {
-  const embed = new EmbedBuilder()
-    .setTitle(`💰 Deposit Statement for ${data.username}`)
-    .setColor('#a8dadc')
-    .setThumbnail(
-      'https://cdn.discordapp.com/icons/1144324605599830086/75b1d6fd9acf20c5f0023001ad5d3ad7.webp?size=100'
-    )
-    .setDescription(`Your deposit of $${data.amount} is completed.`)
-    .addFields(
-      {name: '💵 Cash', value: `$${data.cash.toLocaleString()}`},
-      {name: '🏦 Bank', value: `$${data.bank.toLocaleString()}`}
-    )
-    .setTimestamp()
-    .setFooter({text: 'Yue Bank Corp.'});
-
-  return embed;
-}

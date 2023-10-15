@@ -1,10 +1,7 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  BaseInteraction,
-} = require('discord.js');
-const economy = require('../../modules/economy');
+const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
+const dailyBonus = require('../../modules/economy/bonuses/dailyBonus');
 const {convertToSeconds} = require('../../utils/calculate');
+const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
   cooldown: convertToSeconds('1d'),
@@ -16,32 +13,13 @@ module.exports = {
    */
   async execute(interaction) {
     await interaction.deferReply();
-    const data = await economy.dailyBonus(
-      interaction.user.id,
-      interaction.guildId
-    );
+    const data = await dailyBonus(interaction.user.id, interaction.guildId);
     data.username = interaction.user.displayName;
-    const balanceEmbed = responseEmbed(data);
-    interaction.editReply({embeds: [balanceEmbed]});
+    const embedOptions = {
+      title: `💰 ${data.username} Pay Stub`,
+      description: `Your daily pay of $${data.amount} has been delivered.`,
+    };
+    const responseEmbed = createEmbed(embedOptions);
+    interaction.editReply({embeds: [responseEmbed]});
   },
 };
-
-/**
- * Create a embed for the output
- *
- * @param {Object} data - The user's account data.
- * @returns {MessageEmbed} - The embed to send.
- */
-function responseEmbed(data) {
-  const embed = new EmbedBuilder()
-    .setTitle(`💰 ${data.username} Pay Stub`)
-    .setColor('#a8dadc')
-    .setThumbnail(
-      'https://cdn.discordapp.com/icons/1144324605599830086/75b1d6fd9acf20c5f0023001ad5d3ad7.webp?size=100'
-    )
-    .setDescription(`Your daily pay of $${data.amount} has been delivered.`)
-    .setTimestamp()
-    .setFooter({text: 'Yue Bank Corp.'});
-
-  return embed;
-}

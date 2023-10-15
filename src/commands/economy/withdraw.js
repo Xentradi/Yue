@@ -1,14 +1,10 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  BaseInteraction,
-} = require('discord.js');
-const economy = require('../../modules/economy');
+const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
+const withdraw = require('../../modules/economy/bankOperations/withdraw');
 const {convertToSeconds} = require('../../utils/calculate');
+const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
   cooldown: convertToSeconds('1s'),
-
   data: new SlashCommandBuilder()
     .setName('withdraw')
     .setDescription('Withdraw cash from your bank.')
@@ -22,36 +18,45 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
     const amount = interaction.options.getInteger('amount');
-    const data = await economy.withdraw(
+    const data = await withdraw(
       interaction.user.id,
       interaction.guildId,
       amount
     );
-    data.username = interaction.user.displayName;
-    interaction.editReply({embeds: [responseEmbed(data)]});
+    let embedOptions = {};
+
+    if (data === null) {
+      embedOptions = {
+        title: '💰 Withdrawal Statement',
+        description: 'Account not found.',
+        color: '#FF3333',
+      };
+    } else if (data === false) {
+      embedOptions = {
+        title: '💰 Withdrawal Statement',
+        description: 'Invalid withdrawal amount.',
+        color: '#FF3333',
+      };
+    } else if (!data.success) {
+      embedOptions = {
+        title: '💰 Withdrawal Statement',
+        description: data.message,
+        color: '#FF3333',
+      };
+    } else {
+      embedOptions = {
+        title: `💰 Withdrawal Statement for ${interaction.user.username}`,
+        description: `Your withdrawal of $${data.amount.toLocaleString()} is completed.`,
+        color: '#33CC33',
+        fields: [
+          {name: '💵 Cash', value: `$${data.cash.toLocaleString()}`},
+          {name: '🏦 Bank', value: `$${data.bank.toLocaleString()}`},
+        ],
+        footer: {text: 'Yue Bank Corp.'},
+      };
+    }
+
+    const responseEmbed = createEmbed(embedOptions);
+    interaction.editReply({embeds: [responseEmbed]});
   },
 };
-
-/**
- * Create a embed for the output
- *
- * @param {Object} data - The user's account data.
- * @returns {MessageEmbed} - The embed to send.
- */
-function responseEmbed(data) {
-  const embed = new EmbedBuilder()
-    .setTitle(`💰 Withdrawl Statement for ${data.username}`)
-    .setColor('#a8dadc')
-    .setThumbnail(
-      'https://cdn.discordapp.com/icons/1144324605599830086/75b1d6fd9acf20c5f0023001ad5d3ad7.webp?size=100'
-    )
-    .setDescription(`Your withdrawl of $${data.amount} is completed.`)
-    .addFields(
-      {name: '💵 Cash', value: `$${data.cash.toLocaleString()}`},
-      {name: '🏦 Bank', value: `$${data.bank.toLocaleString()}`}
-    )
-    .setTimestamp()
-    .setFooter({text: 'Yue Bank Corp.'});
-
-  return embed;
-}

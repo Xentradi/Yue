@@ -3,14 +3,12 @@ const config = require('../config.json');
 const Player = require('../models/Player');
 const {levelUp} = require('../utils/calculate');
 
-module.exports = {messageReward};
-
 /**
  *
  * @param {Message} message
  *
  */
-async function messageReward(message) {
+module.exports = async function messageReward(message) {
   if (!message.inGuild() || message.author.bot) return;
 
   const query = {
@@ -69,7 +67,7 @@ async function messageReward(message) {
   } catch (err) {
     console.error(err);
   }
-}
+};
 
 function getRandomExp() {
   const min = Math.ceil(config.minExp);

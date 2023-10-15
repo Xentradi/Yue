@@ -8,20 +8,36 @@ const Player = require('../../../models/Player');
  * @param {string} userId - The ID of the user.
  * @param {string} guildId - The ID of the guild (server).
  * @param {number} amount - The amount of cash to deposit.
- * @returns {Promise<Object|null>} An object containing the transaction result, or `null` if the player is not found.
- * @returns {boolean} success - Indicates if the deposit was successful.
- * @returns {number} amount - The amount deposited.
- * @returns {number} cash - The updated cash balance after deposit.
- * @returns {number} bank - The updated bank balance after deposit.
+ * @returns {Promise<Object>} An object containing the transaction result and status of operation.
+ * @throws Will log an error if saving to the database fails.
  */
-
 module.exports.deposit = async function deposit(userId, guildId, amount) {
   const player = await Player.findOne({userId, guildId});
-  if (!player) return null; // Handle player not found
-  if (amount <= 0 || player.cash < amount) return false; // Handle invalid amount
+
+  if (!player) {
+    return {
+      success: false,
+      message: 'Player not found in the database.',
+    };
+  }
+
+  if (amount <= 0) {
+    return {
+      success: false,
+      message: 'Invalid deposit amount.',
+    };
+  }
+
+  if (player.cash < amount) {
+    return {
+      success: false,
+      message: 'Insufficient funds to deposit.',
+    };
+  }
 
   player.cash -= amount;
   player.bank += amount;
+
   try {
     await player.save();
     return {
@@ -32,5 +48,9 @@ module.exports.deposit = async function deposit(userId, guildId, amount) {
     };
   } catch (err) {
     console.error(err);
+    return {
+      success: false,
+      message: 'An error occurred while processing the deposit.',
+    };
   }
 };

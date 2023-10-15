@@ -7,11 +7,18 @@ const Player = require('../../../models/Player');
  * @async
  * @function
  * @param {string} guildId - The ID of the guild (server) for which the interest should be applied.
- * @returns {Promise<void>} Resolves when all player balances have been updated.
+ * @returns {Promise<Object>} An object containing the operation status and message.
+ * @throws Will log an error if there's an issue with database access.
  */
-
 module.exports.applyBankInterest = async function applyBankInterest(guildId) {
   const players = await Player.find({guildId});
+
+  if (!players || players.length === 0) {
+    return {
+      success: false,
+      message: 'No players found for the specified guild.',
+    };
+  }
 
   // Randomly generate bank and debt interest rates
   const bankInterestRate = 0.001 + Math.random() * 0.002; // 0.1% to 0.3%
@@ -33,7 +40,15 @@ module.exports.applyBankInterest = async function applyBankInterest(guildId) {
 
   try {
     await Promise.all(players.map(player => player.save()));
+    return {
+      success: true,
+      message: 'Bank and debt interests successfully applied.',
+    };
   } catch (err) {
     console.error(err);
+    return {
+      success: false,
+      message: 'An error occurred while applying bank and debt interests.',
+    };
   }
 };
