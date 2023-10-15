@@ -10,7 +10,7 @@ module.exports = {
     .setDescription('Attempt to steal cash from another user.')
     .addUserOption(option =>
       option
-        .setName('victim')
+        .setName('target')
         .setDescription('Person you want to steal from')
         .setRequired(true)
     )
@@ -24,12 +24,12 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
 
-    const victim = interaction.options.getUser('victim');
+    const target = interaction.options.getUser('target');
     const amount = interaction.options.getInteger('amount');
 
     const data = await stealCash(
       interaction.user.id,
-      victim.id,
+      target.id,
       interaction.guildId,
       amount
     );
@@ -49,7 +49,7 @@ module.exports = {
         description: `${
           interaction.user.username
         } managed to steal $${data.amountStolen.toLocaleString()} from ${
-          victim.username
+          target.username
         }.`,
         color: '#33CC33',
       };
@@ -57,7 +57,7 @@ module.exports = {
       embedOptions = {
         title: '❌ Failed Heist!',
         description: `${interaction.user.username} failed to steal from ${
-          victim.username
+          target.username
         } and had to pay a penalty of $${data.penalty.toLocaleString()}.`,
         color: '#FF3333',
       };

@@ -1,12 +1,17 @@
 const Player = require('../../../models/Player');
 
-module.exports = async function coinFlip(userId, guildId, choice, betAmount) {
+module.exports = async function diceRoll(
+  userId,
+  guildId,
+  guessedNumber,
+  betAmount
+) {
   const player = await Player.findOne({userId, guildId});
 
   const result = {
     success: false,
-    outcome: Math.random() < 0.5 ? 'heads' : 'tails',
-    playerChoice: choice,
+    outcome: Math.floor(Math.random() * 6) + 1,
+    guessedNumber,
     betAmount,
     win: false,
     prize: 0,
@@ -24,7 +29,12 @@ module.exports = async function coinFlip(userId, guildId, choice, betAmount) {
     return result;
   }
 
-  if (result.outcome === choice) {
+  if (guessedNumber < 1 || guessedNumber > 6) {
+    result.message = 'Invalid guessed number. Must be between 1 and 6.';
+    return result;
+  }
+
+  if (result.outcome === guessedNumber) {
     player.cash += betAmount;
     result.win = true;
     result.prize = betAmount;
