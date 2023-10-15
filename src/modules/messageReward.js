@@ -14,8 +14,8 @@ module.exports = async function messageReward(message) {
   try {
     const player = await Player.findOne(query);
 
-    let expToGive = getRandomExp();
-    let cashToGive = config.cashPerMessage;
+    let expToGive = getRandomExp() * (player?.expBonus || 1);
+    let cashToGive = config.cashPerMessage * (player?.cashBonus || 1);
 
     if (player) {
       if (message.member.roles.cache.has(config.boosterRole)) {
