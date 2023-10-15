@@ -7,15 +7,26 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('balance')
     .setDescription('Shows your balance.'),
+
   /**
-   * @param {BaseInteraction} interaction
+   * Executes the balance command which shows the user's current balance.
+   *
+   * @async
+   * @function
+   * @param {BaseInteraction} interaction - The interaction that triggered the command.
+   * @throws Will send an error response to the user if there's an issue retrieving the balance.
    */
   async execute(interaction) {
     await interaction.deferReply();
+
     const data = await getBalance(interaction.user.id, interaction.guildId);
-    data.username = interaction.user.displayName;
+
+    if (!data.success) {
+      return interaction.editReply(data.message);
+    }
+
     const embedOptions = {
-      title: `💰 Financial Statement for ${data.username}`,
+      title: `💰 Financial Statement for ${interaction.user.displayName}`,
       fields: [
         {name: '💵 Cash', value: `$${data.cash.toLocaleString()}`},
         {name: '🏦 Bank', value: `$${data.bank.toLocaleString()}`},

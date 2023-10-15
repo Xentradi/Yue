@@ -3,6 +3,17 @@ const config = require('../config.json');
 const Player = require('../models/Player');
 const {levelUp} = require('../utils/calculate');
 
+/**
+ * Awards a player with experience points and cash for each message they send in the guild.
+ * If a player levels up, sends a celebratory message in the channel.
+ * Also, handles the creation of a new player record if the player is not in the database.
+ *
+ * @async
+ * @function
+ * @param {Message} message - The message sent by the player in the guild.
+ * @throws Will log an error if any database operation fails.
+ */
+
 module.exports = async function messageReward(message) {
   if (!message.inGuild() || message.author.bot) return;
 
@@ -50,6 +61,12 @@ module.exports = async function messageReward(message) {
   }
 };
 
+/**
+ * Generates a random experience value between the minimum and maximum values specified in the config.
+ *
+ * @function
+ * @returns {number} A random experience value.
+ */
 function getRandomExp() {
   const min = Math.ceil(config.minExp);
   const max = Math.floor(config.maxExp);
