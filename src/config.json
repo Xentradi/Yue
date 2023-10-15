@@ -10,5 +10,6 @@
   "cashPerMessage": 5,
   "expScale": 0.065,
   "minExp": 1,
-  "maxExp": 15
+  "maxExp": 15,
+  "dailyWage": 1000
 }

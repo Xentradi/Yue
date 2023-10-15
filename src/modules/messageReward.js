@@ -1,7 +1,7 @@
 const {Message} = require('discord.js');
 const config = require('../config.json');
 const Player = require('../models/Player');
-const calculate = require('../utils/calculate');
+const {levelUp} = require('../utils/calculate');
 
 module.exports = {messageReward};
 
@@ -52,7 +52,8 @@ async function messageReward(message) {
       player.cash += cashToGive;
 
       // check if the player will level up with the gained exp
-      const toLevelUp = calculate.levelUp(player.level + 1);
+      const toLevelUp = levelUp(player.level);
+
       if (player.exp >= toLevelUp) {
         player.exp = 0;
         player.level += 1;
@@ -60,7 +61,6 @@ async function messageReward(message) {
           `:tada: *${message.member} is ** level ${player.level}** *`
         );
       }
-      console.log(player);
       player.save().catch(e => {
         console.error(`Error saving updated player ${e}`);
         return;

@@ -5,6 +5,8 @@ const {Collection} = require('discord.js');
 module.exports = client => {
   // Command Handler
   client.commands = new Collection();
+  client.cooldowns = new Collection();
+
   const foldersPath = path.join(__dirname, '../commands');
   const commandFolders = fs.readdirSync(foldersPath);
   for (const folder of commandFolders) {
