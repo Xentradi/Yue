@@ -12,12 +12,7 @@ const Player = require('../../../models/Player');
  * @returns {Promise<Object|null>} An object containing the outcome of the coin flip, win status, and prize amount, or `null` if the player has insufficient funds or is not found.
  * @throws Will log an error if saving to the database fails.
  */
-module.exports.coinflip = async function coinflip(
-  userId,
-  guildId,
-  choice,
-  betAmount
-) {
+module.exports = async function coinflip(userId, guildId, choice, betAmount) {
   const player = await Player.findOne({userId, guildId});
   if (!player || player.cash < betAmount) return null; // Handle insufficient funds or player not found
 

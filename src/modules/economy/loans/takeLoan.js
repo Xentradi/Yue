@@ -11,7 +11,7 @@ const Player = require('../../../models/Player');
  * @returns {Promise<Object|boolean|null>} An object containing the outcome of the loan or `false` if the loan couldn't be taken, or `null` if the player was not found.
  * @throws Will log an error if saving to the database fails.
  */
-module.exports.takeLoan = async function takeLoan(userId, guildId, amount) {
+module.exports = async function takeLoan(userId, guildId, amount) {
   const player = await Player.findOne({userId, guildId});
 
   if (!player) {

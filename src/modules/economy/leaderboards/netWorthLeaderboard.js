@@ -10,10 +10,7 @@ const Player = require('../../../models/Player');
  * @returns {Promise<Array>} An array of top players sorted by net worth.
  */
 
-module.exports.getTopNetWorth = async function getTopNetWorth(
-  guildId,
-  limit = 10
-) {
+module.exports = async function getTopNetWorth(guildId, limit = 10) {
   // Aggregate players in the guild, calculate their net worth, and sort by descending net worth
   const topPlayers = await Player.aggregate([
     {$match: {guildId: guildId}},

@@ -10,7 +10,7 @@ const Player = require('../../../models/Player');
  * @returns {Promise<Object>} An object indicating success status and potentially containing the player's cash, bank, and debt balances.
  * @throws Will log an error if there's an issue with database access.
  */
-module.exports.getBalance = async function getBalance(userId, guildId) {
+module.exports = async function getBalance(userId, guildId) {
   try {
     const player = await Player.findOne({userId, guildId});
 

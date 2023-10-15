@@ -10,10 +10,7 @@ const Player = require('../../../models/Player');
  * @returns {Promise<Array>} An array of top players sorted by cash amount, only including their user ID and cash amount.
  */
 
-module.exports.getCashLeaderboard = async function getCashLeaderboard(
-  guildId,
-  topN = 10
-) {
+module.exports = async function getCashLeaderboard(guildId, topN = 10) {
   const players = await Player.find({guildId})
     .sort({cash: -1})
     .limit(topN)

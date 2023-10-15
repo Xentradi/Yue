@@ -12,7 +12,7 @@ const Player = require('../../../models/Player');
  * @returns {Promise<Object>} An object containing transaction details and status of operation.
  * @throws Will log an error if saving to the database fails.
  */
-module.exports.giveCash = async function giveCash(
+module.exports = async function giveCash(
   fromUserId,
   toUserId,
   guildId,

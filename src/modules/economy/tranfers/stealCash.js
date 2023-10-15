@@ -12,7 +12,7 @@ const Player = require('../../../models/Player');
  * @returns {Promise<Object|null>} An object containing the outcome of the steal attempt, amount stolen, and new balances, or `null` if one or both players are not found.
  * @throws Will log an error if saving to the database fails.
  */
-module.exports.stealCash = async function stealCash(
+module.exports = async function stealCash(
   userId,
   targetUserId,
   guildId,

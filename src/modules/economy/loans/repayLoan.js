@@ -11,7 +11,7 @@ const Player = require('../../../models/Player');
  * @returns {Promise<Object>} An object containing the outcome of the repayment.
  * @throws Will log an error if saving to the database fails.
  */
-module.exports.repayLoan = async function repayLoan(userId, guildId, amount) {
+module.exports = async function repayLoan(userId, guildId, amount) {
   const player = await Player.findOne({userId, guildId});
 
   if (!player) {

@@ -1,5 +1,5 @@
 const {SlashCommandBuilder} = require('discord.js');
-const {stealCash} = require('../../modules/economy/tranfers/stealCash'); // Adjust the path as necessary
+const stealCash = require('../../modules/economy/tranfers/stealCash'); // Adjust the path as necessary
 const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 

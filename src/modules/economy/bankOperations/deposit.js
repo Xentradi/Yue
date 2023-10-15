@@ -11,7 +11,7 @@ const Player = require('../../../models/Player');
  * @returns {Promise<Object>} An object containing the transaction result and status of operation.
  * @throws Will log an error if saving to the database fails.
  */
-module.exports.deposit = async function deposit(userId, guildId, amount) {
+module.exports = async function deposit(userId, guildId, amount) {
   const player = await Player.findOne({userId, guildId});
 
   if (!player) {

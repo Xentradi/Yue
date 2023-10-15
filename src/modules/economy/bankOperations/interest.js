@@ -10,7 +10,7 @@ const Player = require('../../../models/Player');
  * @returns {Promise<Object>} An object containing the operation status and message.
  * @throws Will log an error if there's an issue with database access.
  */
-module.exports.applyBankInterest = async function applyBankInterest(guildId) {
+module.exports = async function applyBankInterest(guildId) {
   const players = await Player.find({guildId});
 
   if (!players || players.length === 0) {

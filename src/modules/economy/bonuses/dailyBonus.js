@@ -11,7 +11,8 @@ const config = require('../../../config.json');
  * @returns {Promise<Object>} An object containing the transaction result.
  * @throws Will log an error if there's an issue with database access.
  */
-module.exports.dailyBonus = async function dailyBonus(userId, guildId) {
+
+module.exports = async function dailyBonus(userId, guildId) {
   const player = await Player.findOne({userId, guildId});
 
   if (!player) {
@@ -35,7 +36,7 @@ module.exports.dailyBonus = async function dailyBonus(userId, guildId) {
     console.error(err);
     return {
       success: false,
-      message: 'An error occurred while granting the daily bonus.'
+      message: 'An error occurred while granting the daily bonus.',
     };
   }
 };

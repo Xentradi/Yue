@@ -11,7 +11,7 @@ const Player = require('../../../models/Player');
  * @returns {Promise<Object>} An object containing the transaction result.
  * @throws Will log an error if there's an issue with database access.
  */
-module.exports.withdraw = async function withdraw(userId, guildId, amount) {
+module.exports = async function withdraw(userId, guildId, amount) {
   const player = await Player.findOne({userId, guildId});
 
   if (!player) {
