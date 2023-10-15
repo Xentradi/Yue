@@ -1,3 +1,14 @@
 {
-  "extends": "./node_modules/gts/"
+  "extends": "./node_modules/gts/",
+  "parserOptions": {
+    "ecmaVersion": 2020
+  },
+  "rules": {
+    "node/no-unsupported-features/es-syntax": [
+      "error",
+      {
+        "version": ">=20.0.0"
+      }
+    ]
+  }
 }

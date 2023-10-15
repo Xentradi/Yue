@@ -3,11 +3,6 @@ const config = require('../config.json');
 const Player = require('../models/Player');
 const {levelUp} = require('../utils/calculate');
 
-/**
- *
- * @param {Message} message
- *
- */
 module.exports = async function messageReward(message) {
   if (!message.inGuild() || message.author.bot) return;
 
@@ -22,36 +17,15 @@ module.exports = async function messageReward(message) {
     let expToGive = getRandomExp();
     let cashToGive = config.cashPerMessage;
 
-    // new player
-    if (!player) {
-      const newPlayer = new Player({
-        userId: message.author.id,
-        guildId: message.guild.id,
-        exp: expToGive,
-        cash: cashToGive,
-      });
-      newPlayer.save().catch(e => {
-        console.error(`Error saving new player ${e}`);
-        return;
-      });
-    }
-
-    // existing player
     if (player) {
-      // Add multipliers to the gained exp and cash
-      expToGive *= player.expBonus;
-      cashToGive *= player.cashBonus;
       if (message.member.roles.cache.has(config.boosterRole)) {
         expToGive *= config.boosterExpBonus;
         cashToGive *= config.boosterCashBonus;
       }
-
       player.exp += expToGive;
       player.cash += cashToGive;
 
-      // check if the player will level up with the gained exp
       const toLevelUp = levelUp(player.level);
-
       if (player.exp >= toLevelUp) {
         player.exp = 0;
         player.level += 1;
@@ -59,10 +33,17 @@ module.exports = async function messageReward(message) {
           `:tada: *${message.member} is ** level ${player.level}** *`
         );
       }
-      player.save().catch(e => {
-        console.error(`Error saving updated player ${e}`);
-        return;
+
+      await player.save();
+    } else {
+      const newPlayer = new Player({
+        userId: message.author.id,
+        guildId: message.guild.id,
+        exp: expToGive,
+        cash: cashToGive,
       });
+
+      await newPlayer.save();
     }
   } catch (err) {
     console.error(err);
