@@ -40,18 +40,29 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
       `Started refreshing ${commands.length} application (/) commands.`
     );
 
-    for (const command of commands) {
-      if (command.deployGlobal) {
-        // Deploy command globally
-        await rest.put(Routes.applicationCommands(clientId), {
-          body: [command.data],
-        });
-      } else {
-        // Deploy command to specific guild
-        await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
-          body: [command.data],
-        });
-      }
+    // Separate commands into global and guild-specific
+    const globalCommands = commands
+      .filter(cmd => cmd.deployGlobal)
+      .map(cmd => cmd.data);
+
+    const guildCommands = commands
+      .filter(cmd => !cmd.deployGlobal)
+      .map(cmd => cmd.data);
+
+    // Deploy global commands
+    if (globalCommands.length > 0) {
+      await rest.put(Routes.applicationCommands(clientId), {
+        body: globalCommands,
+      });
+      console.log(`Deployed ${globalCommands.length} global commands.`);
+    }
+
+    // Deploy guild-specific commands
+    if (guildCommands.length > 0) {
+      await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
+        body: guildCommands,
+      });
+      console.log(`Deployed ${guildCommands.length} guild-specific commands.`);
     }
 
     console.log(

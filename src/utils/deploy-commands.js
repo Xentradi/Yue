@@ -28,9 +28,7 @@ for (const folder of commandFolders) {
     }
   }
 }
-console.log(`token: ${process.env.DISCORD_TOKEN}`);
-console.log(`clientId: ${clientId}`);
-console.log(`guildId: ${guildId}`);
+
 const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
