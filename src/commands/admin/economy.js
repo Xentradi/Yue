@@ -8,7 +8,7 @@ module.exports = {
     .setDescription('Economy administrator operations')
     .addSubcommand(subcommand =>
       subcommand
-        .setName('checkbalances')
+        .setName('get')
         .setDescription("Check a user's balances")
         .addUserOption(option =>
           option.setName('user').setDescription('The user').setRequired(true)
@@ -102,16 +102,56 @@ module.exports = {
       return interaction.editReply({embeds: [responseEmbed], ephemeral: true});
     }
 
-    const response = economyHandler(interaction);
+    const response = await economyHandler(interaction);
 
-    const embedOptions = {
-      title: `💰 Financial Statement for ${response.user.displayName}`,
-      fields: [
-        {name: '💵 Cash', value: `$${response.cash.toLocaleString()}`},
-        {name: '🏦 Bank', value: `$${response.bank.toLocaleString()}`},
-        {name: '📉 Debt', value: `$${response.debt.toLocaleString()}`},
-      ],
-    };
+    const embedOptions = {};
+
+    if (response.success) {
+      switch (interaction.options.getSubcommand()) {
+        case 'get':
+          embedOptions.title = `💰 Financial Statement for ${
+            interaction.options.getUser('user').displayName
+          }`;
+          embedOptions.fields = [
+            {name: '💵 Cash', value: `$${response.cash.toLocaleString()}`},
+            {name: '🏦 Bank', value: `$${response.bank.toLocaleString()}`},
+            {name: '📉 Debt', value: `$${response.debt.toLocaleString()}`},
+          ];
+          break;
+
+        case 'give':
+          embedOptions.title = '✅ Give Operation Successful';
+          embedOptions.description = `An amount of $${response.newAmount.toLocaleString()} has been added to ${
+            interaction.options.getUser('user').displayName
+          }'s ${response.field} balance.`;
+          break;
+
+        case 'set':
+          embedOptions.title = '✅ Set Operation Successful';
+          embedOptions.description = `${
+            interaction.options.getUser('user').displayName
+          }'s ${
+            response.field
+          } balance has been set to $${response.newAmount.toLocaleString()}.`;
+          break;
+        case 'reset':
+          embedOptions.title = '✅ Operation Successful';
+          embedOptions.description = `The operation was executed successfully for ${
+            interaction.options.getUser('user').displayName
+          }.`;
+          break;
+
+        case 'airdrop':
+          embedOptions.title = '✅ Airdrop Successful';
+          embedOptions.description = `A total of $${response.total.toLocaleString()} has been distributed among the active users.`;
+          break;
+      }
+    } else {
+      embedOptions.title = '❌ Operation Failed';
+      embedOptions.description = response.error;
+      embedOptions.color = '#FF0000';
+    }
+
     const responseEmbed = createEmbed(embedOptions);
     interaction.editReply({embeds: [responseEmbed], ephemeral: true});
   },

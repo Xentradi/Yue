@@ -1,8 +1,6 @@
 const {SlashCommandBuilder} = require('discord.js');
-const {convertToSeconds} = require('../../utils/calculate');
 
 module.exports = {
-  cooldown: convertToSeconds('1s'),
   data: new SlashCommandBuilder()
     .setName('ping')
     .setDescription('Replies with Pong!'),
