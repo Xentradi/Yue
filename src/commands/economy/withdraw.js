@@ -4,7 +4,6 @@ const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
-  cooldown: convertToSeconds('1s'),
   data: new SlashCommandBuilder()
     .setName('withdraw')
     .setDescription('Withdraw cash from your bank.')
@@ -14,6 +13,8 @@ module.exports = {
         .setDescription('Amount to withdraw')
         .setRequired(true)
     ),
+  cooldown: convertToSeconds('1s'),
+  deployGlobal: true,
 
   async execute(interaction) {
     await interaction.deferReply();

@@ -4,7 +4,6 @@ const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
-  cooldown: convertToSeconds('3s'),
   data: new SlashCommandBuilder()
     .setName('coin')
     .setDescription('Bet on heads or tails')
@@ -24,6 +23,8 @@ module.exports = {
         .setDescription('The amount you wish to wager')
         .setRequired(true)
     ),
+  cooldown: convertToSeconds('3s'),
+  deployGlobal: true,
 
   /**
    * @param {BaseInteraction} interaction

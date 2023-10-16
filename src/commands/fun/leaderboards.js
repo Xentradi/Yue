@@ -2,8 +2,8 @@ const {SlashCommandBuilder} = require('discord.js');
 const getCashLeaderboard = require('../../modules/economy/leaderboards/cashLeaderboard');
 const getBankLeaderboard = require('../../modules/economy/leaderboards/bankLeaderboard');
 const getNetWorthLeaderboard = require('../../modules/economy/leaderboards/netWorthLeaderboard');
-// ... (Import other modules like level and debt leaderboards)
 const {createEmbed} = require('../../utils/embedUtils');
+const {convertToSeconds} = require('../../utils/calculate');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -20,7 +20,8 @@ module.exports = {
         .setName('networth')
         .setDescription('View the net worth leaderboard')
     ),
-  // ... (Add other subcommands like level and debt here)
+  cooldown: convertToSeconds('1s'),
+  deployGlobal: true,
 
   /**
    *

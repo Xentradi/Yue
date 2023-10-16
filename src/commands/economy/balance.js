@@ -4,10 +4,11 @@ const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
-  cooldown: convertToSeconds('1s'),
   data: new SlashCommandBuilder()
     .setName('balance')
     .setDescription('Shows your balance.'),
+  cooldown: convertToSeconds('1s'),
+  deployGlobal: true,
 
   /**
    * Executes the balance command which shows the user's current balance.

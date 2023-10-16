@@ -4,7 +4,6 @@ const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
-  cooldown: convertToSeconds('1s'),
   data: new SlashCommandBuilder()
     .setName('deposit')
     .setDescription('Move virtual cash from your wallet to the bank.')
@@ -14,6 +13,9 @@ module.exports = {
         .setDescription('Amount of virtual cash to deposit')
         .setRequired(true)
     ),
+  cooldown: convertToSeconds('1s'),
+  deployGlobal: true,
+
   async execute(interaction) {
     await interaction.deferReply();
     const amount = interaction.options.getInteger('deposit_amount');

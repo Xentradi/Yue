@@ -4,7 +4,6 @@ const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
-  cooldown: convertToSeconds('3s'),
   data: new SlashCommandBuilder()
     .setName('dice')
     .setDescription('Bet on the outcome of a dice roll (1-6)')
@@ -28,6 +27,8 @@ module.exports = {
         .setDescription('The amount you wish to wager')
         .setRequired(true)
     ),
+  cooldown: convertToSeconds('3s'),
+  deployGlobal: true,
 
   async execute(interaction) {
     await interaction.deferReply();

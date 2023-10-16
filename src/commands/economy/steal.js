@@ -4,7 +4,6 @@ const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
-  cooldown: convertToSeconds('3h'),
   data: new SlashCommandBuilder()
     .setName('steal')
     .setDescription(
@@ -22,6 +21,8 @@ module.exports = {
         .setDescription('The pile of cash you have your eyes set on')
         .setRequired(true)
     ),
+  cooldown: convertToSeconds('3h'),
+  deployGlobal: true,
 
   async execute(interaction) {
     await interaction.deferReply();

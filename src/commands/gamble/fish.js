@@ -4,10 +4,11 @@ const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
-  cooldown: convertToSeconds('5s'),
   data: new SlashCommandBuilder()
     .setName('fish')
     .setDescription('Try your luck and fish in the virtual lake.'),
+  cooldown: convertToSeconds('3s'),
+  deployGlobal: true,
 
   async execute(interaction) {
     await interaction.deferReply();

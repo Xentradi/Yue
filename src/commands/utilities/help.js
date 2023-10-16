@@ -6,10 +6,11 @@ const {createEmbed} = require('../../utils/embedUtils');
 const {convertToSeconds} = require('../../utils/calculate');
 
 module.exports = {
-  cooldown: convertToSeconds('5m'),
   data: new SlashCommandBuilder()
     .setName('help')
     .setDescription('List all commands or info about a specific command'),
+  cooldown: convertToSeconds('5m'),
+  deployGlobal: true,
 
   async execute(interaction) {
     const foldersPath = path.join(__dirname, '../'); // Adjust the path as needed

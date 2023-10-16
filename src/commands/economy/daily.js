@@ -4,10 +4,12 @@ const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
-  cooldown: convertToSeconds('1d'),
   data: new SlashCommandBuilder()
     .setName('daily')
     .setDescription('Claim your daily reward.'),
+  cooldown: convertToSeconds('1d'),
+  deployGlobal: true,
+
   /**
    * @param {BaseInteraction} interaction
    */

@@ -4,7 +4,6 @@ const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
-  cooldown: convertToSeconds('1s'),
   data: new SlashCommandBuilder()
     .setName('pay')
     .setDescription('Transfer virtual cash to another member.')
@@ -20,6 +19,8 @@ module.exports = {
         .setDescription('The amount of virtual cash you wish to send')
         .setRequired(true)
     ),
+  cooldown: convertToSeconds('1s'),
+  deployGlobal: true,
 
   /**
    * Executes the pay command, allowing users to transfer cash to others.

@@ -2,13 +2,16 @@ const {SlashCommandBuilder} = require('discord.js');
 const Player = require('../../models/Player');
 const {manageRoles} = require('../../utils/manageRoles');
 const {createEmbed} = require('../../utils/embedUtils');
+const {convertToSeconds} = require('../../utils/calculate');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('reconroles')
+    .setName('syncRoles')
     .setDescription(
       'Reconscile roles to users based on their levels in the database.'
     ),
+  cooldown: convertToSeconds('0s'),
+  deployGlobal: true,
 
   async execute(interaction) {
     await interaction.deferReply();

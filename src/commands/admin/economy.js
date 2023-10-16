@@ -1,5 +1,6 @@
 const {SlashCommandBuilder} = require('discord.js');
 const {createEmbed} = require('../../utils/embedUtils');
+const {convertToSeconds} = require('../../utils/calculate');
 const economyHandler = require('../../modules/economy/adminOperations/economyHandler');
 
 module.exports = {
@@ -88,6 +89,8 @@ module.exports = {
             .setRequired(true)
         )
     ),
+  cooldown: convertToSeconds('0s'),
+  deployGlobal: true,
 
   async execute(interaction) {
     await interaction.deferReply({ephemeral: true});

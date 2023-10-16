@@ -4,7 +4,6 @@ const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
-  cooldown: convertToSeconds('10m'), // Set a cooldown of 10 minutes for this command
   data: new SlashCommandBuilder()
     .setName('restocklake')
     .setDescription('Restock the virtual lake with new fish.')
@@ -14,6 +13,8 @@ module.exports = {
         .setDescription('How many fish you want to stock in the lake')
         .setRequired(false)
     ),
+  cooldown: convertToSeconds('10m'),
+  deployGlobal: true,
 
   async execute(interaction) {
     await interaction.deferReply();
