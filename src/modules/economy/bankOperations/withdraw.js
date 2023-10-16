@@ -1,4 +1,5 @@
 const Player = require('../../../models/Player');
+const balance = require('../../economy/balance');
 
 /**
  * Withdraws a specified amount of cash from a player's bank account.
@@ -35,22 +36,21 @@ module.exports = async function withdraw(userId, guildId, amount) {
     };
   }
 
-  player.bank -= amount;
-  player.cash += amount;
-
   try {
-    await player.save();
-    return {
-      success: true,
-      amount: amount,
-      cash: player.cash,
-      bank: player.bank,
-    };
-  } catch (err) {
-    console.error(err);
+    const transferResult = await balance.transferFunds(player, amount, false);
+    return transferResult.success
+      ? {
+          success: true,
+          amount: amount,
+          cash: transferResult.cash,
+          bank: transferResult.bank,
+        }
+      : transferResult;
+  } catch (error) {
+    console.error(error);
     return {
       success: false,
-      message: 'An error occurred while processing the transaction.',
+      message: 'An error occurred while processing the withdrawl.',
     };
   }
 };

@@ -32,7 +32,7 @@ module.exports = async function applyBankInterest(guildId) {
     }
 
     // Assuming debt is a property on the player model and is a negative value
-    if (player.debt && player.debt < 0) {
+    if (player.debt && player.debt > 0) {
       const debtInterest = Math.round(player.debt * debtInterestRate);
       player.debt += debtInterest;
     }

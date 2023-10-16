@@ -8,7 +8,7 @@ const FishSchema = new Schema({
 
 const LakeSchema = new Schema({
   guildId: String,
-  fishes: [FishSchema],
+  fishStock: [FishSchema],
   lastStocked: Date,
 });
 

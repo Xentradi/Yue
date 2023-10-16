@@ -45,6 +45,10 @@ module.exports = async function stealCash(
     player.cash += amount;
     target.cash -= amount;
 
+    // Ensuring cash doesn't go below zero
+    player.cash = Math.max(player.cash, 0);
+    target.cash = Math.max(target.cash, 0);
+
     result.amountStolen = amount;
     result.playerCash = player.cash;
     result.targetCash = target.cash;
@@ -61,6 +65,8 @@ module.exports = async function stealCash(
 
     result.penalty = penalty;
   }
+  // Ensuring bank doesn't go below zero
+  player.bank = Math.max(player.bank, 0);
 
   try {
     await player.save();

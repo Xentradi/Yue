@@ -1,5 +1,6 @@
 const Player = require('../../../models/Player');
 const Lake = require('../../../models/Lake');
+const balance = require('../../economy/balance');
 
 /**
  * Allow a player to fish in the lake and get rewarded based on the fish they catch.
@@ -30,14 +31,26 @@ module.exports = async function fish(userId, guildId) {
 
   const outcome = selectFishFromLake(lake);
 
-  player.cash += outcome.reward;
+  // Use the updatePlayerCash function to handle cash updates
+  const updateCashResult = await balance.updatePlayerCash(
+    player,
+    outcome.reward
+  );
+
+  if (!updateCashResult.success) {
+    return {
+      success: false,
+      description: updateCashResult.message, // Using the error message from updatePlayerCash
+    };
+  }
 
   try {
     await lake.save();
-    await player.save();
 
     return {
       success: true,
+      type: outcome.type, // Include the type of fish caught in the return object
+      reward: outcome.reward,
       description: `You cast your line and caught a ${outcome.type}!`,
       message:
         outcome.reward >= 0
@@ -60,7 +73,7 @@ module.exports = async function fish(userId, guildId) {
  * @returns {boolean} True if there's at least one fish left, false otherwise.
  */
 function lakeHasFish(lake) {
-  return lake.fishes.some(fish => fish.count > 0);
+  return lake.fishStock.some(fish => fish.count > 0);
 }
 
 /**
@@ -71,7 +84,7 @@ function lakeHasFish(lake) {
  */
 function selectFishFromLake(lake) {
   // Convert the fish array into a weighted array
-  const weightedFishes = lake.fishes.flatMap(fish =>
+  const weightedFishes = lake.fishStock.flatMap(fish =>
     Array(fish.count).fill(fish)
   );
 
@@ -80,7 +93,7 @@ function selectFishFromLake(lake) {
     weightedFishes[Math.floor(Math.random() * weightedFishes.length)];
 
   // Decrement the fish count in the lake
-  const fishInLake = lake.fishes.find(f => f.type === randomFish.type);
+  const fishInLake = lake.fishStock.find(f => f.type === randomFish.type);
   fishInLake.count -= 1;
 
   return randomFish;

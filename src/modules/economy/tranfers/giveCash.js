@@ -1,4 +1,5 @@
 const Player = require('../../../models/Player');
+const balance = require('../../economy/balance');
 
 /**
  * Transfers cash from one player to another.
@@ -10,7 +11,6 @@ const Player = require('../../../models/Player');
  * @param {string} guildId - The ID of the guild (server) where both users are members.
  * @param {number} amount - The amount of cash to transfer.
  * @returns {Promise<Object>} An object containing transaction details and status of operation.
- * @throws Will log an error if saving to the database fails.
  */
 module.exports = async function giveCash(
   fromUserId,
@@ -35,33 +35,18 @@ module.exports = async function giveCash(
     };
   }
 
-  if (fromPlayer.cash < amount) {
+  if (amount <= 0 || fromPlayer.cash < amount) {
     return {
       success: false,
-      message: 'Insufficient funds to complete the transfer.',
+      message:
+        amount <= 0
+          ? 'Invalid transfer amount.'
+          : 'Insufficient funds to complete the transfer.',
     };
   }
 
-  if (amount <= 0) {
-    return {
-      success: false,
-      message: 'Invalid transfer amount.',
-    };
-  }
-
-  fromPlayer.cash -= amount;
-  toPlayer.cash += amount;
-
-  try {
-    await fromPlayer.save();
-    await toPlayer.save();
-  } catch (err) {
-    console.error(err);
-    return {
-      success: false,
-      message: 'An error occurred while processing the transaction.',
-    };
-  }
+  await balance.updatePlayerCash(fromPlayer, -amount);
+  await balance.updatePlayerCash(toPlayer, amount);
 
   return {
     success: true,

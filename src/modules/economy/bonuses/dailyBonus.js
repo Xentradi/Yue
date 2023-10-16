@@ -1,5 +1,6 @@
 const Player = require('../../../models/Player');
 const config = require('../../../config.json');
+const balance = require('../../economy/balance');
 
 /**
  * Provides a daily cash bonus to a player.
@@ -23,15 +24,20 @@ module.exports = async function dailyBonus(userId, guildId) {
   }
 
   const bonusAmount = config.dailyWage ?? 500; // Default to 500 if dailyWage isn't set in the config
-  player.cash += bonusAmount;
 
   try {
-    await player.save();
-    return {
-      success: true,
-      amount: bonusAmount,
-      cash: player.cash,
-    };
+    const updateCashResult = await balance.updatePlayerCash(
+      player,
+      bonusAmount
+    );
+
+    return updateCashResult.success
+      ? {
+          success: true,
+          amount: bonusAmount,
+          cash: updateCashResult.cash,
+        }
+      : updateCashResult;
   } catch (err) {
     console.error(err);
     return {

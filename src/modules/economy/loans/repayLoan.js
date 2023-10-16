@@ -37,6 +37,10 @@ module.exports = async function repayLoan(userId, guildId, amount) {
 
   player.debt -= amount;
   player.cash -= amount;
+
+  player.debt = Math.max(player.debt, 0);
+  player.cash = Math.max(player.cash, 0);
+
   if (player.debt < 0) {
     player.cash += Math.abs(player.debt); // If they overpay, return the extra to cash
     player.debt = 0;

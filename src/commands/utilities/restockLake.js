@@ -7,7 +7,13 @@ module.exports = {
   cooldown: convertToSeconds('10m'), // Set a cooldown of 10 minutes for this command
   data: new SlashCommandBuilder()
     .setName('restocklake')
-    .setDescription('Restock the virtual lake with new fish.'),
+    .setDescription('Restock the virtual lake with new fish.')
+    .addIntegerOption(option =>
+      option
+        .setName('lake_size')
+        .setDescription('How many fish you want to stock in the lake')
+        .setRequired(false)
+    ),
 
   async execute(interaction) {
     await interaction.deferReply();
@@ -21,7 +27,18 @@ module.exports = {
       return interaction.editReply({embeds: [responseEmbed]});
     }
 
-    const restockResult = await restockLake(interaction.guildId, 2000);
+    const lakeSize = interaction.options.getInteger('lake_size') || 1000;
+
+    if (lakeSize <= 0) {
+      const responseEmbed = createEmbed({
+        title: '❌ Invalid Lake Size',
+        description: 'Please provide a positive integer for the lake size.',
+        color: '#FF0000',
+      });
+      return interaction.editReply({embeds: [responseEmbed]});
+    }
+
+    const restockResult = await restockLake(interaction.guildId, lakeSize);
 
     let embedOptions = {
       title: '🐟 Lake Restocked!',

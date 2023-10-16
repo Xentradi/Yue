@@ -10,7 +10,7 @@ const Lake = require('../../../models/Lake'); // Make sure to adjust the path as
  * @returns {Promise<Object>} The result and status of the restock operation.
  * @throws Will log an error if saving to the database fails.
  */
-async function restockLake(guildId, size = 1000) {
+module.exports = async function restockLake(guildId, size = 1000) {
   const fishingOutcomes = [
     {type: 'Tilapia', reward: 10, rarity: 20},
     {type: 'Salmon', reward: 10, rarity: 20},
@@ -43,7 +43,11 @@ async function restockLake(guildId, size = 1000) {
 
   try {
     await lake.save();
-    return {success: true, message: 'Lake restocked successfully!'};
+    return {
+      success: true,
+      newFishCount: size,
+      message: 'Lake restocked successfully!',
+    };
   } catch (err) {
     console.error(err);
     return {
@@ -51,6 +55,4 @@ async function restockLake(guildId, size = 1000) {
       message: 'An error occurred while restocking the lake.',
     };
   }
-}
-
-module.exports = restockLake;
+};
