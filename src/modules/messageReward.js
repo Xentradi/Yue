@@ -2,6 +2,7 @@ const {Message} = require('discord.js');
 const config = require('../config.json');
 const Player = require('../models/Player');
 const {levelUp} = require('../utils/calculate');
+const {manageRoles} = require('../utils/manageRoles');
 
 /**
  * Awards a player with experience points and cash for each message they send in the guild.
@@ -43,6 +44,7 @@ module.exports = async function messageReward(message) {
         message.channel.send(
           `:tada: *${message.member} is ** level ${player.level}** *`
         );
+        await manageRoles(message.member, player.level);
       }
 
       await player.save();
