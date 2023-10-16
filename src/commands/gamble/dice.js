@@ -59,7 +59,7 @@ module.exports = {
       : defeatMessage[Math.floor(Math.random() * defeatMessage.length)];
 
     const embedOptions = {
-      title: `Dice Roll Result for ${interaction.user.username}`,
+      title: `Dice Roll Result for ${interaction.user.displayName}`,
       description: `The dice rolled **${data.outcome}**. ${randomMessage}`,
       fields: [
         {
