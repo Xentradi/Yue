@@ -12,22 +12,29 @@ module.exports = {
       );
       return;
     }
-    if (!interaction.client.cooldowns.has(command.data.name)) {
-      interaction.client.cooldowns.set(command.data.name, new Collection());
+
+    const commandName = command.data.name;
+    const userId = interaction.user.id;
+    const guildId = interaction.guild.id;
+
+    const cooldownKey = `${commandName}_${guildId}_${userId}`;
+
+    if (!interaction.client.cooldowns.has(cooldownKey)) {
+      interaction.client.cooldowns.set(cooldownKey, new Collection());
     }
+
     const now = Date.now();
-    const timestamps = interaction.client.cooldowns.get(command.data.name);
+    const timestamps = interaction.client.cooldowns.get(cooldownKey);
     const defaultCooldownDuration = 3;
     const cooldownAmount = (command.cooldown ?? defaultCooldownDuration) * 1000;
 
-    if (timestamps.has(interaction.user.id)) {
-      const expirationTime =
-        timestamps.get(interaction.user.id) + cooldownAmount;
+    if (timestamps.has(userId)) {
+      const expirationTime = timestamps.get(userId) + cooldownAmount;
 
       if (now < expirationTime) {
         const expiredTimestamp = Math.round(expirationTime / 1000);
         return interaction.reply({
-          content: `Please wait, you are on a cooldown for \`${command.data.name}\`. You can use it again <t:${expiredTimestamp}:R>.`,
+          content: `Please wait, you are on a cooldown for \`${commandName}\`. You can use it again <t:${expiredTimestamp}:R>.`,
           ephemeral: true,
         });
       }

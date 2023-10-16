@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const config = require('../config.json');
 const clientId = config.clientId;
-const guildId = config.homeServer;
+const guildId = config.devServer;
 
 const commands = [];
 
