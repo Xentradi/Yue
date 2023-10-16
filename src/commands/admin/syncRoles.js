@@ -6,7 +6,7 @@ const {convertToSeconds} = require('../../utils/calculate');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('syncRoles')
+    .setName('syncroles')
     .setDescription(
       'Reconscile roles to users based on their levels in the database.'
     ),
