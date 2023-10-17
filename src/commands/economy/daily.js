@@ -1,13 +1,12 @@
 const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
 const dailyBonus = require('../../modules/economy/bonuses/dailyBonus');
-const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('daily')
     .setDescription('Claim your daily reward.'),
-  cooldown: convertToSeconds('1d'),
+  cooldown: '1d',
   deployGlobal: true,
 
   /**

@@ -1,6 +1,5 @@
 const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
 const diceRoll = require('../../modules/economy/games/diceRoll');
-const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
@@ -27,7 +26,7 @@ module.exports = {
         .setDescription('The amount you wish to wager')
         .setRequired(true)
     ),
-  cooldown: convertToSeconds('3s'),
+  cooldown: 3,
   deployGlobal: true,
 
   async execute(interaction) {

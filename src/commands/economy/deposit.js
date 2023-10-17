@@ -1,6 +1,5 @@
 const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
 const deposit = require('../../modules/economy/bankOperations/deposit');
-const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
@@ -13,7 +12,7 @@ module.exports = {
         .setDescription('Amount of virtual cash to deposit')
         .setRequired(true)
     ),
-  cooldown: convertToSeconds('1s'),
+  cooldown: 2,
   deployGlobal: true,
 
   async execute(interaction) {

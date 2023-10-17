@@ -1,4 +1,5 @@
 const {Events, Collection} = require('discord.js');
+const {convertToSeconds} = require('../utils/calculate');
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -23,10 +24,12 @@ module.exports = {
       interaction.client.cooldowns.set(cooldownKey, new Collection());
     }
 
+    const cooldownConfigured = convertToSeconds(command.cooldown);
     const now = Date.now();
     const timestamps = interaction.client.cooldowns.get(cooldownKey);
     const defaultCooldownDuration = 3;
-    const cooldownAmount = (command.cooldown ?? defaultCooldownDuration) * 1000;
+    const cooldownAmount =
+      (cooldownConfigured ?? defaultCooldownDuration) * 1000;
 
     if (timestamps.has(userId)) {
       const expirationTime = timestamps.get(userId) + cooldownAmount;

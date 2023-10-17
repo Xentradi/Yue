@@ -1,13 +1,12 @@
 const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
 const getBalance = require('../../modules/economy/playerInfo/balance');
-const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('balance')
     .setDescription('Shows your balance.'),
-  cooldown: convertToSeconds('1s'),
+  cooldown: 2,
   deployGlobal: true,
 
   /**

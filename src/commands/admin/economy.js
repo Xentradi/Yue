@@ -89,7 +89,7 @@ module.exports = {
             .setRequired(true)
         )
     ),
-  cooldown: convertToSeconds('0s'),
+  cooldown: 0,
   deployGlobal: true,
 
   async execute(interaction) {

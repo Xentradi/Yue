@@ -12,6 +12,15 @@ module.exports.levelUp = function levelUp(level) {
  * @returns time in miliseconds
  */
 module.exports.convertToSeconds = function convertToSeconds(time) {
+  // If its an number just spit it backout.
+  if (typeof time === 'number') {
+    return time;
+  }
+  // If it's not a number or a string, throw an error
+  if (typeof time !== 'string') {
+    throw new Error('Invalid input: time must be a string or number');
+  }
+
   const units = {
     s: 1, // seconds
     m: 60, // minutes

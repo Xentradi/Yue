@@ -1,6 +1,5 @@
 const {SlashCommandBuilder} = require('discord.js');
 const stealCash = require('../../modules/economy/tranfers/stealCash');
-const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
@@ -21,7 +20,7 @@ module.exports = {
         .setDescription('The pile of cash you have your eyes set on')
         .setRequired(true)
     ),
-  cooldown: convertToSeconds('3h'),
+  cooldown: '1h',
   deployGlobal: true,
 
   async execute(interaction) {

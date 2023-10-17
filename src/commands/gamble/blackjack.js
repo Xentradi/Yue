@@ -5,7 +5,6 @@ const {
   EmbedBuilder,
   SlashCommandBuilder,
 } = require('discord.js');
-const {convertToSeconds} = require('../../utils/calculate');
 const Player = require('../../models/Player'); // Ensure the path is correct
 
 module.exports = {
@@ -19,7 +18,7 @@ module.exports = {
         .setRequired(true)
     ),
 
-  cooldown: convertToSeconds('3s'),
+  cooldown: 3,
   deployGlobal: false,
 
   async execute(interaction) {

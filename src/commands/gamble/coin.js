@@ -23,7 +23,7 @@ module.exports = {
         .setDescription('The amount you wish to wager')
         .setRequired(true)
     ),
-  cooldown: convertToSeconds('3s'),
+  cooldown: 3,
   deployGlobal: true,
 
   /**

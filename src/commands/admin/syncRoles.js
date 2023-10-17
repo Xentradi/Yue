@@ -10,7 +10,7 @@ module.exports = {
     .setDescription(
       'Reconscile roles to users based on their levels in the database.'
     ),
-  cooldown: convertToSeconds('0s'),
+  cooldown: 0,
   deployGlobal: true,
 
   async execute(interaction) {

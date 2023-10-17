@@ -13,7 +13,7 @@ module.exports = {
         .setDescription('How many fish you want to stock in the lake')
         .setRequired(false)
     ),
-  cooldown: convertToSeconds('10m'),
+  cooldown: 0,
   deployGlobal: true,
 
   async execute(interaction) {

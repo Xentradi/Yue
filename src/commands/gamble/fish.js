@@ -1,13 +1,12 @@
 const {SlashCommandBuilder} = require('discord.js');
 const fishing = require('../../modules/economy/games/fishing');
-const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('fish')
     .setDescription('Try your luck and fish in the virtual lake.'),
-  cooldown: convertToSeconds('3s'),
+  cooldown: 3,
   deployGlobal: true,
 
   async execute(interaction) {

@@ -3,7 +3,6 @@ const getCashLeaderboard = require('../../modules/economy/leaderboards/cashLeade
 const getBankLeaderboard = require('../../modules/economy/leaderboards/bankLeaderboard');
 const getNetWorthLeaderboard = require('../../modules/economy/leaderboards/netWorthLeaderboard');
 const {createEmbed} = require('../../utils/embedUtils');
-const {convertToSeconds} = require('../../utils/calculate');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -20,7 +19,7 @@ module.exports = {
         .setName('networth')
         .setDescription('View the net worth leaderboard')
     ),
-  cooldown: convertToSeconds('1s'),
+  cooldown: 2,
   deployGlobal: true,
 
   /**

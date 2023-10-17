@@ -3,13 +3,12 @@ const path = require('node:path');
 const fs = require('node:fs');
 const {SlashCommandBuilder} = require('discord.js');
 const {createEmbed} = require('../../utils/embedUtils');
-const {convertToSeconds} = require('../../utils/calculate');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('help')
     .setDescription('List all commands or info about a specific command'),
-  cooldown: convertToSeconds('5m'),
+  cooldown: '5m',
   deployGlobal: true,
 
   async execute(interaction) {
