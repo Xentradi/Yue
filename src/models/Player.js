@@ -37,17 +37,29 @@ const playerSchema = new Schema({
     type: Number,
     default: 0,
   },
-  expBonus: {
+  expMultiplier: {
     type: Number,
     default: 1,
   },
-  cashBonus: {
+  cashMultiplier: {
     type: Number,
     default: 1,
   },
-  bankInterest: {
+  interestMultiplier: {
     type: Number,
     default: 1,
+  },
+  stats: {
+    strength: {type: Number, default: 0},
+    dexterity: {type: Number, default: 0},
+    intelligence: {type: Number, default: 0},
+    charisma: {type: Number, default: 0},
+    spirit: {type: Number, default: 0},
+    focus: {type: Number, default: 0},
+    endurance: {type: Number, default: 0},
+    luck: {type: Number, default: 0},
+    alchemy: {type: Number, default: 0},
+    crafting: {type: Number, default: 0},
   },
 });
 
