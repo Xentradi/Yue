@@ -53,14 +53,17 @@ module.exports = async function stealCash(
     result.playerCash = player.cash;
     result.targetCash = target.cash;
   } else {
-    const percentage = amount / target.cash;
-    const totalAssets = player.cash + player.bank;
-    const penalty = Math.ceil(getPenalty(percentage, totalAssets));
+    const penalty = Math.ceil(getPenalty(amount));
 
     player.cash -= penalty;
     if (player.cash < 0) {
       player.bank += player.cash; // If cash goes negative, subtract from bank
       player.cash = 0;
+    }
+
+    if (player.bank < 0) {
+      player.debt -= player.bank; // If bank goes negative, add to debt
+      player.bank = 0;
     }
 
     result.penalty = penalty;
@@ -78,10 +81,16 @@ module.exports = async function stealCash(
   return result;
 };
 
-const getPenalty = (percentage, totalAssets) => {
-  if (percentage <= 0.1) return 0.1 * totalAssets;
-  if (percentage <= 0.25) return 0.25 * totalAssets;
-  if (percentage <= 0.5) return 0.4 * totalAssets;
-  if (percentage <= 0.75) return 0.6 * totalAssets;
-  return 0.8 * totalAssets;
+const getPenalty = amount => {
+  let penaltyRate = 1.5; // 150% base penalty
+
+  if (amount > 1000) {
+    penaltyRate += 2; // Additional 200%
+  } else if (amount > 500) {
+    penaltyRate += 1; // Additional 100%
+  } else if (amount > 100) {
+    penaltyRate += 0.5; // Additional 50%
+  }
+
+  return amount * penaltyRate;
 };
