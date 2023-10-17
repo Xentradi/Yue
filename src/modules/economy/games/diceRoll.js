@@ -50,9 +50,9 @@ module.exports = async function diceRoll(userId, guildId, choice, betAmount) {
   result.playerBalanceBefore = player.cash;
 
   if (result.outcome === choice) {
-    const {success} = await balance.updatePlayerCash(player, betAmount);
+    const {success} = await balance.updatePlayerCash(player, betAmount * 5);
     result.win = success;
-    result.prize = success ? betAmount : 0;
+    result.prize = success ? betAmount * 5 : 0;
   } else {
     const {success} = await balance.updatePlayerCash(player, -betAmount);
     result.prize = success ? -betAmount : 0;
