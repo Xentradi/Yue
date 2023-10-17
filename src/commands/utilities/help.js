@@ -33,7 +33,7 @@ module.exports = {
           if (
             isAdminCommand &&
             !interaction.member.permissions.has(
-              PermissionFlagsBits.ADMINISTRATOR
+              PermissionFlagsBits.Administrator
             )
           ) {
             continue; // Skip admin commands for non-admin users
