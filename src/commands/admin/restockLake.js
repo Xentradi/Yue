@@ -1,6 +1,5 @@
 const {SlashCommandBuilder} = require('discord.js');
 const restockLake = require('../../modules/economy/games/restockLake');
-const {convertToSeconds} = require('../../utils/calculate');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
@@ -28,7 +27,7 @@ module.exports = {
       return interaction.editReply({embeds: [responseEmbed]});
     }
 
-    const lakeSize = interaction.options.getInteger('lake_size') || 1000;
+    let lakeSize = interaction.options.getInteger('lake_size') || 1000;
 
     if (lakeSize <= 0) {
       const responseEmbed = createEmbed({
@@ -38,6 +37,7 @@ module.exports = {
       });
       return interaction.editReply({embeds: [responseEmbed]});
     }
+    if (lakeSize > 999999) lakeSize = 1000000;
 
     const restockResult = await restockLake(interaction.guildId, lakeSize);
 
