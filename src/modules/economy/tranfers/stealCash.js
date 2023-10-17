@@ -55,7 +55,7 @@ module.exports = async function stealCash(
   } else {
     const percentage = amount / target.cash;
     const totalAssets = player.cash + player.bank;
-    const penalty = getPenalty(percentage, totalAssets);
+    const penalty = Math.ceil(getPenalty(percentage, totalAssets));
 
     player.cash -= penalty;
     if (player.cash < 0) {
