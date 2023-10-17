@@ -1,7 +1,7 @@
 // src/commands/utilities/help.js
 const path = require('node:path');
 const fs = require('node:fs');
-const {SlashCommandBuilder} = require('discord.js');
+const {SlashCommandBuilder, Permissions} = require('discord.js');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
@@ -32,7 +32,7 @@ module.exports = {
         if (command.data) {
           if (
             isAdminCommand &&
-            !interaction.member.permissions.has('ADMINISTRATOR')
+            !interaction.member.permissions.has(Permissions.FLAGS.ADMINISTRATOR)
           ) {
             continue; // Skip admin commands for non-admin users
           }
