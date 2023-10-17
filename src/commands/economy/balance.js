@@ -27,7 +27,7 @@ module.exports = {
     }
 
     const embedOptions = {
-      title: `💰 Financial Statement for ${interaction.user.displayName}`,
+      title: `💰 Financial Statement for ${interaction.member.displayName}`,
       fields: [
         {name: '💵 Cash', value: `$${data.cash.toLocaleString()}`},
         {name: '🏦 Bank', value: `$${data.bank.toLocaleString()}`},

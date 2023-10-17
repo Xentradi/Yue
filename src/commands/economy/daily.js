@@ -15,7 +15,7 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
     const data = await dailyBonus(interaction.user.id, interaction.guildId);
-    data.username = interaction.user.displayName;
+    data.username = interaction.member.displayName;
     const embedOptions = {
       title: `💰 ${data.username} Pay Stub`,
       description: `Your daily pay of $${data.amount} has been delivered.`,

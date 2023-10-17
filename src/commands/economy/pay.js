@@ -47,7 +47,7 @@ module.exports = {
       embedOptions = {
         title: '💸 Transfer Details',
         description: `${
-          interaction.user.displayName
+          interaction.member.displayName
         } has sent $${data.transferredAmount.toLocaleString()} to ${
           recipient.displayName
         }.`,

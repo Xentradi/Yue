@@ -72,7 +72,7 @@ module.exports = {
       embedOptions = {
         title: 'Heist Report: Success!',
         description: `${randomMessage}\n${
-          interaction.user.displayName
+          interaction.member.displayName
         } managed to swipe $${data.amountStolen.toLocaleString()} from ${
           victim.displayName
         }.`,
@@ -82,7 +82,7 @@ module.exports = {
       embedOptions = {
         title: 'Heist Report: Busted!',
         description: `${randomMessage}\n${
-          interaction.user.displayName
+          interaction.member.displayName
         } was caught trying to steal from ${
           victim.displayName
         } and faced a fine of $${data.penalty.toLocaleString()}.`,

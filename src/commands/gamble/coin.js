@@ -60,7 +60,7 @@ module.exports = {
         : defeatMessage[Math.floor(Math.random() * defeatMessage.length)];
 
       embedOptions = {
-        title: `Coin Flip Result for ${interaction.user.displayName}`,
+        title: `Coin Flip Result for ${interaction.member.displayName}`,
         description: `The coin landed on **${data.outcome.toUpperCase()}**. ${randomMessage}`,
         fields: [
           {

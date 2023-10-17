@@ -28,7 +28,7 @@ module.exports = {
 
     if (data.success) {
       embedOptions = {
-        title: `💰 Deposit Statement for ${interaction.user.displayName}`,
+        title: `💰 Deposit Statement for ${interaction.member.displayName}`,
         description: `Your deposit of $${data.amount} is completed.`,
         fields: [
           {name: '💵 Cash', value: `$${data.cash.toLocaleString()}`},
