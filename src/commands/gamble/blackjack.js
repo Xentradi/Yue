@@ -206,26 +206,6 @@ function createGameEmbed(playerHand, dealerHand) {
     )
     .setColor('#0099ff');
 }
-/*
-function createResultEmbed(result, playerHand, dealerHand) {
-  return new EmbedBuilder()
-    .setTitle('Blackjack')
-    .setDescription(result)
-    .addFields(
-      {
-        name: 'Your Hand',
-        value: playerHand.map(cardToString).join(' '),
-        inline: true,
-      },
-      {
-        name: "Dealer's Hand",
-        value: dealerHand.map(cardToString).join(' '),
-        inline: true,
-      }
-    )
-    .setColor('#0099ff');
-}
-*/
 
 function createResultEmbed(
   result,
