@@ -147,19 +147,31 @@ module.exports = {
         const dealerValue = calculateValue(dealerHand);
 
         let result;
+        let wonAmount = 0;
         if (dealerValue > 21 || playerValue > dealerValue) {
-          result = 'Congratulations! You won.';
-          const prize = betAmount * (3 / 2);
-          await balance.updatePlayerCash(player, prize); // Player wins the bet amount
+          wonAmount = betAmount * (3 / 2);
+          result = 'win';
+          await balance.updatePlayerCash(player, wonAmount); // Player wins the bet amount * (3/2)
         } else if (playerValue < dealerValue) {
-          result = 'Sorry! You lost.';
+          result = 'lose';
+          await balance.updatePlayerCash(player, -betAmount); // Player loses the bet amount
+        } else if (calculateValue(playerHand) > 21) {
+          result = 'bust';
           await balance.updatePlayerCash(player, -betAmount); // Player loses the bet amount
         } else {
-          result = "It's a tie!";
+          result = 'tie';
         }
 
         await i.update({
-          embeds: [createResultEmbed(result, playerHand, dealerHand)],
+          embeds: [
+            createResultEmbed(
+              result,
+              playerHand,
+              dealerHand,
+              betAmount,
+              wonAmount
+            ),
+          ],
           components: [], // Disable the buttons
         });
         collector.stop();
@@ -194,7 +206,7 @@ function createGameEmbed(playerHand, dealerHand) {
     )
     .setColor('#0099ff');
 }
-
+/*
 function createResultEmbed(result, playerHand, dealerHand) {
   return new EmbedBuilder()
     .setTitle('Blackjack')
@@ -212,6 +224,61 @@ function createResultEmbed(result, playerHand, dealerHand) {
       }
     )
     .setColor('#0099ff');
+}
+*/
+
+function createResultEmbed(
+  result,
+  playerHand,
+  dealerHand,
+  betAmount,
+  wonAmount = 0
+) {
+  const baseEmbed = new EmbedBuilder()
+    .setTitle('🎲 Blackjack Results 🎲')
+    .addFields(
+      {
+        name: "🤵 Dealer's Hand",
+        value: dealerHand.map(cardToString).join(' '),
+        inline: true,
+      },
+      {
+        name: '🧑‍🤝‍🧑 Your Hand',
+        value: playerHand.map(cardToString).join(' '),
+        inline: true,
+      }
+    )
+    .setColor('#0099ff');
+
+  if (result === 'win') {
+    return baseEmbed
+      .setDescription(
+        `🎉 **Congratulations!** You've won! 🎉\nYou bet **${betAmount}** and won **${wonAmount}**! Your new balance is **${
+          wonAmount + betAmount
+        }**! 💰`
+      )
+      .setColor('GREEN');
+  } else if (result === 'lose') {
+    return baseEmbed
+      .setDescription(
+        `😢 **Oh no!** You've lost! 😢\nYou bet **${betAmount}** and lost it. Better luck next time! 🍀`
+      )
+      .setColor('RED');
+  } else if (result === 'tie') {
+    return baseEmbed
+      .setDescription(
+        `🤝 It's a tie! 🤝\nYou get your bet of **${betAmount}** back. Try again for a win! 🌟`
+      )
+      .setColor('GOLD');
+  } else if (result === 'bust') {
+    return baseEmbed
+      .setDescription(
+        `💥 Busted! You've lost this round! 💥\nYou bet **${betAmount}** and lost it. Don't give up; keep trying! 🌈`
+      )
+      .setColor('RED');
+  }
+
+  return baseEmbed;
 }
 
 function cardToString(card) {
