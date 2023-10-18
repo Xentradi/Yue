@@ -122,6 +122,13 @@ module.exports = {
 
     // Set up a collector event listener
     collector.on('collect', async i => {
+      if (
+        (i.customId === 'hit' || i.customId === 'stand') &&
+        i.user.id === userId
+      ) {
+        await i.deferUpdate(); // Defer the interaction update
+      }
+
       if (i.customId === 'hit') {
         // Draw another card for the player
         playerHand.push(deck.pop());
@@ -192,7 +199,9 @@ module.exports = {
     });
 
     collector.on('end', collected => {
-      //console.log(`Collected ${collected.size} interactions.`);
+      if (collected.size === 0) {
+        interaction.followUp('Game ended due to inactivity.'); // Inform the user
+      }
     });
   },
 };
