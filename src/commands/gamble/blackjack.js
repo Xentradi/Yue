@@ -108,9 +108,9 @@ module.exports = {
 
     // Create a filter to only collect button interactions from the message author
     const filter = i => {
+      i.deferUpdate(); // defer the update to prevent the "This interaction failed" error
       return (
-        i.customId === 'hit' ||
-        (i.customId === 'stand' && i.user.id === interaction.user.id)
+        (i.customId === 'hit' || i.customId === 'stand') && i.user.id === userId
       );
     };
 
