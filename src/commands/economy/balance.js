@@ -20,18 +20,23 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
 
-    const data = await getBalance(interaction.user.id, interaction.guildId);
-    console.log(data);
-    if (!data.success) {
-      return interaction.editReply(data.message);
+    //console.log('User ID:', interaction.user.id);
+    //console.log('Guild ID:', interaction.guildId);
+    const playerBalance = await getBalance(
+      interaction.user.id,
+      interaction.guildId
+    );
+    console.log('playerBalance', playerBalance);
+    if (!playerBalance.success) {
+      return interaction.editReply(playerBalance.message);
     }
 
     const embedOptions = {
       title: `💰 Financial Statement for ${interaction.member.displayName}`,
       fields: [
-        {name: '💵 Cash', value: `$${data.cash.toLocaleString()}`},
-        {name: '🏦 Bank', value: `$${data.bank.toLocaleString()}`},
-        {name: '📉 Debt', value: `$${data.debt.toLocaleString()}`},
+        {name: '💵 Cash', value: `$${playerBalance.cash.toLocaleString()}`},
+        {name: '🏦 Bank', value: `$${playerBalance.bank.toLocaleString()}`},
+        {name: '📉 Debt', value: `$${playerBalance.debt.toLocaleString()}`},
       ],
     };
     const responseEmbed = createEmbed(embedOptions);

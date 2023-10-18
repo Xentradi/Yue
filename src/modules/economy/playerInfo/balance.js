@@ -13,7 +13,6 @@ const Player = require('../../../models/Player');
 module.exports = async function getBalance(userId, guildId) {
   try {
     const player = await Player.findOne({userId, guildId});
-
     // If the player doesn't exist in the database, return a success value of false with an appropriate message
     if (!player) {
       return {
@@ -23,6 +22,8 @@ module.exports = async function getBalance(userId, guildId) {
     }
 
     // If everything is okay, return the player's balances with a success value of true
+    console.log(player);
+    console.log(`player.cash: ${player.cash}`);
     return {
       success: true,
       cash: player.cash,

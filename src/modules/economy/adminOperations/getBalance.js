@@ -6,7 +6,10 @@ module.exports = async function getBalance(interaction) {
   const guildId = interaction.guildId;
 
   try {
+    //console.log('UserId:', userId);
+    //console.log('GuildId:', guildId);
     const player = await Player.findOne({userId, guildId});
+    //console.log('Player:', player);
 
     if (!player) return {success: false, error: 'User not found.'};
 

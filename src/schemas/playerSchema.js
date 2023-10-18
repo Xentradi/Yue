@@ -1,7 +1,7 @@
 const {Schema} = require('mongoose');
 const statsSchema = require('./statsSchema');
 
-module.exports.playerSchema = new Schema({
+const playerSchema = new Schema({
   userId: {
     type: String,
     required: true,
@@ -55,3 +55,5 @@ module.exports.playerSchema = new Schema({
     default: {},
   },
 });
+
+module.exports = {playerSchema};
