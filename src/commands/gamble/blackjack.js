@@ -1,3 +1,6 @@
+const Player = require('../../models/Player');
+const balance = require('../../modules/economy/balance');
+
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -5,11 +8,47 @@ const {
   EmbedBuilder,
   SlashCommandBuilder,
 } = require('discord.js');
-const Player = require('../../models/Player'); // Ensure the path is correct
+
+// Define the cards and their values
+const suits = ['♠', '♣', '♥', '♦'];
+const faces = [
+  'A',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  '10',
+  'J',
+  'Q',
+  'K',
+];
+
+// Function to create a deck
+function createDeck() {
+  const deck = [];
+  for (const suit of suits) {
+    for (const face of faces) {
+      deck.push({suit, face});
+    }
+  }
+  return deck;
+}
+
+// Function to shuffle the deck
+function shuffleDeck(deck) {
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('blackjack')
+    .setName('blackjackfree')
     .setDescription('Play a game of blackjack against the bot')
     .addIntegerOption(option =>
       option
@@ -17,21 +56,18 @@ module.exports = {
         .setDescription('The amount you wish to wager')
         .setRequired(true)
     ),
-
   cooldown: 3,
-  deployGlobal: false,
+  deployGlobal: true,
 
   async execute(interaction) {
     const betAmount = interaction.options.getInteger('bet');
     const userId = interaction.user.id;
-    const guildId = interaction.guildId;
+    const guildId = interaction.guild.id;
+
+    // Verify player balance before proceeding
     const player = await Player.findOne({userId, guildId});
-
-    if (!player) return null;
-
-    if (player.cash < betAmount) {
-      result.message = 'Insufficient funds to place the bet.';
-      return result;
+    if (!player || player.cash < betAmount) {
+      return interaction.reply('Insufficient funds to place the bet.');
     }
 
     const deck = createDeck();
@@ -57,7 +93,7 @@ module.exports = {
       .addFields(
         {
           name: 'Your Hand',
-          value: playerHand.map(card => `${card.face}${card.suit}`).join(' '),
+          value: playerHand.map(card => `${card.face}${card.suit} `).join(' '),
           inline: true,
         },
         {
@@ -113,10 +149,11 @@ module.exports = {
         let result;
         if (dealerValue > 21 || playerValue > dealerValue) {
           result = 'Congratulations! You won.';
-          addUserCurrency(interaction.user.id, betAmount);
+          const prize = betAmount * (3 / 2);
+          await balance.updatePlayerCash(player, prize); // Player wins the bet amount
         } else if (playerValue < dealerValue) {
           result = 'Sorry! You lost.';
-          subtractUserCurrency(interaction.user.id, betAmount);
+          await balance.updatePlayerCash(player, -betAmount); // Player loses the bet amount
         } else {
           result = "It's a tie!";
         }
@@ -158,7 +195,7 @@ function createGameEmbed(playerHand, dealerHand) {
     .setColor('#0099ff');
 }
 
-function createResultEmbed(result, playerHand, dealerHand, bet, win) {
+function createResultEmbed(result, playerHand, dealerHand) {
   return new EmbedBuilder()
     .setTitle('Blackjack')
     .setDescription(result)
@@ -172,16 +209,35 @@ function createResultEmbed(result, playerHand, dealerHand, bet, win) {
         name: "Dealer's Hand",
         value: dealerHand.map(cardToString).join(' '),
         inline: true,
-      },
-      {
-        name: 'Result',
-        value: win ? `You won $${bet}` : `You lost $${bet}`,
-        inline: false,
       }
     )
     .setColor('#0099ff');
 }
 
 function cardToString(card) {
-  return `${card.face}${card.suit}`;
+  return `${card.face}${card.suit} `;
+}
+
+function calculateValue(hand) {
+  let value = 0;
+  let aceCount = 0;
+
+  hand.forEach(card => {
+    if (card.face === 'A') {
+      aceCount++;
+      value += 11;
+    } else if (['K', 'Q', 'J'].includes(card.face)) {
+      value += 10;
+    } else {
+      value += Number(card.face);
+    }
+  });
+
+  // Adjust the value of aces if needed
+  while (value > 21 && aceCount > 0) {
+    value -= 10;
+    aceCount--;
+  }
+
+  return value;
 }

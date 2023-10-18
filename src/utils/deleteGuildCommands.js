@@ -2,7 +2,7 @@ require('dotenv').config();
 const {REST, Routes} = require('discord.js');
 const config = require('../config.json');
 const clientId = config.clientId;
-const guildId = config.homeServer;
+const guildId = config.devServer;
 
 const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
