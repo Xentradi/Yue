@@ -52,5 +52,6 @@ module.exports.playerSchema = new Schema({
   },
   stats: {
     type: statsSchema,
-    default: {}
+    default: {},
+  },
 });
