@@ -14,13 +14,31 @@ const config = require('../config.json');
 module.exports.manageRoles = async function (member, level) {
   const newRoleID = config.levelRoles[level.toString()];
   if (newRoleID) {
-    const newRole = member.guild.roles.cache.get(newRoleID);
-    await member.roles.add(newRole);
+    const guild = member.guild;
+    const newRole = guild.roles.cache.get(newRoleID);
+    if (!newRole) {
+      console.error(
+        `Role with ID ${newRoleID} does not exist in guild ${guild.id}`
+      );
+      return;
+    }
+    if (!guild.me.permissions.has('MANAGE_ROLES')) {
+      console.error('Bot lacks the MANAGE_ROLES permission');
+      return;
+    }
+    await member.roles.add(newRole).catch(console.error);
 
     // Remove previous level roles
     for (const [lvl, roleID] of Object.entries(config.levelRoles)) {
       if (Number(lvl) < level) {
-        await member.roles.remove(roleID);
+        const oldRole = guild.roles.cache.get(roleID);
+        if (oldRole) {
+          await member.roles.remove(oldRole).catch(console.error);
+        } else {
+          console.error(
+            `Role with ID ${roleID} does not exist in guild ${guild.id}`
+          );
+        }
       }
     }
   }

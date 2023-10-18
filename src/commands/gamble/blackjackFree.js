@@ -5,7 +5,6 @@ const {
   EmbedBuilder,
   SlashCommandBuilder,
 } = require('discord.js');
-const {convertToSeconds} = require('../../utils/calculate');
 
 // Define the cards and their values
 const suits = ['♠', '♣', '♥', '♦'];
@@ -48,7 +47,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('blackjackfree')
     .setDescription('Play a game of blackjack against the bot'),
-  cooldown: convertToSeconds('3s'),
+  cooldown: 3,
   deployGlobal: false,
 
   async execute(interaction) {
