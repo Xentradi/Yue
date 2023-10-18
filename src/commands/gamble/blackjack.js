@@ -94,12 +94,12 @@ module.exports = {
         {
           name: "Dealer's Hand",
           value: `${dealerHand[0].face}${dealerHand[0].suit} ?`,
-          inline: true,
+          inline: false,
         },
         {
           name: 'Your Hand',
           value: playerHand.map(card => `${card.face}${card.suit} `).join(' '),
-          inline: true,
+          inline: false,
         }
       )
       .setColor('#0099ff');
@@ -194,13 +194,13 @@ function createGameEmbed(playerHand, dealerHand) {
     .setTitle('Blackjack')
     .addFields(
       {
-        name: 'Your Hand',
-        value: playerHand.map(cardToString).join(' '),
+        name: "Dealer's Hand",
+        value: `${dealerHand[0].face}${dealerHand[0].suit} ?`,
         inline: true,
       },
       {
-        name: "Dealer's Hand",
-        value: `${dealerHand[0].face}${dealerHand[0].suit} ?`,
+        name: 'Your Hand',
+        value: playerHand.map(cardToString).join(' '),
         inline: true,
       }
     )
