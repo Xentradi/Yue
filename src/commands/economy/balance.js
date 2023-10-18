@@ -21,7 +21,7 @@ module.exports = {
     await interaction.deferReply();
 
     const data = await getBalance(interaction.user.id, interaction.guildId);
-
+    console.log(data);
     if (!data.success) {
       return interaction.editReply(data.message);
     }
