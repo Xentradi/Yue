@@ -128,9 +128,17 @@ module.exports = {
 
         // Check if the player is busted
         if (calculateValue(playerHand) > 21) {
+          const result = 'bust';
+          const wonAmount = 0;
           await i.update({
             embeds: [
-              createResultEmbed('Busted! You lost.', playerHand, dealerHand),
+              createResultEmbed(
+                result,
+                playerHand,
+                dealerHand,
+                betAmount,
+                wonAmount
+              ),
             ],
             components: [], // Disable the buttons
           });
@@ -155,7 +163,7 @@ module.exports = {
         } else if (playerValue < dealerValue) {
           result = 'lose';
           await balance.updatePlayerCash(player, -betAmount); // Player loses the bet amount
-        } else if (calculateValue(playerHand) > 21) {
+        } else if (playerValue > 21) {
           result = 'bust';
           await balance.updatePlayerCash(player, -betAmount); // Player loses the bet amount
         } else {
@@ -196,12 +204,12 @@ function createGameEmbed(playerHand, dealerHand) {
       {
         name: "Dealer's Hand",
         value: `${dealerHand[0].face}${dealerHand[0].suit} ?`,
-        inline: true,
+        inline: false,
       },
       {
         name: 'Your Hand',
         value: playerHand.map(cardToString).join(' '),
-        inline: true,
+        inline: false,
       }
     )
     .setColor('#0099ff');
