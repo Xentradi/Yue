@@ -257,25 +257,25 @@ function createResultEmbed(
           wonAmount + betAmount
         }**! 💰`
       )
-      .setColor('GREEN');
+      .setColor('#00FF00  ');
   } else if (result === 'lose') {
     return baseEmbed
       .setDescription(
         `😢 **Oh no!** You've lost! 😢\nYou bet **${betAmount}** and lost it. Better luck next time! 🍀`
       )
-      .setColor('RED');
+      .setColor('#FF0000');
   } else if (result === 'tie') {
     return baseEmbed
       .setDescription(
         `🤝 It's a tie! 🤝\nYou get your bet of **${betAmount}** back. Try again for a win! 🌟`
       )
-      .setColor('GOLD');
+      .setColor('#FFFF00');
   } else if (result === 'bust') {
     return baseEmbed
       .setDescription(
         `💥 Busted! You've lost this round! 💥\nYou bet **${betAmount}** and lost it. Don't give up; keep trying! 🌈`
       )
-      .setColor('RED');
+      .setColor('#FF0000');
   }
 
   return baseEmbed;
