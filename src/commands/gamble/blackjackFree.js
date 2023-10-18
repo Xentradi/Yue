@@ -45,7 +45,7 @@ function shuffleDeck(deck) {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('blackjackfree')
+    .setName('blackjacktest')
     .setDescription('Play a game of blackjack against the bot'),
   cooldown: 3,
   deployGlobal: false,

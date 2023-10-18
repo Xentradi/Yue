@@ -48,7 +48,7 @@ function shuffleDeck(deck) {
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('blackjackfree')
+    .setName('blackjack')
     .setDescription('Play a game of blackjack against the bot')
     .addIntegerOption(option =>
       option
