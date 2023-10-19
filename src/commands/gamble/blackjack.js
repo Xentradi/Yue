@@ -23,6 +23,9 @@ module.exports = {
   deployGlobal: true,
 
   async execute(interaction) {
+    return await interaction.reply(
+      'Sorry Blackjack is unavailable right now. Check back soon!'
+    );
     const betAmount = interaction.options.getInteger('bet');
     const userId = interaction.user.id;
     const guildId = interaction.guild.id;
