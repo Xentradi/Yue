@@ -23,12 +23,16 @@ module.exports = {
   deployGlobal: true,
 
   async execute(interaction) {
-    return await interaction.reply(
-      'Sorry Blackjack is unavailable right now. Check back soon!'
-    );
     const betAmount = interaction.options.getInteger('bet');
     const userId = interaction.user.id;
     const guildId = interaction.guild.id;
+
+    if (betAmount <= 0) {
+      return interaction.reply(
+        'Invalid bet amount. Please enter a positive value.'
+      );
+    }
+
     // Verify player balance before proceeding
     const player = await Player.findOne({userId, guildId});
     if (!player || player.cash < betAmount) {
@@ -87,11 +91,13 @@ module.exports = {
 
     // Set up a collector event listener
     collector.on('collect', async i => {
-      await i.deferUpdate();
-
       if (i.customId === 'hit') {
         // Draw another card for the player
         playerHand.push(deck.pop());
+        await i.update({
+          embeds: [createGameEmbed(playerHand, dealerHand)],
+          components: [row], // Include the buttons again
+        });
         if (isBusted(playerHand)) {
           collector.stop(); // stop collector if player busted
         }
@@ -102,13 +108,6 @@ module.exports = {
         }
         collector.stop();
       }
-
-      // Update the embed for the next interaction
-      await i.update({
-        embeds: [createGameEmbed(playerHand, dealerHand)],
-      });
-
-      return;
     });
 
     collector.on('end', async collected => {
@@ -121,21 +120,41 @@ module.exports = {
       let result;
       let wonAmount = 0;
 
-      if (dealerValue > 21 || playerValue > dealerValue) {
-        wonAmount = betAmount * (3 / 2);
+      // Check for Blackjacks first
+      if (playerValue === 21 && dealerValue !== 21) {
         result = 'win';
-        await balance.updatePlayerCash(player, wonAmount); // Player wins the bet amount * (3/2)
-      } else if (playerValue < dealerValue) {
+      } else if (dealerValue === 21 && playerValue !== 21) {
         result = 'lose';
-        await balance.updatePlayerCash(player, -betAmount); // Player loses the bet amount
-      } else if (playerValue > 21) {
-        result = 'bust';
-        await balance.updatePlayerCash(player, -betAmount); // Player loses the bet amount
-      } else {
+      } else if (playerValue === 21 && dealerValue === 21) {
         result = 'tie';
       }
 
-      await i.update({
+      // Check for Busting
+      else if (playerValue > 21) {
+        result = 'busted';
+      } else if (dealerValue > 21) {
+        result = 'win';
+      }
+
+      // Regular game outcomes
+      else if (playerValue > dealerValue) {
+        result = 'win';
+      } else if (playerValue < dealerValue) {
+        result = 'lose';
+      } else if (playerValue === dealerValue) {
+        result = 'tie'; // Scores are equal, it’s a tie
+      }
+
+      if (result === 'win') {
+        wonAmount = Math.round(betAmount * (3 / 2));
+      } else if (result === 'lose') {
+        wonAmount = -betAmount;
+      } else {
+        wonAmount = 0;
+      }
+      await balance.updatePlayerCash(player, wonAmount);
+
+      await interaction.editReply({
         embeds: [
           createResultEmbed(
             result,
@@ -290,20 +309,3 @@ function shuffleDeck(deck) {
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
 }
-
-/*
-await i.update({
-      embeds: [
-        createResultEmbed(
-          result,
-          playerHand,
-          dealerHand,
-          betAmount,
-          wonAmount
-        ),
-      ],
-      components: [], // Disable the buttons
-    });
-
-
-*/
