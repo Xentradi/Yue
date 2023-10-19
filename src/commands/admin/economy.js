@@ -87,8 +87,8 @@ module.exports = {
             .setDescription('Amount to airdrop to each active user')
             .setRequired(true)
         )
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    ),
+    )
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   cooldown: 0,
   deployGlobal: true,
 
