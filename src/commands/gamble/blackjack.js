@@ -94,12 +94,17 @@ module.exports = {
       if (i.customId === 'hit') {
         // Draw another card for the player
         playerHand.push(deck.pop());
-        await i.update({
-          embeds: [createGameEmbed(playerHand, dealerHand)],
-          components: [row], // Include the buttons again
-        });
         if (isBusted(playerHand)) {
+          await i.update({
+            embeds: [createGameEmbed(playerHand, dealerHand)],
+            components: [], // Include the buttons again
+          });
           collector.stop(); // stop collector if player busted
+        } else {
+          await i.update({
+            embeds: [createGameEmbed(playerHand, dealerHand)],
+            components: [row], // Include the buttons again
+          });
         }
       } else if (i.customId === 'stand') {
         // Reveal the dealer's hidden card and play for the dealer
