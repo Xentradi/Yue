@@ -240,7 +240,7 @@ function createResultEmbed(
         `🤝 It's a tie! 🤝\nYou get your bet of **${betAmount}** back. Try again for a win! 🌟`
       )
       .setColor('#FFFF00');
-  } else if (result === 'bust') {
+  } else if (result === 'busted') {
     return baseEmbed
       .setDescription(
         `💥 Busted! You've lost this round! 💥\nYou bet **${betAmount}** and lost it. Don't give up; keep trying! 🌈`
