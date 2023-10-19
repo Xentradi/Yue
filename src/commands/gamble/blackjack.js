@@ -103,7 +103,11 @@ module.exports = {
         }
       } else if (i.customId === 'stand') {
         // Reveal the dealer's hidden card and play for the dealer
-        while (calculateValue(dealerHand) < 17) {
+        while (
+          calculateValue(dealerHand) < 17 ||
+          (calculateValue(playerHand) > 17 &&
+            calculateValue(dealerHand) < calculateValue(playerHand))
+        ) {
           dealerHand.push(deck.pop());
         }
         collector.stop();
