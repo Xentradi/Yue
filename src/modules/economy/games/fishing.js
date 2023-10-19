@@ -31,6 +31,13 @@ module.exports = async function fish(userId, guildId) {
 
   const outcome = selectFishFromLake(lake);
 
+  if (!outcome) {
+    return {
+      success: false,
+      description: 'The pond has been depleted! Come back later.',
+    };
+  }
+
   // Use the updatePlayerCash function to handle cash updates
   const updateCashResult = await balance.updatePlayerCash(
     player,
@@ -87,6 +94,8 @@ function selectFishFromLake(lake) {
   const weightedFishes = lake.fishStock.flatMap(fish =>
     Array(fish.count).fill(fish)
   );
+
+  if (weightedFishes.length === 0) return null;
 
   // Select a random fish from the weighted array
   const randomFish =
