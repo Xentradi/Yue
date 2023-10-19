@@ -147,7 +147,7 @@ module.exports = {
 
       if (result === 'win') {
         wonAmount = Math.round(betAmount * (3 / 2));
-      } else if (result === 'lose') {
+      } else if (result === 'lose' || result === 'busted') {
         wonAmount = -betAmount;
       } else {
         wonAmount = 0;
