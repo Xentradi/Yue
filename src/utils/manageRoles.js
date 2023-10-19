@@ -1,4 +1,5 @@
 const config = require('../config.json');
+const {PermissionFlagsBits} = require('discord.js');
 
 /**
  * Manages roles based on the player's level.
@@ -12,6 +13,17 @@ const config = require('../config.json');
  * @throws Will throw an error if there is an issue with role assignment or removal.
  */
 module.exports.manageRoles = async function (member, level) {
+  //console.log('manageRoles called for guildId: ', member.guild.id);
+  //console.log('member.guild.members.me: ', member.guild.members.me);
+  // Check if the bot has permissions to manage roles before doing anything.
+  if (
+    !member.guild.members.me.permissions.has(PermissionFlagsBits.ManageRoles)
+  ) {
+    console.error('Bot lacks the ManageRoles permission');
+    return;
+  }
+
+  // Check if the role exists in the guild
   const newRoleID = config.levelRoles[level.toString()];
   if (newRoleID) {
     const guild = member.guild;
@@ -22,10 +34,7 @@ module.exports.manageRoles = async function (member, level) {
       );
       return;
     }
-    if (!guild.me.permissions.has('MANAGE_ROLES')) {
-      console.error('Bot lacks the MANAGE_ROLES permission');
-      return;
-    }
+
     await member.roles.add(newRole).catch(console.error);
 
     // Remove previous level roles

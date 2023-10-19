@@ -1,22 +1,24 @@
-const {SlashCommandBuilder} = require('discord.js');
+const {SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
 const Player = require('../../models/Player');
 const {manageRoles} = require('../../utils/manageRoles');
 const {createEmbed} = require('../../utils/embedUtils');
-const {convertToSeconds} = require('../../utils/calculate');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('syncroles')
     .setDescription(
       'Reconscile roles to users based on their levels in the database.'
-    ),
+    )
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   cooldown: 0,
   deployGlobal: true,
 
   async execute(interaction) {
     await interaction.deferReply();
 
-    if (!interaction.member.permissions.has('ADMINISTRATOR')) {
+    if (
+      !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
+    ) {
       const responseEmbed = createEmbed({
         title: '❌ Permission Denied',
         description:

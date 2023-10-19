@@ -1,4 +1,4 @@
-const {SlashCommandBuilder} = require('discord.js');
+const {SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
 const restockLake = require('../../modules/economy/games/restockLake');
 const {createEmbed} = require('../../utils/embedUtils');
 
@@ -11,13 +11,16 @@ module.exports = {
         .setName('lake_size')
         .setDescription('How many fish you want to stock in the lake')
         .setRequired(false)
-    ),
+    )
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   cooldown: 0,
   deployGlobal: true,
 
   async execute(interaction) {
     await interaction.deferReply();
-    if (!interaction.member.permissions.has('ADMINISTRATOR')) {
+    if (
+      !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
+    ) {
       const responseEmbed = createEmbed({
         title: '❌ Permission Denied',
         description:

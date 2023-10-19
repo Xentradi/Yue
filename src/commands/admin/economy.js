@@ -1,4 +1,4 @@
-const {SlashCommandBuilder} = require('discord.js');
+const {SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
 const {createEmbed} = require('../../utils/embedUtils');
 const economyHandler = require('../../modules/economy/adminOperations/economyHandler');
 
@@ -87,6 +87,7 @@ module.exports = {
             .setDescription('Amount to airdrop to each active user')
             .setRequired(true)
         )
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     ),
   cooldown: 0,
   deployGlobal: true,
@@ -94,14 +95,16 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply({ephemeral: true});
 
-    if (!interaction.member.permissions.has('ADMINISTRATOR')) {
+    if (
+      !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
+    ) {
       const responseEmbed = createEmbed({
         title: '❌ Permission Denied',
         description:
           'You need administrator permissions to execute this command.',
         color: '#FF0000',
       });
-      return interaction.editReply({embeds: [responseEmbed], ephemeral: true});
+      return interaction.editReply({embeds: [responseEmbed]});
     }
 
     const response = await economyHandler(interaction);
