@@ -223,9 +223,7 @@ function createResultEmbed(
   if (result === 'win') {
     return baseEmbed
       .setDescription(
-        `🎉 **Congratulations!** You've won! 🎉\nYou bet **${betAmount}** and won **${wonAmount}**! Your new balance is **${
-          wonAmount + betAmount
-        }**! 💰`
+        `🎉 **Congratulations!** You've won! 🎉\nYou bet **${betAmount}** and won **${wonAmount}**! 💰`
       )
       .setColor('#00FF00');
   } else if (result === 'lose') {
