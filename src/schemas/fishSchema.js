@@ -1,7 +1,9 @@
 const {Schema} = require('mongoose');
 
-module.exports.fishSchema = new Schema({
+const fishSchema = new Schema({
   type: String,
   count: Number,
   reward: Number,
 });
+
+module.exports = {fishSchema};
