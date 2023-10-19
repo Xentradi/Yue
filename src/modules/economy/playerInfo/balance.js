@@ -22,8 +22,6 @@ module.exports = async function getBalance(userId, guildId) {
     }
 
     // If everything is okay, return the player's balances with a success value of true
-    console.log(player);
-    console.log(`player.cash: ${player.cash}`);
     return {
       success: true,
       cash: player.cash,
