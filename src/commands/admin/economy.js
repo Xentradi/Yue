@@ -149,6 +149,13 @@ module.exports = {
         case 'airdrop':
           embedOptions.title = '✅ Airdrop Successful';
           embedOptions.description = `A total of $${response.total.toLocaleString()} has been distributed among the active users.`;
+
+          await interaction.followUp({
+            content: `${
+              interaction.user
+            } distributed $${response.amount.toLocaleString()} to everyone @here. Check your balance!`,
+            allowedMentions: {parse: ['users', 'here']}, // This allows the @here mention to notify users
+          });
           break;
       }
     } else {
