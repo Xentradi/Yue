@@ -153,7 +153,7 @@ module.exports = {
           await interaction.followUp({
             content: `${
               interaction.user
-            } distributed $${response.amount.toLocaleString()} to everyone @here. Check your balance!`,
+            } distributed $${response.total.toLocaleString()} among everyone @here. Check your balance!`,
           });
           break;
       }
