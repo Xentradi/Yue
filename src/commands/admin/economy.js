@@ -154,7 +154,6 @@ module.exports = {
             content: `${
               interaction.user
             } distributed $${response.amount.toLocaleString()} to everyone @here. Check your balance!`,
-            allowedMentions: {parse: ['users', 'here']}, // This allows the @here mention to notify users
           });
           break;
       }
