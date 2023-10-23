@@ -3,7 +3,14 @@ const config = require('../config.json');
 // Calculates the experience needed to level up
 module.exports.levelUp = function levelUp(level) {
   level += 1;
-  return Math.ceil((level / config.expScale) ** 2);
+
+  const L = 10000; // max exp
+  const k = 0.1; // steepness of the curve
+  const x0 = 500; // Mid point level
+
+  const sigmoidExp = L / (1 + Math.exp(-k * (level - x0)));
+  return Math.round(sigmoidExp);
+  //return Math.ceil((level / config.expScale) ** 2);
 };
 
 /**
