@@ -39,7 +39,7 @@ module.exports = {
       return interaction.reply('Insufficient funds to place the bet.');
     }
 
-    const deck = createDeck();
+    const deck = createDeck(12);
     shuffleDeck(deck);
 
     // Deal starting hands
@@ -282,8 +282,8 @@ function isBusted(playerHand) {
 }
 
 // Function to create a deck
-function createDeck() {
-  // Define the cards and their values
+function createDeck(numDecks = 1) {
+  // Default to 1 deck if no argument is provided
   const suits = ['♠', '♣', '♥', '♦'];
   const faces = [
     'A',
@@ -301,9 +301,12 @@ function createDeck() {
     'K',
   ];
   const deck = [];
-  for (const suit of suits) {
-    for (const face of faces) {
-      deck.push({suit, face});
+  for (let d = 0; d < numDecks; d++) {
+    // Loop for each deck
+    for (const suit of suits) {
+      for (const face of faces) {
+        deck.push({suit, face});
+      }
     }
   }
   return deck;
