@@ -37,6 +37,9 @@ module.exports = async function messageReward(message) {
       player.exp += expToGive;
       player.cash += cashToGive;
 
+      console.log('expToGive: ', expToGive);
+      console.log('player.exp: ', player.exp);
+
       const toLevelUp = levelUp(player.level);
       if (player.exp >= toLevelUp) {
         player.exp = 0;

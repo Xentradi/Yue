@@ -8,7 +8,10 @@ module.exports.levelUp = function levelUp(level) {
   const k = 0.1; // steepness of the curve
   const x0 = 500; // Mid point level
 
-  const sigmoidExp = L / (1 + Math.exp(-k * (level - x0)));
+  let sigmoidExp = L / (1 + Math.exp(-k * (level - x0)));
+  sigmoidExp = Math.round(sigmoidExp);
+  console.log('next Level: ', level);
+  console.log('expToLevel: ', sigmoidExp);
   return Math.round(sigmoidExp);
   //return Math.ceil((level / config.expScale) ** 2);
 };
