@@ -1,6 +1,7 @@
 const {SlashCommandBuilder} = require('discord.js');
 const stealCash = require('../../modules/economy/tranfers/stealCash');
 const {createEmbed} = require('../../utils/embedUtils');
+const logger = require('../../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,6 +25,13 @@ module.exports = {
   deployGlobal: true,
 
   async execute(interaction) {
+    logger.info(
+      `Command ${interaction.commandName} invoked by ${
+        interaction.user.tag
+      } with arguments ${interaction.options._hoistedOptions
+        .map(option => `${option.name}: ${option.value}`)
+        .join(', ')}`
+    );
     await interaction.deferReply();
 
     const victim = interaction.options.getUser('victim');

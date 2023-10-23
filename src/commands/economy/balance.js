@@ -1,6 +1,7 @@
 const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
 const getBalance = require('../../modules/economy/playerInfo/balance');
 const {createEmbed} = require('../../utils/embedUtils');
+const logger = require('../../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -18,15 +19,20 @@ module.exports = {
    * @throws Will send an error response to the user if there's an issue retrieving the balance.
    */
   async execute(interaction) {
+    logger.info(
+      `Command ${interaction.commandName} invoked by ${
+        interaction.user.tag
+      } with arguments ${interaction.options._hoistedOptions
+        .map(option => `${option.name}: ${option.value}`)
+        .join(', ')}`
+    );
     await interaction.deferReply();
 
-    //console.log('User ID:', interaction.user.id);
-    //console.log('Guild ID:', interaction.guildId);
     const playerBalance = await getBalance(
       interaction.user.id,
       interaction.guildId
     );
-    console.log('playerBalance', playerBalance);
+    logger.debug(`playerBalance: ${playerBalance}`);
     if (!playerBalance.success) {
       return interaction.editReply(playerBalance.message);
     }

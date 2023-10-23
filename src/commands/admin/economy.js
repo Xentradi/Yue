@@ -1,6 +1,7 @@
 const {SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
 const {createEmbed} = require('../../utils/embedUtils');
 const economyHandler = require('../../modules/economy/adminOperations/economyHandler');
+const logger = require('../../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -93,11 +94,21 @@ module.exports = {
   deployGlobal: true,
 
   async execute(interaction) {
+    logger.info(
+      `Command ${interaction.commandName} invoked by ${
+        interaction.user.tag
+      } with arguments ${interaction.options._hoistedOptions
+        .map(option => `${option.name}: ${option.value}`)
+        .join(', ')}`
+    );
     await interaction.deferReply({ephemeral: true});
 
     if (
       !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
     ) {
+      logger.warn(
+        `User ${interaction.user.tag} attempted to use command ${interaction.commandName} without necessary permissions.`
+      );
       const responseEmbed = createEmbed({
         title: '❌ Permission Denied',
         description:
@@ -106,63 +117,71 @@ module.exports = {
       });
       return interaction.editReply({embeds: [responseEmbed]});
     }
-
-    const response = await economyHandler(interaction);
-
     const embedOptions = {};
+    try {
+      const response = await economyHandler(interaction);
+      if (response.success) {
+        switch (interaction.options.getSubcommand()) {
+          case 'get':
+            embedOptions.title = `💰 Financial Statement for ${
+              interaction.options.getUser('user').displayName
+            }`;
+            embedOptions.fields = [
+              {name: '💵 Cash', value: `$${response.cash.toLocaleString()}`},
+              {name: '🏦 Bank', value: `$${response.bank.toLocaleString()}`},
+              {name: '📉 Debt', value: `$${response.debt.toLocaleString()}`},
+            ];
+            break;
 
-    if (response.success) {
-      switch (interaction.options.getSubcommand()) {
-        case 'get':
-          embedOptions.title = `💰 Financial Statement for ${
-            interaction.options.getUser('user').displayName
-          }`;
-          embedOptions.fields = [
-            {name: '💵 Cash', value: `$${response.cash.toLocaleString()}`},
-            {name: '🏦 Bank', value: `$${response.bank.toLocaleString()}`},
-            {name: '📉 Debt', value: `$${response.debt.toLocaleString()}`},
-          ];
-          break;
+          case 'give':
+            embedOptions.title = '✅ Give Operation Successful';
+            embedOptions.description = `An amount of $${response.newAmount.toLocaleString()} has been added to ${
+              interaction.options.getUser('user').displayName
+            }'s ${response.field} balance.`;
+            break;
 
-        case 'give':
-          embedOptions.title = '✅ Give Operation Successful';
-          embedOptions.description = `An amount of $${response.newAmount.toLocaleString()} has been added to ${
-            interaction.options.getUser('user').displayName
-          }'s ${response.field} balance.`;
-          break;
+          case 'set':
+            embedOptions.title = '✅ Set Operation Successful';
+            embedOptions.description = `${
+              interaction.options.getUser('user').displayName
+            }'s ${
+              response.field
+            } balance has been set to $${response.newAmount.toLocaleString()}.`;
+            break;
+          case 'reset':
+            embedOptions.title = '✅ Operation Successful';
+            embedOptions.description = `The operation was executed successfully for ${
+              interaction.options.getUser('user').displayName
+            }.`;
+            break;
 
-        case 'set':
-          embedOptions.title = '✅ Set Operation Successful';
-          embedOptions.description = `${
-            interaction.options.getUser('user').displayName
-          }'s ${
-            response.field
-          } balance has been set to $${response.newAmount.toLocaleString()}.`;
-          break;
-        case 'reset':
-          embedOptions.title = '✅ Operation Successful';
-          embedOptions.description = `The operation was executed successfully for ${
-            interaction.options.getUser('user').displayName
-          }.`;
-          break;
+          case 'airdrop':
+            embedOptions.title = '✅ Airdrop Successful';
+            embedOptions.description = `A total of $${response.total.toLocaleString()} has been distributed among the active users.`;
 
-        case 'airdrop':
-          embedOptions.title = '✅ Airdrop Successful';
-          embedOptions.description = `A total of $${response.total.toLocaleString()} has been distributed among the active users.`;
-
-          await interaction.followUp({
-            content: `${
-              interaction.user
-            } distributed $${response.total.toLocaleString()} among everyone @here. Check your balance!`,
-          });
-          break;
+            await interaction.followUp({
+              content: `${
+                interaction.user
+              } distributed $${response.total.toLocaleString()} among everyone @here. Check your balance!`,
+            });
+            break;
+        }
+      } else {
+        logger.error(
+          `Operation failed in command ${interaction.commandName}: ${response.error}`
+        );
+        embedOptions.title = '❌ Operation Failed';
+        embedOptions.description = response.error;
+        embedOptions.color = '#FF0000';
       }
-    } else {
+    } catch (error) {
+      logger.error(
+        `Error in command ${interaction.commandName} for user ${interaction.user.tag}: ${error.message}`
+      );
       embedOptions.title = '❌ Operation Failed';
-      embedOptions.description = response.error;
+      embedOptions.description = `Command ${interaction.commandName} failed. Please see logs for more information.`;
       embedOptions.color = '#FF0000';
     }
-
     const responseEmbed = createEmbed(embedOptions);
     interaction.editReply({embeds: [responseEmbed], ephemeral: true});
   },

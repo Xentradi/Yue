@@ -1,3 +1,5 @@
+const logger = require('../../utils/logger');
+
 /**
  * Updates a player's cash balance.
  *
@@ -15,7 +17,7 @@ module.exports.updatePlayerCash = async function (player, amount) {
     await player.save();
     return {success: true, cash: player.cash};
   } catch (err) {
-    console.error(err);
+    logger.error(`Error updating cash balance: ${err}`);
     return {success: false, message: 'Error updating cash balance.'};
   }
 };
@@ -37,7 +39,7 @@ module.exports.updatePlayerBank = async function (player, amount) {
     await player.save();
     return {success: true, bank: player.bank};
   } catch (err) {
-    console.error(err);
+    logger.error(`Error updating bank balance: ${err}`);
     return {success: false, message: 'Error updating bank balance.'};
   }
 };
@@ -70,7 +72,7 @@ module.exports.transferFunds = async function (player, amount, toBank = true) {
     await player.save();
     return {success: true, cash: player.cash, bank: player.bank};
   } catch (err) {
-    console.error(err);
+    logger.error(`Error updating transfering funds: ${err}`);
     return {success: false, message: 'Error transferring funds.'};
   }
 };

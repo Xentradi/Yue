@@ -1,4 +1,5 @@
 const Player = require('../../../models/Player');
+const logger = require('../../../utils/logger');
 
 /**
  * Allows a player to repay a portion or the entirety of their debt.
@@ -49,7 +50,7 @@ module.exports = async function repayLoan(userId, guildId, amount) {
   try {
     await player.save();
   } catch (err) {
-    console.error(err);
+    logger.error(`Failed to save changes to database: ${err}`);
     return {
       success: false,
       message: 'Failed to save changes to the database.',

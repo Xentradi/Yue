@@ -3,6 +3,7 @@ const setBalance = require('./setBalance');
 const giveBalance = require('./giveBalance');
 const resetBalance = require('./resetBalance');
 const airdrop = require('./airdrop');
+const logger = require('../../../utils/logger');
 
 /**
  * Handles economy admin actions such as setting, giving, resetting balances and airdrop.
@@ -33,7 +34,9 @@ module.exports = async function economyHandler(interaction) {
     }
   } catch (error) {
     // Log the error and return a user-friendly message
-    console.error(error);
+    logger.error(
+      `An error occured while handling the economy action. ${error}`
+    );
     return {
       title: '❌ An error occurred',
       description:

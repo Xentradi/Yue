@@ -1,4 +1,5 @@
 const Player = require('../../../models/Player');
+const logger = require('../../../utils/logger');
 
 /**
  * Attempt to steal cash from another user.
@@ -75,7 +76,7 @@ module.exports = async function stealCash(
     await player.save();
     await target.save();
   } catch (err) {
-    console.error(err);
+    logger.error(`Error updating balance information: ${err}`);
   }
 
   return result;

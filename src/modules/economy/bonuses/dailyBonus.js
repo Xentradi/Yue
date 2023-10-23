@@ -1,6 +1,7 @@
 const Player = require('../../../models/Player');
 const config = require('../../../config.json');
 const balance = require('../../economy/balance');
+const logger = require('../../../utils/logger');
 
 /**
  * Provides a daily cash bonus to a player.
@@ -39,7 +40,7 @@ module.exports = async function dailyBonus(userId, guildId) {
         }
       : updateCashResult;
   } catch (err) {
-    console.error(err);
+    logger.error(`An error occurred while granting the daily bonus: ${err}`);
     return {
       success: false,
       message: 'An error occurred while granting the daily bonus.',

@@ -1,4 +1,5 @@
 const Player = require('../../../models/Player');
+const logger = require('../../../utils/logger');
 
 /**
  * Applies a variable interest rate to all player's bank balances and debt within a specific guild.
@@ -14,7 +15,7 @@ module.exports = async function applyBankInterest() {
   try {
     players = await Player.find();
   } catch (error) {
-    console.error('Error fetching players: ', error);
+    logger.error(`An error occured while fetching fetching players: ${error}`);
     return {
       success: false,
       message: 'Database error.',
@@ -56,7 +57,9 @@ module.exports = async function applyBankInterest() {
       message: 'Bank and debt interests successfully applied.',
     };
   } catch (err) {
-    console.error(err);
+    logger.error(
+      `An error occurred while applying bank and debt interests: ${err}`
+    );
     return {
       success: false,
       message: 'An error occurred while applying bank and debt interests.',

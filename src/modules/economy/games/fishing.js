@@ -1,6 +1,7 @@
 const Player = require('../../../models/Player');
 const Lake = require('../../../models/Lake');
 const balance = require('../../economy/balance');
+const logger = require('../../../utils/logger');
 
 /**
  * Allow a player to fish in the lake and get rewarded based on the fish they catch.
@@ -65,7 +66,9 @@ module.exports = async function fish(userId, guildId) {
           : `You lost $${Math.abs(outcome.reward)}.`,
     };
   } catch (err) {
-    console.error(err);
+    logger.error(
+      `An error occured while processing the fishing attempt: ${err}`
+    );
     return {
       success: false,
       description: 'An error occurred while processing the fishing attempt.',

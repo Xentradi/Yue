@@ -1,4 +1,5 @@
 const Player = require('../../../models/Player');
+const logger = require('../../../utils/logger');
 
 /**
  * Retrieves the balance details (cash, bank, and debt) for a specific player.
@@ -30,7 +31,7 @@ module.exports = async function getBalance(userId, guildId) {
     };
   } catch (err) {
     // Log any errors and return a success value of false with a generic error message
-    console.error(err);
+    logger.error(`Error occured while fetching the player's balance: ${err}`);
     return {
       success: false,
       message: "An error occurred while fetching the player's balance.",

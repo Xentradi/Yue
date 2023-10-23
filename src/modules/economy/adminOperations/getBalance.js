@@ -1,4 +1,5 @@
 const Player = require('../../../models/Player');
+const logger = require('../../../utils/logger');
 
 module.exports = async function getBalance(interaction) {
   const user = interaction.options.getUser('user');
@@ -6,10 +7,10 @@ module.exports = async function getBalance(interaction) {
   const guildId = interaction.guildId;
 
   try {
-    //console.log('UserId:', userId);
-    //console.log('GuildId:', guildId);
+    logger.debug(`'UserId: ${userId}`);
+    logger.debug(`GuildId: ${guildId}`);
     const player = await Player.findOne({userId, guildId});
-    //console.log('Player:', player);
+    logger.debug(`Player: ${player}`);
 
     if (!player) return {success: false, error: 'User not found.'};
 
@@ -21,6 +22,7 @@ module.exports = async function getBalance(interaction) {
       debt: player.debt,
     };
   } catch (error) {
+    logger.error(`An error occurred retrieving the player balance: ${error}`);
     return {success: false, error: error.message};
   }
 };

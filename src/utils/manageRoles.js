@@ -1,5 +1,6 @@
 const config = require('../config.json');
 const {PermissionFlagsBits} = require('discord.js');
+const logger = require('../utils/logger');
 
 /**
  * Manages roles based on the player's level.
@@ -13,13 +14,16 @@ const {PermissionFlagsBits} = require('discord.js');
  * @throws Will throw an error if there is an issue with role assignment or removal.
  */
 module.exports.manageRoles = async function (member, level) {
-  //console.log('manageRoles called for guildId: ', member.guild.id);
-  //console.log('member.guild.members.me: ', member.guild.members.me);
+  logger.debug(`manageRoles called for guildId: ${member.guild.id}`);
+  logger.debug(`member.guild.members.me: ${member.guild.members.me}`);
+
   // Check if the bot has permissions to manage roles before doing anything.
   if (
     !member.guild.members.me.permissions.has(PermissionFlagsBits.ManageRoles)
   ) {
-    console.error('Bot lacks the ManageRoles permission');
+    logger.warn(
+      `Bot lacks the ManageRoles permission in guild ${member.guild.id}. Roles will not be issued.`
+    );
     return;
   }
 
@@ -29,22 +33,22 @@ module.exports.manageRoles = async function (member, level) {
     const guild = member.guild;
     const newRole = guild.roles.cache.get(newRoleID);
     if (!newRole) {
-      console.error(
+      logger.error(
         `Role with ID ${newRoleID} does not exist in guild ${guild.id}`
       );
       return;
     }
 
-    await member.roles.add(newRole).catch(console.error);
+    await member.roles.add(newRole).catch(logger.error);
 
     // Remove previous level roles
     for (const [lvl, roleID] of Object.entries(config.levelRoles)) {
       if (Number(lvl) < level) {
         const oldRole = guild.roles.cache.get(roleID);
         if (oldRole) {
-          await member.roles.remove(oldRole).catch(console.error);
+          await member.roles.remove(oldRole).catch(logger.error);
         } else {
-          console.error(
+          logger.error(
             `Role with ID ${roleID} does not exist in guild ${guild.id}`
           );
         }

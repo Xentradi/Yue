@@ -3,6 +3,7 @@ const {REST, Routes} = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const config = require('../config.json');
+const logger = require('../utils/logger');
 const clientId = config.clientId;
 const guildId = config.devServer;
 
@@ -25,7 +26,7 @@ for (const folder of commandFolders) {
         deployGlobal: command.deployGlobal, // Save the deployGlobal property
       });
     } else {
-      console.log(
+      logger.warn(
         `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
       );
     }
@@ -36,7 +37,7 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
   try {
-    console.log(
+    logger.info(
       `Started refreshing ${commands.length} application (/) commands.`
     );
 
@@ -54,7 +55,7 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
       await rest.put(Routes.applicationCommands(clientId), {
         body: globalCommands,
       });
-      console.log(`Deployed ${globalCommands.length} global commands.`);
+      logger.info(`Deployed ${globalCommands.length} global commands.`);
     }
 
     // Deploy guild-specific commands
@@ -62,13 +63,13 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
       await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
         body: guildCommands,
       });
-      console.log(`Deployed ${guildCommands.length} guild-specific commands.`);
+      logger.info(`Deployed ${guildCommands.length} guild-specific commands.`);
     }
 
-    console.log(
+    logger.info(
       `Successfully reloaded ${commands.length} application (/) commands.`
     );
   } catch (err) {
-    console.error(err);
+    logger.error(`Error deploying commands: ${err}`);
   }
 })();

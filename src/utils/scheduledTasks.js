@@ -1,17 +1,18 @@
 const cron = require('node-cron');
 const applyBankInterest = require('../modules/economy/bankOperations/interest');
 const restockLake = require('../modules/economy/games/restockLake');
+const logger = require('../utils/logger');
 
 // Daily
 cron.schedule(
   '0 12 * * *',
   () => {
     applyBankInterest()
-      .then(response => console.log(response.message))
-      .catch(error => console.error(error));
+      .then(response => logger.info(response.message))
+      .catch(error => logger.error(error));
     restockLake(5500)
-      .then(response => console.log(response.message))
-      .catch(error => console.error(error));
+      .then(response => logger.info(response.message))
+      .catch(error => logger.error(error));
   },
   {
     scheduled: true,
@@ -24,8 +25,8 @@ cron.schedule(
   '0 * * * *',
   () => {
     restockLake(500)
-      .then(response => console.log(response.message))
-      .catch(error => console.error(error));
+      .then(response => logger.info(response.message))
+      .catch(error => logger.error(error));
   },
   {
     scheduled: true,

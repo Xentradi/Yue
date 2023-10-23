@@ -3,6 +3,7 @@ const config = require('../config.json');
 const Player = require('../models/Player');
 const {levelUp} = require('../utils/calculate');
 const {manageRoles} = require('../utils/manageRoles');
+const logger = require('../utils/logger');
 
 /**
  * Awards a player with experience points and cash for each message they send in the guild.
@@ -34,11 +35,14 @@ module.exports = async function messageReward(message) {
         expToGive *= config.boosterExpBonus;
         cashToGive *= config.boosterCashBonus;
       }
+      logger.debug(
+        `Message received from existing player ${message.author.id} in ${message.guild.id}`
+      );
       player.exp += expToGive;
       player.cash += cashToGive;
 
-      console.log('expToGive: ', expToGive);
-      console.log('player.exp: ', player.exp);
+      logger.debug(`expToGive: ${expToGive}`);
+      logger.debug(`player.exp: ${player.exp}`);
 
       const toLevelUp = levelUp(player.level);
       if (player.exp >= toLevelUp) {
@@ -58,11 +62,13 @@ module.exports = async function messageReward(message) {
         exp: expToGive,
         cash: cashToGive,
       });
-
+      logger.debug(
+        `Message received from new player ${message.author.id} in ${message.guild.id}`
+      );
       await newPlayer.save();
     }
   } catch (err) {
-    console.error(err);
+    logger.error(`Error processing messageReward: ${err}`);
   }
 };
 

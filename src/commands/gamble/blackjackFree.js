@@ -5,6 +5,7 @@ const {
   EmbedBuilder,
   SlashCommandBuilder,
 } = require('discord.js');
+const logger = require('../../utils/logger');
 
 // Define the cards and their values
 const suits = ['♠', '♣', '♥', '♦'];
@@ -51,6 +52,13 @@ module.exports = {
   deployGlobal: false,
 
   async execute(interaction) {
+    logger.info(
+      `Command ${interaction.commandName} invoked by ${
+        interaction.user.tag
+      } with arguments ${interaction.options._hoistedOptions
+        .map(option => `${option.name}: ${option.value}`)
+        .join(', ')}`
+    );
     const deck = createDeck();
     shuffleDeck(deck);
 

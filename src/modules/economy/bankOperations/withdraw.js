@@ -1,5 +1,6 @@
 const Player = require('../../../models/Player');
 const balance = require('../../economy/balance');
+const logger = require('../../../utils/logger');
 
 /**
  * Withdraws a specified amount of cash from a player's bank account.
@@ -47,7 +48,7 @@ module.exports = async function withdraw(userId, guildId, amount) {
         }
       : transferResult;
   } catch (error) {
-    console.error(error);
+    logger.error(`An error occured while processing the withdrawl: ${error}`);
     return {
       success: false,
       message: 'An error occurred while processing the withdrawl.',

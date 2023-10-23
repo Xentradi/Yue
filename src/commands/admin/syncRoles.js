@@ -2,6 +2,7 @@ const {SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
 const Player = require('../../models/Player');
 const {manageRoles} = require('../../utils/manageRoles');
 const {createEmbed} = require('../../utils/embedUtils');
+const logger = require('../../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -14,6 +15,13 @@ module.exports = {
   deployGlobal: true,
 
   async execute(interaction) {
+    logger.info(
+      `Command ${interaction.commandName} invoked by ${
+        interaction.user.tag
+      } with arguments ${interaction.options._hoistedOptions
+        .map(option => `${option.name}: ${option.value}`)
+        .join(', ')}`
+    );
     await interaction.deferReply();
 
     if (
@@ -56,7 +64,7 @@ module.exports = {
       });
       interaction.editReply({embeds: [responseEmbed]});
     } catch (err) {
-      console.error(err);
+      logger.error(`An error occured while syncing roles: ${err}`);
       const responseEmbed = createEmbed({
         title: '❌ Error',
         description: 'An error occurred while updating roles.',

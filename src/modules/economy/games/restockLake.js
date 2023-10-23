@@ -1,4 +1,5 @@
 const Lake = require('../../../models/Lake'); // Make sure to adjust the path as necessary
+const logger = require('../../../utils/logger');
 
 /**
  * Restocks the lake with the default fish and other items.
@@ -49,7 +50,7 @@ module.exports = async function restockLake(guildId, size = 1000) {
       message: 'Lake restocked successfully!',
     };
   } catch (err) {
-    console.error(err);
+    logger.error(`An error occurred while restocking the lake: ${err}`);
     return {
       success: false,
       message: 'An error occurred while restocking the lake.',

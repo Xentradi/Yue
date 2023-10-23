@@ -1,4 +1,4 @@
-const config = require('../config.json');
+const logger = require('../utils/logger');
 
 // Calculates the experience needed to level up
 module.exports.levelUp = function levelUp(level) {
@@ -13,8 +13,8 @@ module.exports.levelUp = function levelUp(level) {
   sigmoidExp = Math.max(sigmoidExp, level * 10);
 
   sigmoidExp = Math.round(sigmoidExp);
-  console.log('next Level: ', level);
-  console.log('expToLevel: ', sigmoidExp);
+  logger.debug('TargetLevel: ', level);
+  logger.debug('ExpRequired: ', sigmoidExp);
   return Math.round(sigmoidExp);
   //return Math.ceil((level / config.expScale) ** 2);
 };
