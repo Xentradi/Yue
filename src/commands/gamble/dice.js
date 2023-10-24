@@ -2,6 +2,7 @@ const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
 const diceRoll = require('../../modules/economy/games/diceRoll');
 const {createEmbed} = require('../../utils/embedUtils');
 const logger = require('../../utils/logger');
+const Player = require('../../models/Player');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -39,8 +40,25 @@ module.exports = {
         .join(', ')}`
     );
     await interaction.deferReply();
+
     const guessedNumber = interaction.options.getInteger('guess');
     const betAmount = interaction.options.getInteger('bet');
+
+    // Fetch the player from the database
+    const player = await Player.findOne({
+      userId: interaction.user.id,
+      guildId: interaction.guildId,
+    });
+
+    // Check if the player exists and has sufficient funds
+    if (!player) {
+      await interaction.reply('You do not have an account set up.');
+      return; // Exit early
+    } else if (player.cash < betAmount) {
+      await interaction.reply('You do not have sufficient funds for this bet.');
+      return; // Exit early
+    }
+
     const data = await diceRoll(
       interaction.user.id,
       interaction.guildId,
