@@ -1,0 +1,191 @@
+Good, please feel free to ask me to see the contents of any file at anytime. 
+
+To begin with I think that growth requires a strong and stable foundation.Currently most modules and commands import the Player or Lake models and directly perform the actions including any "sanity" checks on the operation.I think it would be beneficial to build these checks and such into methods on the schemas / models(I'm not sure the correct place)
+
+
+Here are the different schema files:
+  ```
+const {Schema} = require('mongoose');
+
+const fishSchema = new Schema({
+  type: String,
+  count: Number,
+  reward: Number,
+});
+
+module.exports = {fishSchema};
+```
+
+
+    ```
+const {Schema} = require('mongoose');
+const {fishSchema} = require('./fishSchema');
+
+const lakeSchema = new Schema({
+  guildId: String,
+  fishStock: [fishSchema],
+  lastStocked: Date,
+});
+
+module.exports = {lakeSchema};
+```
+
+    ```
+const {Schema} = require('mongoose');
+const statsSchema = require('./statsSchema');
+
+const playerSchema = new Schema({
+  userId: {
+    type: String,
+    required: true,
+  },
+  guildId: {
+    type: String,
+    required: true,
+  },
+  exp: {
+    type: Number,
+    default: 0,
+  },
+  level: {
+    type: Number,
+    default: 0,
+  },
+  cash: {
+    type: Number,
+    default: 0,
+  },
+  bank: {
+    type: Number,
+    default: 0,
+  },
+  debt: {
+    type: Number,
+    default: 0,
+  },
+  reputation: {
+    type: Number,
+    default: 0,
+  },
+  relationship: {
+    type: Number,
+    default: 0,
+  },
+  expMultiplier: {
+    type: Number,
+    default: 1,
+  },
+  cashMultiplier: {
+    type: Number,
+    default: 1,
+  },
+  interestMultiplier: {
+    type: Number,
+    default: 1,
+  },
+  stats: {
+    type: statsSchema,
+    default: {},
+  },
+});
+
+module.exports = {playerSchema};
+```
+
+    ```
+const {Schema} = require('mongoose');
+
+const statsSchema = new Schema({
+  strength: {type: Number, default: 0},
+  dexterity: {type: Number, default: 0},
+  intelligence: {type: Number, default: 0},
+  charisma: {type: Number, default: 0},
+  spirit: {type: Number, default: 0},
+  focus: {type: Number, default: 0},
+  endurance: {type: Number, default: 0},
+  luck: {type: Number, default: 0},
+  alchemy: {type: Number, default: 0},
+  crafting: {type: Number, default: 0},
+});
+
+statsSchema.method({
+  increase(stat, amount) {
+    if (this[stat] !== undefined && amount > 0) {
+      this[stat] += amount;
+    }
+  },
+  decrease(stat, amount) {
+    if (this[stat] !== undefined && amount > 0) {
+      this[stat] = Math.max(0, this[stat] - amount);
+    }
+  },
+  set(stat, value) {
+    if (this[stat] !== undefined && value >= 0) {
+      this[stat] = value;
+    }
+  },
+  reset(stat) {
+    if (this[stat] !== undefined) {
+      this[stat] = 0;
+    }
+  },
+});
+
+module.exports = {statsSchema};
+```
+
+and the models
+
+  ```
+const {model} = require('mongoose');
+const {lakeSchema} = require('../schemas/lakeSchema');
+
+module.exports = model('Lake', lakeSchema);
+```
+
+  ```
+const {model} = require('mongoose');
+const {playerSchema} = require('../schemas/playerSchema');
+
+module.exports = model('Player', playerSchema);
+```
+
+additionally here is the giveBalance.js file of the economy module as an example:
+  ```
+const Player = require('../../../models/Player');
+
+module.exports = async function giveBalance(interaction) {
+  const user = interaction.options.getUser('user');
+  const userId = user.id;
+  const guildId = interaction.guildId;
+  const field = interaction.options.getString('field');
+  const amount = interaction.options.getInteger('amount');
+
+  if (amount < 0)
+    return {success: false, error: 'Amount must be a positive value.'};
+
+  try {
+    const player = await Player.findOne({userId, guildId});
+
+    if (!player) return {success: false, error: 'User not found.'};
+
+    player[field] += amount;
+    await player.save();
+
+    return {
+      success: true,
+      userId,
+      field,
+      newAmount: player[field],
+    };
+  } catch (error) {
+    return {success: false, error: error.message};
+  }
+};
+```
+
+there are other operations performed but this is just an example.
+
+Do you understand ?
+
+

@@ -1,0 +1,96 @@
+I am working on a Discord bot named Yue for the Immortal Inc discord server (Wuxia themed built around the OverMortal game) the bot serves many purposes in the server. Currently it provides chat exp and leveling, currency for chatting with a daily bonus, a bank with daily interest rates, different games where the currency can be gambled.
+
+I am wanting to expand the feature set of the bot to create a more text/command based RPG. Allowing them to spend currency for different virtual items or features on discord, buy properties like a farm to increase their daily income, have jobs, go on adventures all of  that sorta fantasy world type stuff. 
+
+Here is the tree of the src directory of the bot:
+```
+📦src
+ ┣ 📂commands
+ ┃ ┣ 📂admin
+ ┃ ┃ ┣ 📜economy.js
+ ┃ ┃ ┣ 📜restockLake.js
+ ┃ ┃ ┗ 📜syncRoles.js
+ ┃ ┣ 📂economy
+ ┃ ┃ ┣ 📜balance.js
+ ┃ ┃ ┣ 📜daily.js
+ ┃ ┃ ┣ 📜deposit.js
+ ┃ ┃ ┣ 📜pay.js
+ ┃ ┃ ┣ 📜steal.js
+ ┃ ┃ ┗ 📜withdraw.js
+ ┃ ┣ 📂fun
+ ┃ ┃ ┗ 📜leaderboards.js
+ ┃ ┣ 📂gamble
+ ┃ ┃ ┣ 📜blackjack.js
+ ┃ ┃ ┣ 📜coin.js
+ ┃ ┃ ┣ 📜dice.js
+ ┃ ┃ ┗ 📜fish.js
+ ┃ ┗ 📂utilities
+ ┃ ┃ ┣ 📜help.js
+ ┃ ┃ ┣ 📜ping.js
+ ┃ ┃ ┗ 📜user.js
+ ┣ 📂events
+ ┃ ┣ 📜interactionCreate.js
+ ┃ ┣ 📜messageCreate.js
+ ┃ ┗ 📜ready.js
+ ┣ 📂handlers
+ ┃ ┣ 📜commandHandler.js
+ ┃ ┗ 📜eventHandler.js
+ ┣ 📂models
+ ┃ ┣ 📜Lake.js
+ ┃ ┗ 📜Player.js
+ ┣ 📂modules
+ ┃ ┣ 📂economy
+ ┃ ┃ ┣ 📂adminOperations
+ ┃ ┃ ┃ ┣ 📜airdrop.js
+ ┃ ┃ ┃ ┣ 📜economyHandler.js
+ ┃ ┃ ┃ ┣ 📜getBalance.js
+ ┃ ┃ ┃ ┣ 📜giveBalance.js
+ ┃ ┃ ┃ ┣ 📜resetBalance.js
+ ┃ ┃ ┃ ┗ 📜setBalance.js
+ ┃ ┃ ┣ 📂bankOperations
+ ┃ ┃ ┃ ┣ 📜deposit.js
+ ┃ ┃ ┃ ┣ 📜interest.js
+ ┃ ┃ ┃ ┗ 📜withdraw.js
+ ┃ ┃ ┣ 📂bonuses
+ ┃ ┃ ┃ ┗ 📜dailyBonus.js
+ ┃ ┃ ┣ 📂games
+ ┃ ┃ ┃ ┣ 📜coinFlip.js
+ ┃ ┃ ┃ ┣ 📜diceRoll.js
+ ┃ ┃ ┃ ┣ 📜fishing.js
+ ┃ ┃ ┃ ┗ 📜restockLake.js
+ ┃ ┃ ┣ 📂leaderboards
+ ┃ ┃ ┃ ┣ 📜bankLeaderboard.js
+ ┃ ┃ ┃ ┣ 📜cashLeaderboard.js
+ ┃ ┃ ┃ ┗ 📜netWorthLeaderboard.js
+ ┃ ┃ ┣ 📂loans
+ ┃ ┃ ┃ ┣ 📜repayLoan.js
+ ┃ ┃ ┃ ┗ 📜takeLoan.js
+ ┃ ┃ ┣ 📂playerInfo
+ ┃ ┃ ┃ ┗ 📜balance.js
+ ┃ ┃ ┣ 📂tranfers
+ ┃ ┃ ┃ ┣ 📜giveCash.js
+ ┃ ┃ ┃ ┗ 📜stealCash.js
+ ┃ ┃ ┗ 📜balance.js
+ ┃ ┗ 📜messageReward.js
+ ┣ 📂prompts
+ ┃ ┗ 📜characterProfile.json
+ ┣ 📂schemas
+ ┃ ┣ 📜fishSchema.js
+ ┃ ┣ 📜lakeSchema.js
+ ┃ ┣ 📜playerSchema.js
+ ┃ ┗ 📜statsSchema.js
+ ┣ 📂tests
+ ┃ ┣ 📜balanceTest.js
+ ┃ ┗ 📜lakeTest.js
+ ┣ 📂utils
+ ┃ ┣ 📜calculate.js
+ ┃ ┣ 📜deleteGuildCommands.js
+ ┃ ┣ 📜deployCommands.js
+ ┃ ┣ 📜embedUtils.js
+ ┃ ┣ 📜logger.js
+ ┃ ┣ 📜manageRoles.js
+ ┃ ┗ 📜scheduledTasks.js
+ ┣ 📜config.json
+ ┗ 📜main.js```
+
+Do you understand?
