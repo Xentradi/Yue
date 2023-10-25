@@ -7,7 +7,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('daily')
     .setDescription('Claim your daily reward.'),
-  cooldown: '1d',
+  cooldown: '10s',
   deployGlobal: true,
 
   /**

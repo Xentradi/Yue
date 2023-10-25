@@ -73,6 +73,10 @@ const playerSchema = new Schema({
     type: Number,
     default: 1,
   },
+  lastDailyBonusClaim: {
+    type: Date,
+    default: null,
+  },
   stats: {
     type: statsSchema,
     default: {},
