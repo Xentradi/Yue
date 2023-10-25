@@ -7,4 +7,15 @@ const lakeSchema = new Schema({
   lastStocked: Date,
 });
 
+lakeSchema.method('updateFishStock', async (fishType, count, reward) => {
+  const fishIndex = this.fishStock.fishIndex(fish => fish.type === fishType);
+  if (fishIndex !== -1) {
+    this.fishStock[fishIndex].count += count;
+  } else {
+    this.fishStock.push({type: fishType, count, reward});
+  }
+  await this.save();
+  return {success: true, fishStock: this.fishStock};
+});
+
 module.exports = {lakeSchema};
