@@ -52,10 +52,12 @@ module.exports = {
 
     // Check if the player exists and has sufficient funds
     if (!player) {
-      await interaction.reply('You do not have an account set up.');
+      await interaction.editReply('You do not have an account set up.');
       return; // Exit early
     } else if (player.cash < betAmount) {
-      await interaction.reply('You do not have sufficient funds for this bet.');
+      await interaction.editReply(
+        'You do not have sufficient funds for this bet.'
+      );
       return; // Exit early
     }
 
