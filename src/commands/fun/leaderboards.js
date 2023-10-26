@@ -85,6 +85,9 @@ module.exports = {
           case 'networth':
             value = user.netWorth;
             break;
+          case 'debt':
+            value = user.debt;
+            break;
           // ... (Handle other cases like level and debt here)
         }
 
