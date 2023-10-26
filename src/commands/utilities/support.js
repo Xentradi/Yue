@@ -1,4 +1,4 @@
-const {SlashCommandBuilder, MessageEmbed} = require('discord.js');
+const {SlashCommandBuilder, EmbedBuilder} = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -7,7 +7,7 @@ module.exports = {
   cooldown: 1,
   deployGlobal: true,
   async execute(interaction) {
-    const supportEmbed = new MessageEmbed()
+    const supportEmbed = new EmbedBuilder()
       .setColor('#0099ff')
       .setTitle('Need Support?')
       .setDescription(
