@@ -7,7 +7,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('daily')
     .setDescription('Claim your daily reward.'),
-  cooldown: '10s',
+  cooldown: '1s',
   deployGlobal: true,
 
   /**
@@ -24,10 +24,28 @@ module.exports = {
     await interaction.deferReply();
     const data = await dailyBonus(interaction.user.id, interaction.guildId);
     data.username = interaction.member.displayName;
-    const embedOptions = {
-      title: `💰 ${data.username} Pay Stub`,
-      description: `Your daily pay of $${data.amount} has been delivered.`,
-    };
+    let embedOptions = {};
+
+    if (data.success) {
+      embedOptions = {
+        title: `💰 ${data.username} Pay Stub`,
+        description: `Your daily pay of $${data.amount} has been delivered.`,
+      };
+    } else if (
+      !data.success &&
+      data.message === 'Daily bonus already claimed today.'
+    ) {
+      embedOptions = {
+        title: `⚠️ ${data.username} Pay Already Delivered`,
+        description: 'Your daily pay has already been delivered.',
+      };
+    } else {
+      embedOptions = {
+        title: '‼️ Daily Pay Error',
+        description: 'There was an error delivering your pay.',
+      };
+    }
+
     const responseEmbed = createEmbed(embedOptions);
     interaction.editReply({embeds: [responseEmbed]});
   },
