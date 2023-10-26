@@ -1,5 +1,5 @@
 const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
-const diceRoll = require('../../modules/economy/games/diceRoll');
+const diceRoll = require('../../modules/games/diceRoll');
 const {createEmbed} = require('../../utils/embedUtils');
 const logger = require('../../utils/logger');
 const Player = require('../../models/Player');

@@ -1,5 +1,5 @@
 const {SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
-const restockLake = require('../../modules/economy/games/restockLake');
+const restockLake = require('../../modules/games/adminOperations/restockLake');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {

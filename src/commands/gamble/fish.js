@@ -1,5 +1,5 @@
 const {SlashCommandBuilder} = require('discord.js');
-const fishing = require('../../modules/economy/games/fishing');
+const fishing = require('../../modules/games/fishing');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {

@@ -1,5 +1,5 @@
 const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
-const coinFlip = require('../../modules/economy/games/coinFlip');
+const coinFlip = require('../../modules/games/coinFlip');
 const {createEmbed} = require('../../utils/embedUtils');
 
 module.exports = {
