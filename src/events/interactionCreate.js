@@ -46,20 +46,44 @@ module.exports = {
 
     // Try running the command
     try {
+      logCommandInvocation(interaction);
       await command.execute(interaction);
     } catch (err) {
-      logger.error(`Error executing ${interaction.commandName}: ${err}`);
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({
-          content: 'There was an error while executing this command!',
-          ephemeral: true,
-        });
-      } else {
-        await interaction.reply({
-          content: 'There was an error while executing this command!',
-          ephemeral: true,
-        });
-      }
+      handleCommandError(err, interaction);
     }
   },
 };
+
+function logCommandInvocation(interaction) {
+  const args = interaction.options._hoistedOptions
+    .map(option => `${option.name}: ${option.value}`)
+    .join(', ');
+  const argsString = args.length > 0 ? ` with arguements ${args}` : '';
+
+  let logMessage;
+  if (interaction.guild) {
+    const guildName = interaction.guild.name;
+    const guildId = interaction.guild.id;
+    logMessage = `Command ${interaction.commandName} invoked by ${interaction.user.tag}${argsString} in guild ${guildName} (ID: ${guildId})`;
+  } else {
+    logMessage = `Command ${interaction.commandName} invoked by ${interaction.user.tag}${argsString} in a Direct Message`;
+  }
+
+  logger.info(logMessage);
+}
+
+async function handleCommandError(err, interaction) {
+  logger.error(`Error executing ${interaction.commandName}: ${err.stack}`);
+  logger.error(
+    `Error context: commandName=${interaction.commandName}, userId=${
+      interaction.user.id
+    }, guildId=${interaction.guild ? interaction.guild.id : 'DM'}`
+  );
+
+  const errorMessage = 'There was an error while executing this command!';
+  if (interaction.replied || interaction.deferred) {
+    await interaction.followUp({content: errorMessage, ephemeral: true});
+  } else {
+    await interaction.reply({content: errorMessage, ephemeral: true});
+  }
+}
