@@ -31,7 +31,7 @@ module.exports = async function messageReward(message) {
     let cashToGive = config.cashPerMessage * (player?.cashBonus || 1);
 
     if (player) {
-      if (message.member.roles.cache.has(config.boosterRole)) {
+      if (message.member.premiumSince) {
         expToGive *= config.boosterExpBonus;
         cashToGive *= config.boosterCashBonus;
       }
