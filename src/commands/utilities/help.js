@@ -3,7 +3,6 @@ const path = require('node:path');
 const fs = require('node:fs');
 const {SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
 const {createEmbed} = require('../../utils/embedUtils');
-const logger = require('../../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -13,13 +12,6 @@ module.exports = {
   deployGlobal: true,
 
   async execute(interaction) {
-    logger.info(
-      `Command ${interaction.commandName} invoked by ${
-        interaction.user.tag
-      } with arguments ${interaction.options._hoistedOptions
-        .map(option => `${option.name}: ${option.value}`)
-        .join(', ')}`
-    );
     const foldersPath = path.join(__dirname, '../'); // Adjust the path as needed
     const commandFolders = fs.readdirSync(foldersPath);
 

@@ -1,7 +1,6 @@
 const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
 const giveCash = require('../../modules/economy/tranfers/giveCash');
 const {createEmbed} = require('../../utils/embedUtils');
-const logger = require('../../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -31,13 +30,6 @@ module.exports = {
    * @throws Will send an error response to the user if there's an issue processing the transaction.
    */
   async execute(interaction) {
-    logger.info(
-      `Command ${interaction.commandName} invoked by ${
-        interaction.user.tag
-      } with arguments ${interaction.options._hoistedOptions
-        .map(option => `${option.name}: ${option.value}`)
-        .join(', ')}`
-    );
     await interaction.deferReply();
 
     const recipient = interaction.options.getUser('target_user');

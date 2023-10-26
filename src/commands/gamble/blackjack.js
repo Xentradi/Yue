@@ -1,6 +1,5 @@
 const Player = require('../../models/Player');
 const balance = require('../../modules/economy/balance');
-const logger = require('../../utils/logger');
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -23,13 +22,6 @@ module.exports = {
   deployGlobal: true,
 
   async execute(interaction) {
-    logger.info(
-      `Command ${interaction.commandName} invoked by ${
-        interaction.user.tag
-      } with arguments ${interaction.options._hoistedOptions
-        .map(option => `${option.name}: ${option.value}`)
-        .join(', ')}`
-    );
     const betAmount = interaction.options.getInteger('bet');
     const userId = interaction.user.id;
     const guildId = interaction.guild.id;

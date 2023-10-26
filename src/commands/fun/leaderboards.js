@@ -4,7 +4,6 @@ const getBankLeaderboard = require('../../modules/economy/leaderboards/bankLeade
 const getNetWorthLeaderboard = require('../../modules/economy/leaderboards/netWorthLeaderboard');
 const getDebtLeaderboard = require('../../modules/economy/leaderboards/debtLeaderboard');
 const {createEmbed} = require('../../utils/embedUtils');
-const logger = require('../../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -33,13 +32,6 @@ module.exports = {
    */
 
   async execute(interaction) {
-    logger.info(
-      `Command ${interaction.commandName} invoked by ${
-        interaction.user.tag
-      } with arguments ${interaction.options._hoistedOptions
-        .map(option => `${option.name}: ${option.value}`)
-        .join(', ')}`
-    );
     const subcommand = interaction.options.getSubcommand();
 
     let leaderboardData, emoji, title;

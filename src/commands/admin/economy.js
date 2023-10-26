@@ -94,21 +94,11 @@ module.exports = {
   deployGlobal: true,
 
   async execute(interaction) {
-    logger.info(
-      `Command ${interaction.commandName} invoked by ${
-        interaction.user.tag
-      } with arguments ${interaction.options._hoistedOptions
-        .map(option => `${option.name}: ${option.value}`)
-        .join(', ')}`
-    );
     await interaction.deferReply({ephemeral: true});
 
     if (
       !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
     ) {
-      logger.warn(
-        `User ${interaction.user.tag} attempted to use command ${interaction.commandName} without necessary permissions.`
-      );
       const responseEmbed = createEmbed({
         title: '❌ Permission Denied',
         description:
