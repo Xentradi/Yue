@@ -2,6 +2,7 @@ const {SlashCommandBuilder} = require('discord.js');
 const getCashLeaderboard = require('../../modules/economy/leaderboards/cashLeaderboard');
 const getBankLeaderboard = require('../../modules/economy/leaderboards/bankLeaderboard');
 const getNetWorthLeaderboard = require('../../modules/economy/leaderboards/netWorthLeaderboard');
+const getDebtLeaderboard = require('../../modules/economy/leaderboards/debtLeaderboard');
 const {createEmbed} = require('../../utils/embedUtils');
 const logger = require('../../utils/logger');
 
@@ -19,6 +20,9 @@ module.exports = {
       subcommand
         .setName('networth')
         .setDescription('View the net worth leaderboard')
+    )
+    .addSubcommand(subcommand =>
+      subcommand.setName('debt').setDescription('View the debt leaderboard')
     ),
   cooldown: 2,
   deployGlobal: true,
@@ -54,6 +58,11 @@ module.exports = {
         leaderboardData = await getNetWorthLeaderboard(interaction.guildId);
         emoji = ':military_medal: ';
         title = '💰 Net Worth Leaderboard';
+        break;
+      case 'debt':
+        leaderboardData = await getDebtLeaderboard(interaction.guildId);
+        emoji = ':military_medal: ';
+        title = '💳 Debt Leaderboard';
         break;
       // ... (Handle other cases like level and debt here, and assign appropriate emojis and titles)
     }
