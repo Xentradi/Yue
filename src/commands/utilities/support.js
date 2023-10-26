@@ -13,7 +13,7 @@ module.exports = {
       .setDescription(
         'For support, please visit [Our Support Server](https://discord.gg/KF5fbWsKdz)'
       )
-      .setFooter('Bot Support Command');
+      .setFooter({text: 'Bot Support Command'});
 
     await interaction.reply({embeds: [supportEmbed]});
   },
