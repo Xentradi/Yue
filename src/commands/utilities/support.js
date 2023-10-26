@@ -4,6 +4,8 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('support')
     .setDescription('Get support information.'),
+  cooldown: 1,
+  deployGlobal: true,
   async execute(interaction) {
     const supportEmbed = new MessageEmbed()
       .setColor('#0099ff')
