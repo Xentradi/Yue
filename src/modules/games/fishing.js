@@ -1,7 +1,7 @@
-const Player = require('../../../models/Player');
-const Lake = require('../../../models/Lake');
-const balance = require('../../economy/balance');
-const logger = require('../../../utils/logger');
+const Player = require('../../models/Player');
+const Lake = require('../../models/Lake');
+const balance = require('../economy/balance');
+const logger = require('../../utils/logger');
 
 /**
  * Allow a player to fish in the lake and get rewarded based on the fish they catch.

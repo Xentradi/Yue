@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const applyBankInterest = require('../modules/economy/bankOperations/interest');
-const restockLake = require('../modules/economy/games/restockLake');
+const restockLake = require('../modules/games/adminOperations/restockLake');
 const logger = require('../utils/logger');
 
 // Daily

@@ -1,5 +1,5 @@
-const Player = require('../../../models/Player');
-const balance = require('../../economy/balance');
+const Player = require('../../models/Player');
+const balance = require('../economy/balance');
 
 /**
  * Performs a dice roll, updates the player's cash balance based on the result, and returns detailed information about the operation.
