@@ -83,6 +83,8 @@ const playerSchema = new Schema({
   },
 });
 
+playerSchema.index({userId: 1, guildId: 1});
+
 /**
  * Updates the player's cash by a specified amount.
  * @async
