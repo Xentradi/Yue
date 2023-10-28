@@ -18,4 +18,6 @@ lakeSchema.method('updateFishStock', async (fishType, count, reward) => {
   return {success: true, fishStock: this.fishStock};
 });
 
+lakeSchema.index({guildId: 1});
+
 module.exports = {lakeSchema};
