@@ -6,4 +6,6 @@ const fishSchema = new Schema({
   reward: Number,
 });
 
+fishSchema.index({type: 1});
+
 module.exports = {fishSchema};
