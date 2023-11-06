@@ -1,7 +1,7 @@
 const cron = require('node-cron');
-const applyBankInterest = require('../modules/economy/bankOperations/interest');
-const restockLake = require('../modules/games/adminOperations/restockLake');
-const logger = require('../utils/logger');
+const applyBankInterest = require('../economy/bankOperations/interest');
+const restockLake = require('../games/adminOperations/restockLake');
+const logger = require('../../utils/logger');
 
 // Daily
 cron.schedule(
@@ -33,3 +33,5 @@ cron.schedule(
     timezone: 'Etc/UTC',
   }
 );
+
+// Daily

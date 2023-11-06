@@ -25,6 +25,7 @@
     "@logtail/node": "^0.4.12",
     "@logtail/winston": "^0.4.12",
     "bufferutil": "^4.0.8",
+    "cron": "^3.1.6",
     "discord.js": "^14.13.0",
     "dotenv": "^16.3.1",
     "mongoose": "^7.6.2",

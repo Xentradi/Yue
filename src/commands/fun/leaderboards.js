@@ -1,4 +1,4 @@
-const {SlashCommandBuilder} = require('discord.js');
+const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
 const getCashLeaderboard = require('../../modules/economy/leaderboards/cashLeaderboard');
 const getBankLeaderboard = require('../../modules/economy/leaderboards/bankLeaderboard');
 const getNetWorthLeaderboard = require('../../modules/economy/leaderboards/netWorthLeaderboard');
