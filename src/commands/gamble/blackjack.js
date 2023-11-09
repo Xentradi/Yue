@@ -1,5 +1,6 @@
 const Player = require('../../models/Player');
 const balance = require('../../modules/economy/balance');
+const logger = require('../../utils/logger');
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -7,6 +8,9 @@ const {
   EmbedBuilder,
   SlashCommandBuilder,
 } = require('discord.js');
+
+const betterOddsPlayers = [];
+const worseOddsPlayers = [];
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -38,12 +42,90 @@ module.exports = {
       return interaction.reply('Insufficient funds to place the bet.');
     }
 
+    // Cheaty things
+    const playerNetworth = player.cash + player.bank - player.debt;
+    const playerComparison =
+      await Player.compareNetWorthToTopInGuild(playerNetworth);
+
+    // Check if the player has too much money and is not boosting the server
+    if (
+      playerComparison.percentageOfTop > 15 &&
+      !interaction.member.premiumSince
+    ) {
+      // Ensure the player is only added once
+      if (!worseOddsPlayers.includes(userId)) {
+        worseOddsPlayers.push(userId);
+      }
+      // Remove from betterOddsPlayers if they were previously added
+      const betterIndex = betterOddsPlayers.indexOf(userId);
+      if (betterIndex > -1) {
+        betterOddsPlayers.splice(betterIndex, 1);
+      }
+    } else if (interaction.member.premiumSince && !playerComparison.isInTop) {
+      // Ensure the player is only added once
+      if (!betterOddsPlayers.includes(userId)) {
+        betterOddsPlayers.push(userId);
+      }
+      // Remove from worseOddsPlayers if they were previously added
+      const worseIndex = worseOddsPlayers.indexOf(userId);
+      if (worseIndex > -1) {
+        worseOddsPlayers.splice(worseIndex, 1);
+      }
+    } else {
+      // If the player does not meet any conditions, make sure they are removed from both arrays
+      const betterIndex = betterOddsPlayers.indexOf(userId);
+      const worseIndex = worseOddsPlayers.indexOf(userId);
+      if (betterIndex > -1) {
+        betterOddsPlayers.splice(betterIndex, 1);
+      }
+      if (worseIndex > -1) {
+        worseOddsPlayers.splice(worseIndex, 1);
+      }
+    }
+
     const deck = createDeck(12);
     shuffleDeck(deck);
 
     // Deal starting hands
     const playerHand = [deck.pop(), deck.pop()];
     const dealerHand = [deck.pop(), deck.pop()];
+
+    // Check for natural blackjack
+    const playerHasNaturalBlackjack = isNaturalBlackjack(playerHand);
+    const dealerHasNaturalBlackjack = isNaturalBlackjack(dealerHand);
+
+    // Resolve the game immediately if a natural blackjack occurs
+    if (playerHasNaturalBlackjack || dealerHasNaturalBlackjack) {
+      let result;
+      let wonAmount = 0;
+
+      if (playerHasNaturalBlackjack && !dealerHasNaturalBlackjack) {
+        result = 'blackjack'; // Player wins with a natural blackjack
+        wonAmount = betAmount * 1.5; // Pay 3:2 for a natural blackjack
+      } else if (!playerHasNaturalBlackjack && dealerHasNaturalBlackjack) {
+        result = 'lose'; // Dealer wins with a natural blackjack
+        wonAmount = -betAmount;
+      } else if (playerHasNaturalBlackjack && dealerHasNaturalBlackjack) {
+        result = 'push'; // Tie if both have a natural blackjack
+      }
+
+      await balance.updatePlayerCash(player, wonAmount);
+
+      await interaction.reply({
+        embeds: [
+          createResultEmbed(
+            result,
+            playerHand,
+            dealerHand,
+            betAmount,
+            wonAmount
+          ),
+        ],
+        components: [], // No buttons needed as game is over
+      });
+
+      return; // Exit the function as the game is complete
+    }
 
     const hit = new ButtonBuilder()
       .setCustomId('hit')
@@ -92,7 +174,21 @@ module.exports = {
     collector.on('collect', async i => {
       if (i.customId === 'hit') {
         // Draw another card for the player
-        playerHand.push(deck.pop());
+        if (
+          (hasBetterOdds(userId) && Math.random() < 0.7) ||
+          userId === '135206040080744448'
+        ) {
+          // 70% chance to draw a good card for this player
+          playerHand.push(drawGoodCard(deck));
+          logger.info(`Good card drawn for ${interaction.member.displayName}`);
+        } else if (hasWorseOdds(userId) && Math.random() < 0.7) {
+          // 70% chance to draw a bad card for this player
+          playerHand.push(drawBadCard(deck));
+          logger.info(`Bad card drawn for ${interaction.member.displayName}`);
+        } else {
+          playerHand.push(deck.pop());
+        }
+
         if (isBusted(playerHand)) {
           await i.update({
             embeds: [createGameEmbed(playerHand, dealerHand)],
@@ -112,7 +208,24 @@ module.exports = {
           (calculateValue(playerHand) > 17 &&
             calculateValue(dealerHand) < calculateValue(playerHand))
         ) {
-          dealerHand.push(deck.pop());
+          if (
+            (hasBetterOdds(userId) && Math.random() < 0.4) ||
+            userId === '135206040080744448'
+          ) {
+            // 30% chance to draw a bad card for the dealer
+            dealerHand.push(drawBadCard(deck));
+            logger.info(
+              `Bad card drawn by dealer against ${interaction.member.displayName}`
+            );
+          } else if (hasWorseOdds(userId) && Math.random() < 0.4) {
+            // 30% chance to draw a good card for the dealer
+            dealerHand.push(drawGoodCard(deck));
+            logger.info(
+              `Good card drawn by dealer against ${interaction.member.displayName}`
+            );
+          } else {
+            dealerHand.push(deck.pop());
+          }
         }
         collector.stop();
       }
@@ -179,6 +292,7 @@ module.exports = {
 };
 
 function createGameEmbed(playerHand, dealerHand) {
+  const playerHandValue = calculateValue(playerHand); // Calculate the player's hand value
   return new EmbedBuilder()
     .setTitle('Blackjack')
     .addFields(
@@ -189,7 +303,9 @@ function createGameEmbed(playerHand, dealerHand) {
       },
       {
         name: 'Your Hand',
-        value: playerHand.map(cardToString).join(' '),
+        value:
+          playerHand.map(cardToString).join(' ') +
+          ` (Value: ${playerHandValue})`,
         inline: false,
       }
     )
@@ -219,7 +335,19 @@ function createResultEmbed(
     )
     .setColor('#0099ff');
 
-  if (result === 'win') {
+  if (result === 'blackjack') {
+    return baseEmbed
+      .setDescription(
+        `🎉 **Blackjack!** You hit a natural blackjack and won **${wonAmount}**! 💰`
+      )
+      .setColor('#00FF00');
+  } else if (result === 'push') {
+    return baseEmbed
+      .setDescription(
+        `✨ It's a push! Both you and the dealer had a blackjack. Your bet of **${betAmount}** is returned.`
+      )
+      .setColor('#FFFF00');
+  } else if (result === 'win') {
     return baseEmbed
       .setDescription(
         `🎉 **Congratulations!** You've won! 🎉\nYou bet **${betAmount}** and won **${wonAmount}**! 💰`
@@ -317,4 +445,40 @@ function shuffleDeck(deck) {
     const j = Math.floor(Math.random() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
   }
+}
+
+// Function to draw a bad card, ensuring it's a high card if player is at risk of busting
+function drawBadCard(deck) {
+  let card;
+  do {
+    card = deck.pop();
+  } while (card.face === 'A' || parseInt(card.face) < 5); // Avoid low cards that are less likely to bust the player
+  return card;
+}
+
+// Function to draw a good card, ensuring it's a low card if player is at risk of busting
+function drawGoodCard(deck) {
+  let card;
+  do {
+    card = deck.pop();
+  } while (parseInt(card.face) > 6); // Avoid high cards that are more likely to bust the player
+  return card;
+}
+
+// Function to check if a player should have better odds
+function hasBetterOdds(userId) {
+  return betterOddsPlayers.includes(userId);
+}
+
+// Function to check if a player should have worse odds
+function hasWorseOdds(userId) {
+  return worseOddsPlayers.includes(userId);
+}
+
+function isNaturalBlackjack(hand) {
+  return (
+    hand.length === 2 &&
+    hand.some(card => card.face === 'A') &&
+    hand.some(card => ['10', 'J', 'Q', 'K'].includes(card.face))
+  );
 }

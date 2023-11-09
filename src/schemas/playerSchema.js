@@ -286,4 +286,74 @@ playerSchema.statics.getTopPlayersByExp = async function (limit = 10) {
   return await this.find().sort({level: -1, exp: -1}).limit(limit);
 };
 
+/**
+ * Retrieves the total currency (cash + bank) for a specified guild.
+ * @async
+ * @function getTotalCurrencyByGuild
+ * @static
+ * @param {string} guildId - The ID of the guild to retrieve total currency from.
+ * @returns {Promise<number>} The total currency of the guild.
+ */
+playerSchema.statics.getTotalCurrencyByGuild = async function (guildId) {
+  const result = await this.aggregate([
+    {$match: {guildId: guildId}},
+    {
+      $group: {
+        _id: null,
+        totalCash: {$sum: '$cash'},
+        totalBank: {$sum: '$bank'},
+      },
+    },
+    {$project: {totalCurrency: {$add: ['$totalCash', '$totalBank']}}},
+  ]);
+  return result[0] ? result[0].totalCurrency : 0;
+};
+
+/**
+ * Compares a given net worth value against the top 10 players' net worth within a specific guild.
+ * @async
+ * @function compareNetWorthToTopInGuild
+ * @static
+ * @param {number} netWorth - The net worth value to compare.
+ * @param {string} guildId - The guild's unique identifier to constrain the top 10 players.
+ * @returns {Promise<Object>} An object with comparison data.
+ */
+playerSchema.statics.compareNetWorthToTopInGuild = async function (
+  netWorth,
+  guildId
+) {
+  // Retrieve the top 10 players by net worth within the specific guild
+  const topPlayers = await this.find({guildId: guildId})
+    .sort({cash: -1, bank: -1})
+    .limit(30)
+    .lean();
+
+  // Calculate the total net worth of the top 10 players in the guild
+  const totalTopNetWorth = topPlayers.reduce(
+    (acc, player) => acc + player.cash + player.bank,
+    0
+  );
+
+  // Determine where the given net worth stands in comparison to the top 10 players
+  const sortedNetWorths = topPlayers
+    .map(player => player.cash + player.bank)
+    .concat(netWorth)
+    .sort((a, b) => b - a);
+  const rank = sortedNetWorths.indexOf(netWorth) + 1; // Add 1 to get the 1-based rank
+
+  // Calculate the percentage of the total top net worth that the given net worth represents
+  const percentageOfTop = (netWorth / totalTopNetWorth) * 100;
+
+  // Check if the given net worth is in the top 30
+  const isInTop = rank <= 30;
+
+  // Return the comparison data
+  return {
+    isInTop,
+    rank,
+    percentageOfTop,
+    totalTopNetWorth,
+  };
+};
+
 module.exports = {playerSchema};
