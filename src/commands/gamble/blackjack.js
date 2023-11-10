@@ -49,7 +49,7 @@ module.exports = {
 
     // Check if the player has too much money and is not boosting the server
     if (
-      playerComparison.percentageOfTop > 15 &&
+      playerComparison.percentageOfTop > 5 &&
       !interaction.member.premiumSince
     ) {
       // Ensure the player is only added once
@@ -138,7 +138,7 @@ module.exports = {
       .setStyle(ButtonStyle.Secondary);
 
     const row = new ActionRowBuilder().addComponents(hit, stand);
-
+    const playerHandValue = calculateValue(playerHand); // Calculate the player's hand value
     const embed = new EmbedBuilder()
       .setTitle('Blackjack')
       .addFields(
@@ -149,7 +149,9 @@ module.exports = {
         },
         {
           name: 'Your Hand',
-          value: playerHand.map(card => `${card.face}${card.suit} `).join(' '),
+          value:
+            playerHand.map(card => `${card.face}${card.suit} `).join(' ') +
+            `(Value: ${playerHandValue})`,
           inline: false,
         }
       )
@@ -191,7 +193,7 @@ module.exports = {
 
         if (isBusted(playerHand)) {
           await i.update({
-            embeds: [createGameEmbed(playerHand, dealerHand)],
+            embeds: [createGameEmbed(playerHand, dealerHand, true)],
             components: [], // Include the buttons again
           });
           collector.stop(); // stop collector if player busted
@@ -212,13 +214,13 @@ module.exports = {
             (hasBetterOdds(userId) && Math.random() < 0.4) ||
             userId === '135206040080744448'
           ) {
-            // 30% chance to draw a bad card for the dealer
+            // 40% chance to draw a bad card for the dealer
             dealerHand.push(drawBadCard(deck));
             logger.info(
               `Bad card drawn by dealer against ${interaction.member.displayName}`
             );
           } else if (hasWorseOdds(userId) && Math.random() < 0.4) {
-            // 30% chance to draw a good card for the dealer
+            // 40% chance to draw a good card for the dealer
             dealerHand.push(drawGoodCard(deck));
             logger.info(
               `Good card drawn by dealer against ${interaction.member.displayName}`
@@ -291,14 +293,25 @@ module.exports = {
   },
 };
 
-function createGameEmbed(playerHand, dealerHand) {
+function createGameEmbed(playerHand, dealerHand, revealDealer = false) {
   const playerHandValue = calculateValue(playerHand); // Calculate the player's hand value
+  const dealerHandValue = calculateValue(dealerHand); // Calculate the dealer's hand value
+  let dealerHandString = `${dealerHand[0].face}${dealerHand[0].suit}`;
+
+  if (revealDealer) {
+    // If we're revealing the dealer's hand
+    dealerHandString =
+      dealerHand.map(cardToString).join(' ') + ` (Value: ${dealerHandValue})`;
+  } else {
+    dealerHandString += ' ?'; // Keep the second card hidden
+  }
+
   return new EmbedBuilder()
     .setTitle('Blackjack')
     .addFields(
       {
         name: "Dealer's Hand",
-        value: `${dealerHand[0].face}${dealerHand[0].suit} ?`,
+        value: dealerHandString,
         inline: false,
       },
       {
@@ -319,17 +332,24 @@ function createResultEmbed(
   betAmount,
   wonAmount = 0
 ) {
+  const playerHandValue = calculateValue(playerHand);
+  const dealerHandValue = calculateValue(dealerHand);
+
   const baseEmbed = new EmbedBuilder()
     .setTitle('🎲 Blackjack Results 🎲')
     .addFields(
       {
         name: "🤵 Dealer's Hand",
-        value: dealerHand.map(cardToString).join(' '),
+        value:
+          dealerHand.map(cardToString).join(' ') +
+          ` (Value: ${dealerHandValue})`,
         inline: false,
       },
       {
         name: '🧑‍🤝‍🧑 Your Hand',
-        value: playerHand.map(cardToString).join(' '),
+        value:
+          playerHand.map(cardToString).join(' ') +
+          ` (Value: ${playerHandValue})`,
         inline: false,
       }
     )
@@ -449,20 +469,34 @@ function shuffleDeck(deck) {
 
 // Function to draw a bad card, ensuring it's a high card if player is at risk of busting
 function drawBadCard(deck) {
-  let card;
-  do {
-    card = deck.pop();
-  } while (card.face === 'A' || parseInt(card.face) < 5); // Avoid low cards that are less likely to bust the player
-  return card;
+  // Find the index of the next bad card
+  const badCardIndex = deck.findIndex(
+    card => !['A', '2', '3', '4', '5', '6'].includes(card.face)
+  );
+
+  // If a bad card is found, remove it from the deck and return it
+  if (badCardIndex !== -1) {
+    return deck.splice(badCardIndex, 1)[0];
+  } else {
+    // If no bad card is left, return the next card
+    return deck.shift(); // Removes the first element from an array and returns that removed element.
+  }
 }
 
 // Function to draw a good card, ensuring it's a low card if player is at risk of busting
 function drawGoodCard(deck) {
-  let card;
-  do {
-    card = deck.pop();
-  } while (parseInt(card.face) > 6); // Avoid high cards that are more likely to bust the player
-  return card;
+  // Find the index of the next good card
+  const goodCardIndex = deck.findIndex(card =>
+    ['A', '2', '3', '4', '5', '6'].includes(card.face)
+  );
+
+  // If a good card is found, remove it from the deck and return it
+  if (goodCardIndex !== -1) {
+    return deck.splice(goodCardIndex, 1)[0];
+  } else {
+    // If no good card is left, return the next card
+    return deck.shift(); // Removes the first element from an array and returns that removed element.
+  }
 }
 
 // Function to check if a player should have better odds
