@@ -127,6 +127,8 @@ module.exports = {
       return; // Exit the function as the game is complete
     }
 
+    const playerHandValue = calculateValue(playerHand); // Calculate the player's hand value
+
     const hit = new ButtonBuilder()
       .setCustomId('hit')
       .setLabel('Hit')
@@ -137,8 +139,20 @@ module.exports = {
       .setLabel('Stand')
       .setStyle(ButtonStyle.Secondary);
 
-    const row = new ActionRowBuilder().addComponents(hit, stand);
-    const playerHandValue = calculateValue(playerHand); // Calculate the player's hand value
+    const doubleDown = new ButtonBuilder()
+      .setCustomId('double_down')
+      .setLabel('Double Down')
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(
+        !(
+          playerHandValue === 9 ||
+          playerHandValue === 10 ||
+          playerHandValue === 11
+        )
+      );
+
+    const row = new ActionRowBuilder().addComponents(hit, stand, doubleDown);
+
     const embed = new EmbedBuilder()
       .setTitle('Blackjack')
       .addFields(
