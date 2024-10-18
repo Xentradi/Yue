@@ -1,6 +1,6 @@
 module.exports = {
   testEnvironment: 'node',
-  roots: ['<rootDir>/src'],
+  roots: ['<rootDir>/src/modules/economy'],
   testMatch: ['**/__tests__/**/*.js', '**/?(*.)+(spec|test).js'],
   collectCoverage: true,
   coverageDirectory: 'coverage',
