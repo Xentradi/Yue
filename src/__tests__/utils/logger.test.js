@@ -5,18 +5,22 @@ jest.mock('winston', () => ({
     warn: jest.fn(),
   })),
   format: {
-    combine: jest.fn(),
-    timestamp: jest.fn(),
-    printf: jest.fn(),
+    combine: jest.fn((...args) => args),
+    timestamp: jest.fn(() => jest.fn()),
+    printf: jest.fn(() => jest.fn()),
   },
   transports: {
     Console: jest.fn(),
   },
 }));
 
-jest.mock('winston-daily-rotate-file');
-jest.mock('@logtail/node');
-jest.mock('@logtail/winston');
+jest.mock('winston-daily-rotate-file', () => jest.fn());
+jest.mock('@logtail/node', () => ({
+  Logtail: jest.fn(),
+}));
+jest.mock('@logtail/winston', () => ({
+  LogtailTransport: jest.fn(),
+}));
 
 const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
@@ -27,6 +31,7 @@ describe('Logger', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.resetModules();
+    process.env.LOG_TOKEN = 'test-token'; // Ensure the environment variable is set before requiring the logger
   });
 
   it('should create a logger with the correct configuration', () => {
@@ -35,7 +40,7 @@ describe('Logger', () => {
     expect(winston.createLogger).toHaveBeenCalledTimes(1);
     expect(winston.createLogger).toHaveBeenCalledWith(expect.objectContaining({
       level: 'info',
-      format: expect.any(Function),
+      format: expect.any(Array),
       transports: expect.arrayContaining([
         expect.any(winston.transports.Console),
         expect.any(DailyRotateFile),
@@ -70,7 +75,6 @@ describe('Logger', () => {
   });
 
   it('should initialize Logtail with the correct token', () => {
-    process.env.LOG_TOKEN = 'test-token';
     require('../../utils/logger');
 
     expect(Logtail).toHaveBeenCalledWith('test-token');

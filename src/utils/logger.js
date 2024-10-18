@@ -4,8 +4,10 @@ const DailyRotateFile = require('winston-daily-rotate-file');
 const {Logtail} = require('@logtail/node');
 const {LogtailTransport} = require('@logtail/winston');
 
+console.log('Initializing Logtail with token:', process.env.LOG_TOKEN);
 const logtail = new Logtail(process.env.LOG_TOKEN);
 
+console.log('Creating logger with winston');
 const logger = createLogger({
   level: 'info', // Log only info and above, change to 'debug' or 'verbose' for more detailed logs
   format: format.combine(
@@ -27,4 +29,5 @@ const logger = createLogger({
   ],
 });
 
+console.log('Logger created and exported');
 module.exports = logger;

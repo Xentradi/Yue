@@ -36,20 +36,20 @@ describe('Command Handler', () => {
   });
 
   it('should load commands correctly', () => {
-    const validCommand = {
+    const mockValidCommand = {
       data: {name: 'validCommand'},
       execute: jest.fn(),
     };
     const invalidCommand = {};
 
-    jest.mock('commands/category1/command1.js', () => validCommand, {virtual: true});
+    jest.mock('commands/category1/command1.js', () => mockValidCommand, {virtual: true});
     jest.mock('commands/category1/command2.js', () => invalidCommand, {virtual: true});
-    jest.mock('commands/category2/command3.js', () => validCommand, {virtual: true});
+    jest.mock('commands/category2/command3.js', () => mockValidCommand, {virtual: true});
 
     commandHandler(mockClient);
 
     expect(mockClient.commands.set).toHaveBeenCalledTimes(2);
-    expect(mockClient.commands.set).toHaveBeenCalledWith('validCommand', validCommand);
+    expect(mockClient.commands.set).toHaveBeenCalledWith('validCommand', mockValidCommand);
     expect(logger.warn).toHaveBeenCalledTimes(1);
   });
 
