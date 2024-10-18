@@ -1,4 +1,4 @@
-const Player = require('../../../../models/Player');
+const BankService = require('../../../services/BankService');
 
 module.exports = async function giveBalance(interaction) {
   const user = interaction.options.getUser('user');
