@@ -1,5 +1,5 @@
-const Player = require('../../../../models/Player');
-const logger = require('../../../../utils/logger');
+const Player = require('../../../models/Player');
+const logger = require('../../../utils/logger');
 
 /**
  * Retrieves the balance details (cash, bank, and debt) for a specific player.

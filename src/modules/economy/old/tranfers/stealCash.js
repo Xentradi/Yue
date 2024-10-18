@@ -1,5 +1,5 @@
-const Player = require('../../../../models/Player');
-const logger = require('../../../../utils/logger');
+const Player = require('../../../models/Player');
+const logger = require('../../../utils/logger');
 
 /**
  * Attempt to steal cash from another user.
