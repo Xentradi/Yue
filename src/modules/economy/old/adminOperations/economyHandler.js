@@ -3,7 +3,7 @@ const setBalance = require('./setBalance');
 const giveBalance = require('./giveBalance');
 const resetBalance = require('./resetBalance');
 const airdrop = require('./airdrop');
-const logger = require('../../../utils/logger');
+const logger = require('../../../../utils/logger');
 
 /**
  * Handles economy admin actions such as setting, giving, resetting balances and airdrop.

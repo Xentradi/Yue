@@ -1,5 +1,5 @@
-const Player = require('../../../models/Player');
-const logger = require('../../../utils/logger');
+const Player = require('../../../../models/Player');
+const logger = require('../../../../utils/logger');
 
 /**
  * Allows a player to take a loan from the bank. The loan incurs a 10% immediate interest.

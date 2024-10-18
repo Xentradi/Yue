@@ -1,7 +1,7 @@
-const Player = require('../../../models/Player');
-const config = require('../../../config.json');
+const Player = require('../../../../models/Player');
+const config = require('../../../../config.json');
 const balance = require('../../economy/balance');
-const logger = require('../../../utils/logger');
+const logger = require('../../../../utils/logger');
 
 /**
  * Provides a daily cash bonus to a player.

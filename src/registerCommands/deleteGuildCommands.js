@@ -11,4 +11,4 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 rest
   .put(Routes.applicationGuildCommands(clientId, guildId), {body: []})
   .then(() => logger.info('Successfully deleted all guild commands.'))
-  .catch(console.error);
+  .catch(logger.error);

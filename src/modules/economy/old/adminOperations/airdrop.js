@@ -1,4 +1,4 @@
-const Player = require('../../../models/Player');
+const Player = require('../../../../models/Player');
 
 module.exports = async function airdrop(interaction) {
   const amount = interaction.options.getInteger('amount');

@@ -15,13 +15,12 @@ const statsSchema = require('./statsSchema');
  * @property {number} exp - The player's experience points.
  * @property {number} level - The player's level.
  * @property {number} cash - The player's cash.
+ * @property {number} standardCurrency - The amount of standard currency held by the player.
+ * @property {number} premiumCurrency - The amount of premium currency held by the player.
+ * @property {number} interest - The player's interest rate.
  * @property {number} bank - The player's bank balance.
  * @property {number} debt - The player's debt.
  * @property {number} reputation - The player's reputation.
- * @property {number} relationship - The player's relationship status.
- * @property {number} expMultiplier - Multiplier for experience points.
- * @property {number} cashMultiplier - Multiplier for cash.
- * @property {number} interestMultiplier - Multiplier for interest rates.
  * @property {Object} stats - The player's stats.
  */
 const playerSchema = new Schema({
@@ -45,6 +44,14 @@ const playerSchema = new Schema({
     type: Number,
     default: 0,
   },
+  standardCurrency: {
+    type: Number,
+    default: 0,
+  },
+  premiumCurrency: {
+    type: Number,
+    default: 0,
+  },
   bank: {
     type: Number,
     default: 0,
@@ -56,22 +63,6 @@ const playerSchema = new Schema({
   reputation: {
     type: Number,
     default: 0,
-  },
-  relationship: {
-    type: Number,
-    default: 0,
-  },
-  expMultiplier: {
-    type: Number,
-    default: 1,
-  },
-  cashMultiplier: {
-    type: Number,
-    default: 1,
-  },
-  interestMultiplier: {
-    type: Number,
-    default: 1,
   },
   lastDailyBonusClaim: {
     type: Date,

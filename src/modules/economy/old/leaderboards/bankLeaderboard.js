@@ -1,4 +1,4 @@
-const Player = require('../../../models/Player');
+const Player = require('../../../../models/Player');
 
 /**
  * Get the top players by bank balance.

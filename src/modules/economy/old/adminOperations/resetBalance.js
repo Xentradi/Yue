@@ -1,4 +1,4 @@
-const Player = require('../../../models/Player');
+const Player = require('../../../../models/Player');
 
 module.exports = async function resetBalance(interaction) {
   const user = interaction.options.getUser('user');

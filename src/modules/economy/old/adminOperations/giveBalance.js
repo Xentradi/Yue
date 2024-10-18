@@ -1,6 +1,6 @@
-const Player = require('../../../models/Player');
+const Player = require('../../../../models/Player');
 
-module.exports = async function setBalance(interaction) {
+module.exports = async function giveBalance(interaction) {
   const user = interaction.options.getUser('user');
   const userId = user.id;
   const guildId = interaction.guildId;
@@ -11,19 +11,18 @@ module.exports = async function setBalance(interaction) {
     return {success: false, error: 'Amount must be a positive value.'};
 
   try {
-    const player = await Player.findOneAndUpdate(
-      {userId, guildId},
-      {[field]: amount},
-      {new: true}
-    );
+    const player = await Player.findOne({userId, guildId});
 
     if (!player) return {success: false, error: 'User not found.'};
+
+    player[field] += amount;
+    await player.save();
 
     return {
       success: true,
       userId,
       field,
-      newAmount: amount,
+      newAmount: player[field],
     };
   } catch (error) {
     return {success: false, error: error.message};

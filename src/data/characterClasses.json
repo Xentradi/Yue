@@ -1,0 +1,344 @@
+{
+  "Mortal": {
+    "Unawakened": {
+      "strength": 1,
+      "dexterity": 1,
+      "intelligence": 1,
+      "charisma": 1,
+      "spirit": 1,
+      "focus": 1,
+      "endurance": 1,
+      "luck": 2,
+      "alchemy": 1,
+      "crafting": 1
+    },
+    "Awakened Mortal": {
+      "strength": 1,
+      "dexterity": 1,
+      "intelligence": 2,
+      "charisma": 1,
+      "spirit": 2,
+      "focus": 2,
+      "endurance": 1,
+      "luck": 2,
+      "alchemy": 1,
+      "crafting": 1
+    },
+    "Seeker": {
+      "strength": 1,
+      "dexterity": 2,
+      "intelligence": 3,
+      "charisma": 1,
+      "spirit": 2,
+      "focus": 3,
+      "endurance": 1,
+      "luck": 2,
+      "alchemy": 1,
+      "crafting": 1
+    }
+  },
+  "Qi Cultivator": {
+    "Qi Adept": {
+      "strength": 2,
+      "dexterity": 2,
+      "intelligence": 1,
+      "charisma": 1,
+      "spirit": 3,
+      "focus": 3,
+      "endurance": 2,
+      "luck": 1,
+      "alchemy": 1,
+      "crafting": 1
+    },
+    "Qi Master": {
+      "strength": 3,
+      "dexterity": 2,
+      "intelligence": 1,
+      "charisma": 1,
+      "spirit": 4,
+      "focus": 4,
+      "endurance": 3,
+      "luck": 1,
+      "alchemy": 1,
+      "crafting": 1
+    },
+    "Qi Sage": {
+      "strength": 4,
+      "dexterity": 2,
+      "intelligence": 1,
+      "charisma": 1,
+      "spirit": 5,
+      "focus": 5,
+      "endurance": 4,
+      "luck": 1,
+      "alchemy": 1,
+      "crafting": 1
+    }
+  },
+  "Martial Artist": {
+    "Warrior": {
+      "strength": 3,
+      "dexterity": 3,
+      "intelligence": 1,
+      "charisma": 1,
+      "spirit": 2,
+      "focus": 2,
+      "endurance": 3,
+      "luck": 1,
+      "alchemy": 1,
+      "crafting": 1
+    },
+    "Martial Champion": {
+      "strength": 4,
+      "dexterity": 4,
+      "intelligence": 1,
+      "charisma": 2,
+      "spirit": 2,
+      "focus": 3,
+      "endurance": 4,
+      "luck": 1,
+      "alchemy": 1,
+      "crafting": 1
+    },
+    "Combat Strategist": {
+      "strength": 3,
+      "dexterity": 4,
+      "intelligence": 2,
+      "charisma": 3,
+      "spirit": 2,
+      "focus": 4,
+      "endurance": 3,
+      "luck": 2,
+      "alchemy": 1,
+      "crafting": 1
+    }
+  },
+  "Demonic Cultivator": {
+    "Demonic Initiate": {
+      "strength": 2,
+      "dexterity": 1,
+      "intelligence": 2,
+      "charisma": 2,
+      "spirit": 3,
+      "focus": 3,
+      "endurance": 2,
+      "luck": 1,
+      "alchemy": 1,
+      "crafting": 1
+    },
+    "Demonic Lord": {
+      "strength": 3,
+      "dexterity": 1,
+      "intelligence": 3,
+      "charisma": 3,
+      "spirit": 4,
+      "focus": 4,
+      "endurance": 3,
+      "luck": 1,
+      "alchemy": 1,
+      "crafting": 1
+    },
+    "Soul Harvester": {
+      "strength": 4,
+      "dexterity": 1,
+      "intelligence": 4,
+      "charisma": 4,
+      "spirit": 5,
+      "focus": 5,
+      "endurance": 4,
+      "luck": 1,
+      "alchemy": 1,
+      "crafting": 1
+    }
+  },
+  "Elemental Master": {
+    "Element Acolyte": {
+      "strength": 1,
+      "dexterity": 2,
+      "intelligence": 3,
+      "charisma": 1,
+      "spirit": 3,
+      "focus": 3,
+      "endurance": 2,
+      "luck": 2,
+      "alchemy": 2,
+      "crafting": 1
+    },
+    "Elemental Sage": {
+      "strength": 1,
+      "dexterity": 3,
+      "intelligence": 4,
+      "charisma": 1,
+      "spirit": 4,
+      "focus": 4,
+      "endurance": 3,
+      "luck": 2,
+      "alchemy": 2,
+      "crafting": 1
+    },
+    "Elemental Warlock": {
+      "strength": 1,
+      "dexterity": 3,
+      "intelligence": 5,
+      "charisma": 1,
+      "spirit": 5,
+      "focus": 5,
+      "endurance": 3,
+      "luck": 2,
+      "alchemy": 2,
+      "crafting": 1
+    }
+  },
+  "Sword Immortal": {
+    "Sword Disciple": {
+      "strength": 3,
+      "dexterity": 4,
+      "intelligence": 1,
+      "charisma": 1,
+      "spirit": 2,
+      "focus": 3,
+      "endurance": 3,
+      "luck": 1,
+      "alchemy": 1,
+      "crafting": 2
+    },
+    "Sword Master": {
+      "strength": 4,
+      "dexterity": 5,
+      "intelligence": 1,
+      "charisma": 2,
+      "spirit": 3,
+      "focus": 4,
+      "endurance": 4,
+      "luck": 1,
+      "alchemy": 1,
+      "crafting": 2
+    },
+    "Blade Mystic": {
+      "strength": 5,
+      "dexterity": 5,
+      "intelligence": 1,
+      "charisma": 2,
+      "spirit": 4,
+      "focus": 5,
+      "endurance": 4,
+      "luck": 1,
+      "alchemy": 1,
+      "crafting": 2
+    }
+  },
+  "Beast Tamer": {
+    "Beast Whisperer": {
+      "strength": 2,
+      "dexterity": 2,
+      "intelligence": 2,
+      "charisma": 3,
+      "spirit": 3,
+      "focus": 3,
+      "endurance": 2,
+      "luck": 2,
+      "alchemy": 1,
+      "crafting": 1
+    },
+    "Beast Commander": {
+      "strength": 3,
+      "dexterity": 3,
+      "intelligence": 2,
+      "charisma": 4,
+      "spirit": 4,
+      "focus": 4,
+      "endurance": 3,
+      "luck": 2,
+      "alchemy": 1,
+      "crafting": 1
+    },
+    "Mythical Beast Master": {
+      "strength": 4,
+      "dexterity": 4,
+      "intelligence": 2,
+      "charisma": 5,
+      "spirit": 5,
+      "focus": 5,
+      "endurance": 4,
+      "luck": 2,
+      "alchemy": 1,
+      "crafting": 1
+    }
+  },
+  "Alchemy Adept": {
+    "Potion Brewer": {
+      "strength": 1,
+      "dexterity": 1,
+      "intelligence": 3,
+      "charisma": 1,
+      "spirit": 2,
+      "focus": 2,
+      "endurance": 1,
+      "luck": 2,
+      "alchemy": 3,
+      "crafting": 2
+    },
+    "Elixir Sage": {
+      "strength": 1,
+      "dexterity": 1,
+      "intelligence": 4,
+      "charisma": 1,
+      "spirit": 3,
+      "focus": 3,
+      "endurance": 1,
+      "luck": 2,
+      "alchemy": 4,
+      "crafting": 3
+    },
+    "Grand Alchemist": {
+      "strength": 1,
+      "dexterity": 1,
+      "intelligence": 5,
+      "charisma": 1,
+      "spirit": 4,
+      "focus": 4,
+      "endurance": 1,
+      "luck": 2,
+      "alchemy": 5,
+      "crafting": 4
+    }
+  },
+  "Seal Caster": {
+    "Rune Scribe": {
+      "strength": 1,
+      "dexterity": 1,
+      "intelligence": 3,
+      "charisma": 2,
+      "spirit": 2,
+      "focus": 3,
+      "endurance": 1,
+      "luck": 2,
+      "alchemy": 1,
+      "crafting": 2
+    },
+    "Seal Artisan": {
+      "strength": 1,
+      "dexterity": 1,
+      "intelligence": 4,
+      "charisma": 3,
+      "spirit": 3,
+      "focus": 4,
+      "endurance": 1,
+      "luck": 2,
+      "alchemy": 1,
+      "crafting": 3
+    },
+    "Seal Grandmaster": {
+      "strength": 1,
+      "dexterity": 1,
+      "intelligence": 5,
+      "charisma": 4,
+      "spirit": 4,
+      "focus": 5,
+      "endurance": 1,
+      "luck": 2,
+      "alchemy": 1,
+      "crafting": 4
+    }
+  }
+}
