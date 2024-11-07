@@ -1,4 +1,4 @@
-import BankService from '../../services/BankService';
+const BankService = require('../../services/BankService');
 
 describe('BankService', () => {
   test('deposit should add amount to user balance', async () => {

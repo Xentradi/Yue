@@ -1,4 +1,4 @@
-import LoanService from '../../services/LoanService';
+const LoanService = require('../../services/LoanService');
 
 describe('LoanService', () => {
   test('takeLoan should increase user debt by loan amount', async () => {

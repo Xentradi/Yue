@@ -1,4 +1,4 @@
-import StockService from '../../services/StockService';
+const StockService = require('../../services/StockService');
 
 describe('StockService', () => {
   test('buyStock should increase user stock holdings', async () => {
