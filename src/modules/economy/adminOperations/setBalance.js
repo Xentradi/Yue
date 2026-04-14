@@ -1,5 +1,7 @@
 const Player = require('../../../models/Player');
 
+const ALLOWED_FIELDS = new Set(['cash', 'bank', 'debt']);
+
 module.exports = async function setBalance(interaction) {
   const user = interaction.options.getUser('user');
   const userId = user.id;
@@ -7,14 +9,19 @@ module.exports = async function setBalance(interaction) {
   const field = interaction.options.getString('field');
   const amount = interaction.options.getInteger('amount');
 
-  if (amount < 0)
+  if (!ALLOWED_FIELDS.has(field)) {
+    return { success: false, error: 'Invalid balance field.' };
+  }
+
+  if (amount < 0) {
     return { success: false, error: 'Amount must be a positive value.' };
+  }
 
   try {
     const player = await Player.findOneAndUpdate(
       { userId, guildId },
-      { [field]: amount },
-      { new: true },
+      { $set: { [field]: amount } },
+      { returnDocument: 'after' },
     );
 
     if (!player) return { success: false, error: 'User not found.' };

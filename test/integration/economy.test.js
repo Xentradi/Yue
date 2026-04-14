@@ -9,6 +9,9 @@ const config = require('../../src/config.json');
 const dailyBonus = require('../../src/modules/economy/bonuses/dailyBonus');
 const deposit = require('../../src/modules/economy/bankOperations/deposit');
 const applyBankInterest = require('../../src/modules/economy/bankOperations/interest');
+const airdrop = require('../../src/modules/economy/adminOperations/airdrop');
+const giveBalance = require('../../src/modules/economy/adminOperations/giveBalance');
+const setBalance = require('../../src/modules/economy/adminOperations/setBalance');
 const repayLoan = require('../../src/modules/economy/loans/repayLoan');
 const withdraw = require('../../src/modules/economy/bankOperations/withdraw');
 const giveCash = require('../../src/modules/economy/tranfers/giveCash');
@@ -156,6 +159,81 @@ test('bank interest only touches the targeted guild', async () => {
   assert.ok(guildOne.debt > 1000);
   assert.equal(guildTwo.bank, 3000);
   assert.equal(guildTwo.debt, 2000);
+});
+
+test('admin set and give balance operations validate fields and debt behavior', async () => {
+  const userId = 'user-admin';
+  const guildId = 'guild-admin';
+
+  await Player.create({
+    userId,
+    guildId,
+    cash: 100,
+    bank: 200,
+    debt: 300,
+  });
+
+  const invalidSet = await setBalance({
+    guildId,
+    options: {
+      getUser: () => ({ id: userId }),
+      getString: () => 'casch',
+      getInteger: () => 500,
+    },
+  });
+  assert.equal(invalidSet.success, false);
+  assert.equal(invalidSet.error, 'Invalid balance field.');
+
+  const setCash = await setBalance({
+    guildId,
+    options: {
+      getUser: () => ({ id: userId }),
+      getString: (field) => (field === 'field' ? 'cash' : undefined),
+      getInteger: (field) => (field === 'amount' ? 900 : undefined),
+    },
+  });
+  assert.equal(setCash.success, true);
+  assert.equal(setCash.newAmount, 900);
+
+  const giveDebt = await giveBalance({
+    guildId,
+    options: {
+      getUser: () => ({ id: userId }),
+      getString: (field) => (field === 'field' ? 'debt' : undefined),
+      getInteger: (field) => (field === 'amount' ? 120 : undefined),
+    },
+  });
+  assert.equal(giveDebt.success, true);
+  assert.equal(giveDebt.newAmount, 180);
+
+  const player = await Player.findOne({ userId, guildId });
+  assert.equal(player.cash, 900);
+  assert.equal(player.bank, 200);
+  assert.equal(player.debt, 180);
+});
+
+test('admin airdrop credits all players in the guild', async () => {
+  const guildId = 'guild-airdrop';
+
+  await Player.create([
+    { userId: 'airdrop-a', guildId, cash: 10, bank: 0, debt: 0 },
+    { userId: 'airdrop-b', guildId, cash: 20, bank: 0, debt: 0 },
+  ]);
+
+  const result = await airdrop({
+    guildId,
+    options: {
+      getInteger: () => 50,
+    },
+  });
+
+  assert.equal(result.success, true);
+  assert.equal(result.amount, 50);
+  assert.equal(result.total, 100);
+
+  const players = await Player.find({ guildId }).sort({ userId: 1 });
+  assert.equal(players[0].cash, 60);
+  assert.equal(players[1].cash, 70);
 });
 
 test('lake restock persists the expected fish stock', async () => {

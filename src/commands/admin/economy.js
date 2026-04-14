@@ -28,7 +28,7 @@ module.exports = {
             .setDescription('Field to set (cash, bank, debt)')
             .setRequired(true)
             .addChoices(
-              { name: 'cash', value: 'casch' },
+              { name: 'cash', value: 'cash' },
               { name: 'bank', value: 'bank' },
               { name: 'debt', value: 'debt' },
             ),
@@ -53,7 +53,7 @@ module.exports = {
             .setDescription('Field to set (cash, bank, debt)')
             .setRequired(true)
             .addChoices(
-              { name: 'cash', value: 'casch' },
+              { name: 'cash', value: 'cash' },
               { name: 'bank', value: 'bank' },
               { name: 'debt', value: 'debt' },
             ),

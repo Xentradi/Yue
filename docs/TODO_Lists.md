@@ -57,6 +57,13 @@ This roadmap is ordered for the current maintenance pass. Stability work comes b
 - [P1] Add tests for balance, loan, and transfer flows
 - [P2] Add coverage for scheduled tasks and leaderboard queries
 
+### Deferred hardening
+
+These are the next stability follow-ups after admin balance hardening lands.
+
+- [P2] Harden fishing and lake flows against save-order inconsistencies
+- [P2] Add tests for steal behavior and scheduled maintenance paths
+
 ## Epic 5: Feature Backlog
 
 These items stay behind runtime, safety, and documentation work.
