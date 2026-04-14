@@ -23,14 +23,33 @@ module.exports = async function stealCash(
   const target = await Player.findOne({ userId: targetUserId, guildId });
 
   if (!player || !target) return null; // Handle players not found
-
-  // If the thief tries to steal more than the target has, default the amount to the target's total cash
-  if (amount > target.cash) {
-    amount = target.cash;
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return {
+      successful: false,
+      amountStolen: 0,
+      penalty: 0,
+      playerCash: player.cash,
+      targetCash: target.cash,
+      message: 'Invalid steal amount.',
+    };
   }
 
+  if (target.cash <= 0) {
+    return {
+      successful: false,
+      amountStolen: 0,
+      penalty: 0,
+      playerCash: player.cash,
+      targetCash: target.cash,
+      message: 'Target has no cash to steal.',
+    };
+  }
+
+  // If the thief tries to steal more than the target has, default the amount to the target's total cash
+  const stealAmount = Math.min(amount, target.cash);
+
   // Calculate success rate based on the new equation
-  const percentage = amount / target.cash;
+  const percentage = stealAmount / target.cash;
   const successRate = 0.9 / Math.pow(1 + Math.exp(20 * (percentage - 0.1)), 4);
 
   const successful = Math.random() < successRate;
@@ -43,28 +62,30 @@ module.exports = async function stealCash(
   };
 
   if (successful) {
-    player.cash += amount;
-    target.cash -= amount;
+    player.cash += stealAmount;
+    target.cash -= stealAmount;
 
     // Ensuring cash doesn't go below zero
     player.cash = Math.max(player.cash, 0);
     target.cash = Math.max(target.cash, 0);
 
-    result.amountStolen = amount;
+    result.amountStolen = stealAmount;
     result.playerCash = player.cash;
     result.targetCash = target.cash;
   } else {
-    const penalty = Math.ceil(getPenalty(amount));
+    const penalty = Math.ceil(getPenalty(stealAmount));
 
-    player.cash -= penalty;
-    if (player.cash < 0) {
-      player.bank += player.cash; // If cash goes negative, subtract from bank
-      player.cash = 0;
-    }
+    let remainingPenalty = penalty;
+    const cashPenalty = Math.min(player.cash, remainingPenalty);
+    player.cash -= cashPenalty;
+    remainingPenalty -= cashPenalty;
 
-    if (player.bank < 0) {
-      player.debt -= player.bank; // If bank goes negative, add to debt
-      player.bank = 0;
+    const bankPenalty = Math.min(player.bank, remainingPenalty);
+    player.bank -= bankPenalty;
+    remainingPenalty -= bankPenalty;
+
+    if (remainingPenalty > 0) {
+      player.debt += remainingPenalty;
     }
 
     result.penalty = penalty;

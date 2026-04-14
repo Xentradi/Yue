@@ -1,5 +1,9 @@
 const logger = require('../../utils/logger');
 
+function isFiniteNumber(amount) {
+  return typeof amount === 'number' && Number.isFinite(amount);
+}
+
 /**
  * Updates a player's cash balance.
  *
@@ -10,6 +14,9 @@ const logger = require('../../utils/logger');
  */
 module.exports.updatePlayerCash = async function (player, amount) {
   if (!player) return { success: false, message: 'Player not found.' };
+  if (!isFiniteNumber(amount)) {
+    return { success: false, message: 'Invalid amount.' };
+  }
 
   player.cash = Math.max(player.cash + amount, 0);
 
@@ -32,6 +39,9 @@ module.exports.updatePlayerCash = async function (player, amount) {
  */
 module.exports.updatePlayerBank = async function (player, amount) {
   if (!player) return { success: false, message: 'Player not found.' };
+  if (!isFiniteNumber(amount)) {
+    return { success: false, message: 'Invalid amount.' };
+  }
 
   player.bank = Math.max(player.bank + amount, 0);
 
@@ -55,6 +65,9 @@ module.exports.updatePlayerBank = async function (player, amount) {
  */
 module.exports.transferFunds = async function (player, amount, toBank = true) {
   if (!player) return { success: false, message: 'Player not found.' };
+  if (!isFiniteNumber(amount) || amount <= 0) {
+    return { success: false, message: 'Invalid transfer amount.' };
+  }
 
   if (toBank) {
     if (player.cash < amount)

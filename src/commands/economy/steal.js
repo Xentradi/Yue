@@ -36,6 +36,18 @@ module.exports = {
       amount,
     );
 
+    if (!data) {
+      const embedOptions = {
+        title: 'Heist Error',
+        description:
+          "Your heist didn't go as planned. Maybe the target couldn't be found?",
+        color: '#FF8C00',
+      };
+      const responseEmbed = createEmbed(embedOptions);
+      interaction.editReply({ embeds: [responseEmbed] });
+      return;
+    }
+
     const victoryMessage = [
       'Smooth moves, master thief!',
       "You're a natural! The heist went perfectly.",
@@ -53,18 +65,6 @@ module.exports = {
     const randomMessage = data.successful
       ? victoryMessage[Math.floor(Math.random() * victoryMessage.length)]
       : defeatMessage[Math.floor(Math.random() * defeatMessage.length)];
-
-    if (!data) {
-      const embedOptions = {
-        title: 'Heist Error',
-        description:
-          "Your heist didn't go as planned. Maybe the treasure chest was empty?",
-        color: '#FF8C00', // Suggesting an orange for error
-      };
-      const responseEmbed = createEmbed(embedOptions);
-      interaction.editReply({ embeds: [responseEmbed] });
-      return;
-    }
 
     let embedOptions;
 

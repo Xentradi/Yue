@@ -12,6 +12,20 @@ const logger = require('../../../utils/logger');
  * @throws Will log an error if saving to the database fails.
  */
 module.exports = async function restockLake(guildId, size = 1000) {
+  if (!guildId) {
+    return {
+      success: false,
+      message: 'Guild ID is required to restock a lake.',
+    };
+  }
+
+  if (!Number.isFinite(size) || size <= 0) {
+    return {
+      success: false,
+      message: 'Lake size must be a positive number.',
+    };
+  }
+
   const fishingOutcomes = [
     { type: 'Tilapia', reward: 10, rarity: 20 },
     { type: 'Salmon', reward: 10, rarity: 20 },

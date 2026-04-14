@@ -7,15 +7,16 @@ const logger = require('../../../utils/logger');
  *
  * @async
  * @function
+ * @param {string} [guildId] - The ID of the guild to update. If omitted, all players are updated.
  * @returns {Promise<Object>} An object containing the operation status and message.
  * @throws Will log an error if there's an issue with database access.
  */
-module.exports = async function applyBankInterest() {
+module.exports = async function applyBankInterest(guildId) {
   let players;
   try {
-    players = await Player.find();
+    players = await Player.find(guildId ? { guildId } : {});
   } catch (error) {
-    logger.error(`An error occured while fetching fetching players: ${error}`);
+    logger.error(`An error occurred while fetching players: ${error}`);
     return {
       success: false,
       message: 'Database error.',

@@ -8,6 +8,8 @@ const Lake = require('../../src/models/Lake');
 const config = require('../../src/config.json');
 const dailyBonus = require('../../src/modules/economy/bonuses/dailyBonus');
 const deposit = require('../../src/modules/economy/bankOperations/deposit');
+const applyBankInterest = require('../../src/modules/economy/bankOperations/interest');
+const repayLoan = require('../../src/modules/economy/loans/repayLoan');
 const withdraw = require('../../src/modules/economy/bankOperations/withdraw');
 const giveCash = require('../../src/modules/economy/tranfers/giveCash');
 const restockLake = require('../../src/modules/games/adminOperations/restockLake');
@@ -95,6 +97,65 @@ test('cash transfer updates both player balances', async () => {
 
   assert.equal(sender.cash, 700);
   assert.equal(recipient.cash, 450);
+});
+
+test('repay loan returns extra cash when the payment exceeds the debt', async () => {
+  const userId = 'user-loan';
+  const guildId = 'guild-loan';
+
+  await Player.create({
+    userId,
+    guildId,
+    cash: 100,
+    debt: 50,
+  });
+
+  const result = await repayLoan(userId, guildId, 70);
+  assert.equal(result.success, true);
+  assert.equal(result.repaidAmount, 50);
+  assert.equal(result.refundedAmount, 20);
+  assert.equal(result.remainingDebt, 0);
+  assert.equal(result.newBalance, 50);
+
+  const player = await Player.findOne({ userId, guildId });
+  assert.equal(player.cash, 50);
+  assert.equal(player.debt, 0);
+});
+
+test('bank interest only touches the targeted guild', async () => {
+  await Player.create([
+    {
+      userId: 'guild-one-player',
+      guildId: 'guild-one',
+      cash: 0,
+      bank: 2000,
+      debt: 1000,
+    },
+    {
+      userId: 'guild-two-player',
+      guildId: 'guild-two',
+      cash: 0,
+      bank: 3000,
+      debt: 2000,
+    },
+  ]);
+
+  const result = await applyBankInterest('guild-one');
+  assert.equal(result.success, true);
+
+  const guildOne = await Player.findOne({
+    userId: 'guild-one-player',
+    guildId: 'guild-one',
+  });
+  const guildTwo = await Player.findOne({
+    userId: 'guild-two-player',
+    guildId: 'guild-two',
+  });
+
+  assert.ok(guildOne.bank > 2000);
+  assert.ok(guildOne.debt > 1000);
+  assert.equal(guildTwo.bank, 3000);
+  assert.equal(guildTwo.debt, 2000);
 });
 
 test('lake restock persists the expected fish stock', async () => {

@@ -36,15 +36,20 @@ module.exports = async function repayLoan(userId, guildId, amount) {
     };
   }
 
-  player.debt -= amount;
+  if (player.debt <= 0) {
+    return {
+      success: false,
+      message: 'No outstanding debt to repay.',
+    };
+  }
+
+  const repaymentAmount = Math.min(amount, player.debt);
+  const refundAmount = amount - repaymentAmount;
+
+  player.debt -= repaymentAmount;
   player.cash -= amount;
-
-  player.debt = Math.max(player.debt, 0);
-  player.cash = Math.max(player.cash, 0);
-
-  if (player.debt < 0) {
-    player.cash += Math.abs(player.debt); // If they overpay, return the extra to cash
-    player.debt = 0;
+  if (refundAmount > 0) {
+    player.cash += refundAmount;
   }
 
   try {
@@ -59,7 +64,8 @@ module.exports = async function repayLoan(userId, guildId, amount) {
 
   return {
     success: true,
-    repaidAmount: amount,
+    repaidAmount: repaymentAmount,
+    refundedAmount: refundAmount,
     remainingDebt: player.debt,
     newBalance: player.cash,
   };
