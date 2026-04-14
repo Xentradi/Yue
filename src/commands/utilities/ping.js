@@ -1,4 +1,4 @@
-const {SlashCommandBuilder} = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const logger = require('../../utils/logger');
 
 module.exports = {
@@ -13,10 +13,10 @@ module.exports = {
     const reply = await interaction.fetchReply();
     const ping = reply.createdTimestamp - interaction.createdTimestamp;
     logger.info(
-      `Pong! Client ${ping}ms | Websocket: ${interaction.client.ws.ping}ms`
+      `Pong! Client ${ping}ms | Websocket: ${interaction.client.ws.ping}ms`,
     );
     interaction.editReply(
-      `Pong! Client: ${ping}ms | Websocket: ${interaction.client.ws.ping}ms`
+      `Pong! Client: ${ping}ms | Websocket: ${interaction.client.ws.ping}ms`,
     );
   },
 };

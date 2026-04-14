@@ -8,16 +8,16 @@ module.exports = async function setBalance(interaction) {
   const amount = interaction.options.getInteger('amount');
 
   if (amount < 0)
-    return {success: false, error: 'Amount must be a positive value.'};
+    return { success: false, error: 'Amount must be a positive value.' };
 
   try {
     const player = await Player.findOneAndUpdate(
-      {userId, guildId},
-      {[field]: amount},
-      {new: true}
+      { userId, guildId },
+      { [field]: amount },
+      { new: true },
     );
 
-    if (!player) return {success: false, error: 'User not found.'};
+    if (!player) return { success: false, error: 'User not found.' };
 
     return {
       success: true,
@@ -26,6 +26,6 @@ module.exports = async function setBalance(interaction) {
       newAmount: amount,
     };
   } catch (error) {
-    return {success: false, error: error.message};
+    return { success: false, error: error.message };
   }
 };

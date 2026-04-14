@@ -1,9 +1,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const {Collection} = require('discord.js');
+const { Collection } = require('discord.js');
 const logger = require('../utils/logger');
 
-module.exports = client => {
+module.exports = (client) => {
   // Command Handler
   client.commands = new Collection();
   client.cooldowns = new Collection();
@@ -14,7 +14,7 @@ module.exports = client => {
     const commandsPath = path.join(foldersPath, folder);
     const commandFiles = fs
       .readdirSync(commandsPath)
-      .filter(file => file.endsWith('.js'));
+      .filter((file) => file.endsWith('.js'));
     for (const file of commandFiles) {
       const filePath = path.join(commandsPath, file);
       const command = require(filePath);
@@ -22,7 +22,7 @@ module.exports = client => {
         client.commands.set(command.data.name, command);
       } else {
         logger.warn(
-          `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
+          `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`,
         );
       }
     }

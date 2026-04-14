@@ -1,4 +1,4 @@
-const {SlashCommandBuilder, EmbedBuilder} = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -11,10 +11,10 @@ module.exports = {
       .setColor('#0099ff')
       .setTitle('Need Support?')
       .setDescription(
-        'For support, please visit [Our Support Server](https://discord.gg/KF5fbWsKdz)'
+        'For support, please visit [Our Support Server](https://discord.gg/KF5fbWsKdz)',
       )
-      .setFooter({text: 'Bot Support Command'});
+      .setFooter({ text: 'Bot Support Command' });
 
-    await interaction.reply({embeds: [supportEmbed]});
+    await interaction.reply({ embeds: [supportEmbed] });
   },
 };

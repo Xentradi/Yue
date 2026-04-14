@@ -1,5 +1,5 @@
-const {SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
-const {createEmbed} = require('../../utils/embedUtils');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { createEmbed } = require('../../utils/embedUtils');
 const economyHandler = require('../../modules/economy/adminOperations/economyHandler');
 const logger = require('../../utils/logger');
 
@@ -7,94 +7,94 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('economy')
     .setDescription('Economy administrator operations')
-    .addSubcommand(subcommand =>
+    .addSubcommand((subcommand) =>
       subcommand
         .setName('get')
         .setDescription("Check a user's balances")
-        .addUserOption(option =>
-          option.setName('user').setDescription('The user').setRequired(true)
-        )
+        .addUserOption((option) =>
+          option.setName('user').setDescription('The user').setRequired(true),
+        ),
     )
-    .addSubcommand(subcommand =>
+    .addSubcommand((subcommand) =>
       subcommand
         .setName('set')
         .setDescription('Set the cash, bank, or debt of a user')
-        .addUserOption(option =>
-          option.setName('user').setDescription('The user').setRequired(true)
+        .addUserOption((option) =>
+          option.setName('user').setDescription('The user').setRequired(true),
         )
-        .addStringOption(option =>
+        .addStringOption((option) =>
           option
             .setName('field')
             .setDescription('Field to set (cash, bank, debt)')
             .setRequired(true)
             .addChoices(
-              {name: 'cash', value: 'casch'},
-              {name: 'bank', value: 'bank'},
-              {name: 'debt', value: 'debt'}
-            )
+              { name: 'cash', value: 'casch' },
+              { name: 'bank', value: 'bank' },
+              { name: 'debt', value: 'debt' },
+            ),
         )
-        .addIntegerOption(option =>
+        .addIntegerOption((option) =>
           option
             .setName('amount')
             .setDescription('Amount to set')
-            .setRequired(true)
-        )
+            .setRequired(true),
+        ),
     )
-    .addSubcommand(subcommand =>
+    .addSubcommand((subcommand) =>
       subcommand
         .setName('give')
         .setDescription('Give cash, bank, or decrease debt of a user')
-        .addUserOption(option =>
-          option.setName('user').setDescription('The user').setRequired(true)
+        .addUserOption((option) =>
+          option.setName('user').setDescription('The user').setRequired(true),
         )
-        .addStringOption(option =>
+        .addStringOption((option) =>
           option
             .setName('field')
             .setDescription('Field to set (cash, bank, debt)')
             .setRequired(true)
             .addChoices(
-              {name: 'cash', value: 'casch'},
-              {name: 'bank', value: 'bank'},
-              {name: 'debt', value: 'debt'}
-            )
+              { name: 'cash', value: 'casch' },
+              { name: 'bank', value: 'bank' },
+              { name: 'debt', value: 'debt' },
+            ),
         )
-        .addIntegerOption(option =>
+        .addIntegerOption((option) =>
           option
             .setName('amount')
             .setDescription('Amount to give')
-            .setRequired(true)
-        )
+            .setRequired(true),
+        ),
     )
-    .addSubcommand(subcommand =>
+    .addSubcommand((subcommand) =>
       subcommand
         .setName('reset')
         .setDescription("Reset all of a user's economy values to 0")
-        .addUserOption(option =>
+        .addUserOption((option) =>
           option
             .setName('user')
             .setDescription('The user to reset')
-            .setRequired(true)
-        )
+            .setRequired(true),
+        ),
     )
-    .addSubcommand(subcommand =>
+    .addSubcommand((subcommand) =>
       subcommand
         .setName('airdrop')
         .setDescription(
-          'Give everyone active in the channel an entered amount of cash'
+          'Give everyone active in the channel an entered amount of cash',
         )
-        .addIntegerOption(option =>
+        .addIntegerOption((option) =>
           option
             .setName('amount')
             .setDescription('Amount to airdrop to each active user')
-            .setRequired(true)
-        )
+            .setRequired(true),
+        ),
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   cooldown: 0,
   deployGlobal: true,
 
   async execute(interaction) {
-    await interaction.deferReply({ephemeral: true});
+    await interaction.deferReply({ ephemeral: true });
 
     if (
       !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
@@ -105,7 +105,7 @@ module.exports = {
           'You need administrator permissions to execute this command.',
         color: '#FF0000',
       });
-      return interaction.editReply({embeds: [responseEmbed]});
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
     const embedOptions = {};
     try {
@@ -117,9 +117,9 @@ module.exports = {
               interaction.options.getUser('user').displayName
             }`;
             embedOptions.fields = [
-              {name: '💵 Cash', value: `$${response.cash.toLocaleString()}`},
-              {name: '🏦 Bank', value: `$${response.bank.toLocaleString()}`},
-              {name: '📉 Debt', value: `$${response.debt.toLocaleString()}`},
+              { name: '💵 Cash', value: `$${response.cash.toLocaleString()}` },
+              { name: '🏦 Bank', value: `$${response.bank.toLocaleString()}` },
+              { name: '📉 Debt', value: `$${response.debt.toLocaleString()}` },
             ];
             break;
 
@@ -158,7 +158,7 @@ module.exports = {
         }
       } else {
         logger.error(
-          `Operation failed in command ${interaction.commandName}: ${response.error}`
+          `Operation failed in command ${interaction.commandName}: ${response.error}`,
         );
         embedOptions.title = '❌ Operation Failed';
         embedOptions.description = response.error;
@@ -166,13 +166,13 @@ module.exports = {
       }
     } catch (error) {
       logger.error(
-        `Error in command ${interaction.commandName} for user ${interaction.user.tag}: ${error.message}`
+        `Error in command ${interaction.commandName} for user ${interaction.user.tag}: ${error.message}`,
       );
       embedOptions.title = '❌ Operation Failed';
       embedOptions.description = `Command ${interaction.commandName} failed. Please see logs for more information.`;
       embedOptions.color = '#FF0000';
     }
     const responseEmbed = createEmbed(embedOptions);
-    interaction.editReply({embeds: [responseEmbed], ephemeral: true});
+    interaction.editReply({ embeds: [responseEmbed], ephemeral: true });
   },
 };

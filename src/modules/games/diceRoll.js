@@ -24,7 +24,7 @@ const balance = require('../economy/balance');
  * @property {string} [message] - Additional message, e.g., errors or insufficient funds notification.
  */
 module.exports = async function diceRoll(userId, guildId, choice, betAmount) {
-  const player = await Player.findOne({userId, guildId});
+  const player = await Player.findOne({ userId, guildId });
 
   const result = {
     success: false,
@@ -50,11 +50,11 @@ module.exports = async function diceRoll(userId, guildId, choice, betAmount) {
   result.playerBalanceBefore = player.cash;
 
   if (result.outcome === choice) {
-    const {success} = await balance.updatePlayerCash(player, betAmount * 5);
+    const { success } = await balance.updatePlayerCash(player, betAmount * 5);
     result.win = success;
     result.prize = success ? betAmount * 5 : 0;
   } else {
-    const {success} = await balance.updatePlayerCash(player, -betAmount);
+    const { success } = await balance.updatePlayerCash(player, -betAmount);
     result.prize = success ? -betAmount : 0;
   }
 

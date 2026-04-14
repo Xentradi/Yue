@@ -79,9 +79,6 @@ Here is the tree of the src directory of the bot:
  ┃ ┣ 📜lakeSchema.js
  ┃ ┣ 📜playerSchema.js
  ┃ ┗ 📜statsSchema.js
- ┣ 📂tests
- ┃ ┣ 📜balanceTest.js
- ┃ ┗ 📜lakeTest.js
  ┣ 📂utils
  ┃ ┣ 📜calculate.js
  ┃ ┣ 📜deleteGuildCommands.js

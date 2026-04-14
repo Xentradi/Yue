@@ -1,38 +1,43 @@
 {
-  "name": "bailan",
+  "name": "yue",
   "version": "1.0.0",
   "description": "",
   "main": "src/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "gts lint",
-    "clean": "gts clean",
-    "fix": "gts fix",
+    "start": "node src/main.js",
+    "dev": "node --watch src/main.js",
+    "test": "node --test",
+    "lint": "eslint .",
+    "clean": "node -e \"require('fs').rmSync('build', {recursive: true, force: true})\"",
+    "fix": "eslint . --fix && prettier . --write",
     "posttest": "npm run lint"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=24.14.1 <25"
+  },
   "devDependencies": {
-    "@types/node": "20.8.2",
-    "eslint": "^8.51.0",
-    "eslint-plugin-node": "^11.1.0",
-    "gts": "^5.2.0",
-    "nodemon": "^3.0.1",
-    "typescript": "~5.2.0"
+    "@eslint/js": "^9.37.0",
+    "@types/node": "^24.12.2",
+    "eslint": "^9.37.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-n": "^17.24.0",
+    "eslint-plugin-prettier": "^5.5.5",
+    "globals": "^17.5.0",
+    "mongodb-memory-server": "^11.0.1",
+    "prettier": "^3.6.2",
+    "typescript": "^6.0.2"
   },
   "dependencies": {
-    "@logtail/node": "^0.4.12",
-    "@logtail/winston": "^0.4.12",
-    "bufferutil": "^4.0.8",
-    "cron": "^3.1.6",
-    "discord.js": "^14.13.0",
-    "dotenv": "^16.3.1",
-    "mongoose": "^7.6.2",
-    "node-cron": "^3.0.2",
-    "utf-8-validate": "^6.0.3",
-    "winston": "^3.11.0",
-    "winston-daily-rotate-file": "^4.7.1",
-    "zlib-sync": "^0.1.8"
+    "@logtail/node": "^0.5.8",
+    "@logtail/winston": "^0.5.8",
+    "discord.js": "^14.26.2",
+    "dotenv": "^17.4.2",
+    "mongoose": "^9.4.1",
+    "node-cron": "^4.2.1",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
   }
 }

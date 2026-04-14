@@ -1,5 +1,5 @@
-const {Schema} = require('mongoose');
-const {fishSchema} = require('./fishSchema');
+const { Schema } = require('mongoose');
+const { fishSchema } = require('./fishSchema');
 
 const lakeSchema = new Schema({
   guildId: String,
@@ -7,17 +7,17 @@ const lakeSchema = new Schema({
   lastStocked: Date,
 });
 
-lakeSchema.method('updateFishStock', async (fishType, count, reward) => {
-  const fishIndex = this.fishStock.fishIndex(fish => fish.type === fishType);
+lakeSchema.method('updateFishStock', async function (fishType, count, reward) {
+  const fishIndex = this.fishStock.findIndex((fish) => fish.type === fishType);
   if (fishIndex !== -1) {
     this.fishStock[fishIndex].count += count;
   } else {
-    this.fishStock.push({type: fishType, count, reward});
+    this.fishStock.push({ type: fishType, count, reward });
   }
   await this.save();
-  return {success: true, fishStock: this.fishStock};
+  return { success: true, fishStock: this.fishStock };
 });
 
-lakeSchema.index({guildId: 1});
+lakeSchema.index({ guildId: 1 });
 
-module.exports = {lakeSchema};
+module.exports = { lakeSchema };

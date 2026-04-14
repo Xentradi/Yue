@@ -1,4 +1,4 @@
-const {Events} = require('discord.js');
+const { Events } = require('discord.js');
 //const reminderMessages = require('../modules/scheduledEvents/reminderMessages');
 const logger = require('../utils/logger');
 

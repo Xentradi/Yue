@@ -14,7 +14,7 @@ const logger = require('../../../utils/logger');
  * @throws Will log an error if there's an issue with database access.
  */
 module.exports = async function withdraw(userId, guildId, amount) {
-  const player = await Player.findOne({userId, guildId});
+  const player = await Player.findOne({ userId, guildId });
 
   if (!player) {
     return {

@@ -6,9 +6,9 @@ module.exports = async function resetBalance(interaction) {
   const guildId = interaction.guildId;
 
   try {
-    const player = await Player.findOne({userId, guildId});
+    const player = await Player.findOne({ userId, guildId });
 
-    if (!player) return {success: false, error: 'User not found.'};
+    if (!player) return { success: false, error: 'User not found.' };
 
     player.cash = 0;
     player.bank = 0;
@@ -20,6 +20,6 @@ module.exports = async function resetBalance(interaction) {
       userId,
     };
   } catch (error) {
-    return {success: false, error: error.message};
+    return { success: false, error: error.message };
   }
 };

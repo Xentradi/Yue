@@ -1,5 +1,5 @@
 const config = require('../config.json');
-const {PermissionFlagsBits} = require('discord.js');
+const { PermissionFlagsBits } = require('discord.js');
 const logger = require('../utils/logger');
 
 /**
@@ -15,14 +15,15 @@ const logger = require('../utils/logger');
  */
 module.exports.manageRoles = async function (member, level) {
   logger.debug(`manageRoles called for guildId: ${member.guild.id}`);
-  logger.debug(`member.guild.members.me: ${member.guild.members.me}`);
+  const me =
+    member.guild.members.me ??
+    (await member.guild.members.fetchMe().catch(() => null));
+  logger.debug(`member.guild.members.me: ${me}`);
 
   // Check if the bot has permissions to manage roles before doing anything.
-  if (
-    !member.guild.members.me.permissions.has(PermissionFlagsBits.ManageRoles)
-  ) {
+  if (!me?.permissions.has(PermissionFlagsBits.ManageRoles)) {
     logger.warn(
-      `Bot lacks the ManageRoles permission in guild ${member.guild.id}. Roles will not be issued.`
+      `Bot lacks the ManageRoles permission in guild ${member.guild.id}. Roles will not be issued.`,
     );
     return;
   }
@@ -34,7 +35,7 @@ module.exports.manageRoles = async function (member, level) {
     const newRole = guild.roles.cache.get(newRoleID);
     if (!newRole) {
       logger.error(
-        `Role with ID ${newRoleID} does not exist in guild ${guild.id}`
+        `Role with ID ${newRoleID} does not exist in guild ${guild.id}`,
       );
       return;
     }
@@ -49,7 +50,7 @@ module.exports.manageRoles = async function (member, level) {
           await member.roles.remove(oldRole).catch(logger.error);
         } else {
           logger.error(
-            `Role with ID ${roleID} does not exist in guild ${guild.id}`
+            `Role with ID ${roleID} does not exist in guild ${guild.id}`,
           );
         }
       }

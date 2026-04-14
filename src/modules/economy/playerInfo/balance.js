@@ -13,7 +13,7 @@ const logger = require('../../../utils/logger');
  */
 module.exports = async function getBalance(userId, guildId) {
   try {
-    const player = await Player.findOne({userId, guildId});
+    const player = await Player.findOne({ userId, guildId });
     // If the player doesn't exist in the database, return a success value of false with an appropriate message
     if (!player) {
       return {

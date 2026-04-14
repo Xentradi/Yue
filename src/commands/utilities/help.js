@@ -1,8 +1,8 @@
 // src/commands/utilities/help.js
 const path = require('node:path');
 const fs = require('node:fs');
-const {SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
-const {createEmbed} = require('../../utils/embedUtils');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { createEmbed } = require('../../utils/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -21,7 +21,7 @@ module.exports = {
       const commandsPath = path.join(foldersPath, folder);
       const commandFiles = fs
         .readdirSync(commandsPath)
-        .filter(file => file.endsWith('.js'));
+        .filter((file) => file.endsWith('.js'));
 
       let commandList = ''; // This will hold the list of commands in the current folder
 
@@ -33,7 +33,7 @@ module.exports = {
           if (
             isAdminCommand &&
             !interaction.member.permissions.has(
-              PermissionFlagsBits.Administrator
+              PermissionFlagsBits.Administrator,
             )
           ) {
             continue; // Skip admin commands for non-admin users
@@ -63,6 +63,6 @@ module.exports = {
 
     const helpEmbed = createEmbed(embedOptions);
 
-    await interaction.reply({embeds: [helpEmbed]});
+    await interaction.reply({ embeds: [helpEmbed] });
   },
 };

@@ -4,7 +4,7 @@
  * @requires mongoose
  */
 
-const {Schema} = require('mongoose');
+const { Schema } = require('mongoose');
 
 /**
  * @typedef {Object} Stats
@@ -20,16 +20,16 @@ const {Schema} = require('mongoose');
  * @property {number} crafting - The player's crafting skill.
  */
 const statsSchema = new Schema({
-  strength: {type: Number, default: 0},
-  dexterity: {type: Number, default: 0},
-  intelligence: {type: Number, default: 0},
-  charisma: {type: Number, default: 0},
-  spirit: {type: Number, default: 0},
-  focus: {type: Number, default: 0},
-  endurance: {type: Number, default: 0},
-  luck: {type: Number, default: 0},
-  alchemy: {type: Number, default: 0},
-  crafting: {type: Number, default: 0},
+  strength: { type: Number, default: 0 },
+  dexterity: { type: Number, default: 0 },
+  intelligence: { type: Number, default: 0 },
+  charisma: { type: Number, default: 0 },
+  spirit: { type: Number, default: 0 },
+  focus: { type: Number, default: 0 },
+  endurance: { type: Number, default: 0 },
+  luck: { type: Number, default: 0 },
+  alchemy: { type: Number, default: 0 },
+  crafting: { type: Number, default: 0 },
 });
 
 /**
@@ -42,9 +42,9 @@ const statsSchema = new Schema({
 statsSchema.method('updateStat', function (stat, amount) {
   if (this[stat] !== undefined && this[stat] + amount >= 0) {
     this[stat] += amount;
-    return {success: true, newStatValue: this[stat]};
+    return { success: true, newStatValue: this[stat] };
   }
-  return {success: false, error: 'Invalid stat or amount.'};
+  return { success: false, error: 'Invalid stat or amount.' };
 });
 
 /**
@@ -66,7 +66,7 @@ statsSchema.method('updateStats', function (updates) {
       };
     }
   }
-  return {success: true, newStatValues: newValues};
+  return { success: true, newStatValues: newValues };
 });
 
 /**
@@ -78,7 +78,7 @@ statsSchema.method('updateStats', function (updates) {
 statsSchema.method('updateAllStats', function (updates) {
   const newValues = {};
   const statsKeys = Object.keys(this.toObject()).filter(
-    key => typeof this[key] === 'number'
+    (key) => typeof this[key] === 'number',
   );
   for (const stat of statsKeys) {
     const amount = updates[stat];
@@ -86,10 +86,10 @@ statsSchema.method('updateAllStats', function (updates) {
       this[stat] += amount;
       newValues[stat] = this[stat];
     } else if (amount !== undefined) {
-      return {success: false, error: `Invalid amount for stat: ${stat}.`};
+      return { success: false, error: `Invalid amount for stat: ${stat}.` };
     }
   }
-  return {success: true, newStatValues: newValues};
+  return { success: true, newStatValues: newValues };
 });
 
 /**
@@ -123,7 +123,7 @@ statsSchema.method('setAllStats', function (values) {
       };
     }
   }
-  return {success: true, newStatValues: newValues};
+  return { success: true, newStatValues: newValues };
 });
 
 statsSchema.method('reset', async function (stat) {
@@ -132,4 +132,4 @@ statsSchema.method('reset', async function (stat) {
   }
 });
 
-module.exports = {statsSchema};
+module.exports = { statsSchema };

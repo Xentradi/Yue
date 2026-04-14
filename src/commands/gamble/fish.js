@@ -1,6 +1,6 @@
-const {SlashCommandBuilder} = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const fishing = require('../../modules/games/fishing');
-const {createEmbed} = require('../../utils/embedUtils');
+const { createEmbed } = require('../../utils/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -51,7 +51,7 @@ module.exports = {
         embedOptions = {
           title: '😞 Unlucky!',
           description: `Your line broke and you lost $${Math.abs(
-            catchResult.reward
+            catchResult.reward,
           )}. Better luck next time!`,
           color: '#808080',
         };
@@ -66,6 +66,6 @@ module.exports = {
     }
 
     const responseEmbed = createEmbed(embedOptions);
-    interaction.editReply({embeds: [responseEmbed]});
+    interaction.editReply({ embeds: [responseEmbed] });
   },
 };

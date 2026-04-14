@@ -16,11 +16,11 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('blackjack')
     .setDescription('Play a game of blackjack against the bot')
-    .addIntegerOption(option =>
+    .addIntegerOption((option) =>
       option
         .setName('bet')
         .setDescription('The amount you wish to wager')
-        .setRequired(true)
+        .setRequired(true),
     ),
   cooldown: 3,
   deployGlobal: true,
@@ -32,12 +32,12 @@ module.exports = {
 
     if (betAmount <= 0) {
       return interaction.reply(
-        'Invalid bet amount. Please enter a positive value.'
+        'Invalid bet amount. Please enter a positive value.',
       );
     }
 
     // Verify player balance before proceeding
-    const player = await Player.findOne({userId, guildId});
+    const player = await Player.findOne({ userId, guildId });
     if (!player || player.cash < betAmount) {
       return interaction.reply('Insufficient funds to place the bet.');
     }
@@ -118,7 +118,7 @@ module.exports = {
             playerHand,
             dealerHand,
             betAmount,
-            wonAmount
+            wonAmount,
           ),
         ],
         components: [], // No buttons needed as game is over
@@ -148,7 +148,7 @@ module.exports = {
           playerHandValue === 9 ||
           playerHandValue === 10 ||
           playerHandValue === 11
-        )
+        ),
       );
 
     const row = new ActionRowBuilder().addComponents(hit, stand, doubleDown);
@@ -164,17 +164,17 @@ module.exports = {
         {
           name: 'Your Hand',
           value:
-            playerHand.map(card => `${card.face}${card.suit} `).join(' ') +
+            playerHand.map((card) => `${card.face}${card.suit} `).join(' ') +
             `(Value: ${playerHandValue})`,
           inline: false,
-        }
+        },
       )
       .setColor('#0099ff');
 
-    await interaction.reply({embeds: [embed], components: [row]});
+    await interaction.reply({ embeds: [embed], components: [row] });
 
     // Create a filter to only collect button interactions from the message author
-    const filter = i => {
+    const filter = (i) => {
       return (
         (i.customId === 'hit' || i.customId === 'stand') && i.user.id === userId
       );
@@ -187,7 +187,7 @@ module.exports = {
     }); // 30 seconds timeout
 
     // Set up a collector event listener
-    collector.on('collect', async i => {
+    collector.on('collect', async (i) => {
       if (i.customId === 'hit') {
         // Draw another card for the player
         if (
@@ -231,13 +231,13 @@ module.exports = {
             // 40% chance to draw a bad card for the dealer
             dealerHand.push(drawBadCard(deck));
             logger.info(
-              `Bad card drawn by dealer against ${interaction.member.displayName}`
+              `Bad card drawn by dealer against ${interaction.member.displayName}`,
             );
           } else if (hasWorseOdds(userId) && Math.random() < 0.4) {
             // 40% chance to draw a good card for the dealer
             dealerHand.push(drawGoodCard(deck));
             logger.info(
-              `Good card drawn by dealer against ${interaction.member.displayName}`
+              `Good card drawn by dealer against ${interaction.member.displayName}`,
             );
           } else {
             dealerHand.push(deck.pop());
@@ -247,7 +247,7 @@ module.exports = {
       }
     });
 
-    collector.on('end', async collected => {
+    collector.on('end', async (collected) => {
       if (collected.size === 0) {
         interaction.followUp('Game ended due to inactivity.'); // Inform the user
       }
@@ -298,7 +298,7 @@ module.exports = {
             playerHand,
             dealerHand,
             betAmount,
-            wonAmount
+            wonAmount,
           ),
         ],
         components: [], // Disable the buttons
@@ -334,7 +334,7 @@ function createGameEmbed(playerHand, dealerHand, revealDealer = false) {
           playerHand.map(cardToString).join(' ') +
           ` (Value: ${playerHandValue})`,
         inline: false,
-      }
+      },
     )
     .setColor('#0099ff');
 }
@@ -344,7 +344,7 @@ function createResultEmbed(
   playerHand,
   dealerHand,
   betAmount,
-  wonAmount = 0
+  wonAmount = 0,
 ) {
   const playerHandValue = calculateValue(playerHand);
   const dealerHandValue = calculateValue(dealerHand);
@@ -365,44 +365,44 @@ function createResultEmbed(
           playerHand.map(cardToString).join(' ') +
           ` (Value: ${playerHandValue})`,
         inline: false,
-      }
+      },
     )
     .setColor('#0099ff');
 
   if (result === 'blackjack') {
     return baseEmbed
       .setDescription(
-        `🎉 **Blackjack!** You hit a natural blackjack and won **${wonAmount}**! 💰`
+        `🎉 **Blackjack!** You hit a natural blackjack and won **${wonAmount}**! 💰`,
       )
       .setColor('#00FF00');
   } else if (result === 'push') {
     return baseEmbed
       .setDescription(
-        `✨ It's a push! Both you and the dealer had a blackjack. Your bet of **${betAmount}** is returned.`
+        `✨ It's a push! Both you and the dealer had a blackjack. Your bet of **${betAmount}** is returned.`,
       )
       .setColor('#FFFF00');
   } else if (result === 'win') {
     return baseEmbed
       .setDescription(
-        `🎉 **Congratulations!** You've won! 🎉\nYou bet **${betAmount}** and won **${wonAmount}**! 💰`
+        `🎉 **Congratulations!** You've won! 🎉\nYou bet **${betAmount}** and won **${wonAmount}**! 💰`,
       )
       .setColor('#00FF00');
   } else if (result === 'lose') {
     return baseEmbed
       .setDescription(
-        `😢 **Oh no!** You've lost! 😢\nYou bet **${betAmount}** and lost it. Better luck next time! 🍀`
+        `😢 **Oh no!** You've lost! 😢\nYou bet **${betAmount}** and lost it. Better luck next time! 🍀`,
       )
       .setColor('#FF0000');
   } else if (result === 'tie') {
     return baseEmbed
       .setDescription(
-        `🤝 It's a tie! 🤝\nYou get your bet of **${betAmount}** back. Try again for a win! 🌟`
+        `🤝 It's a tie! 🤝\nYou get your bet of **${betAmount}** back. Try again for a win! 🌟`,
       )
       .setColor('#FFFF00');
   } else if (result === 'busted') {
     return baseEmbed
       .setDescription(
-        `💥 Busted! You've lost this round! 💥\nYou bet **${betAmount}** and lost it. Don't give up; keep trying! 🌈`
+        `💥 Busted! You've lost this round! 💥\nYou bet **${betAmount}** and lost it. Don't give up; keep trying! 🌈`,
       )
       .setColor('#FF0000');
   }
@@ -418,7 +418,7 @@ function calculateValue(hand) {
   let value = 0;
   let aceCount = 0;
 
-  hand.forEach(card => {
+  hand.forEach((card) => {
     if (card.face === 'A') {
       aceCount++;
       value += 11;
@@ -466,7 +466,7 @@ function createDeck(numDecks = 1) {
     // Loop for each deck
     for (const suit of suits) {
       for (const face of faces) {
-        deck.push({suit, face});
+        deck.push({ suit, face });
       }
     }
   }
@@ -485,7 +485,7 @@ function shuffleDeck(deck) {
 function drawBadCard(deck) {
   // Find the index of the next bad card
   const badCardIndex = deck.findIndex(
-    card => !['A', '2', '3', '4', '5', '6'].includes(card.face)
+    (card) => !['A', '2', '3', '4', '5', '6'].includes(card.face),
   );
 
   // If a bad card is found, remove it from the deck and return it
@@ -500,8 +500,8 @@ function drawBadCard(deck) {
 // Function to draw a good card, ensuring it's a low card if player is at risk of busting
 function drawGoodCard(deck) {
   // Find the index of the next good card
-  const goodCardIndex = deck.findIndex(card =>
-    ['A', '2', '3', '4', '5', '6'].includes(card.face)
+  const goodCardIndex = deck.findIndex((card) =>
+    ['A', '2', '3', '4', '5', '6'].includes(card.face),
   );
 
   // If a good card is found, remove it from the deck and return it
@@ -526,7 +526,7 @@ function hasWorseOdds(userId) {
 function isNaturalBlackjack(hand) {
   return (
     hand.length === 2 &&
-    hand.some(card => card.face === 'A') &&
-    hand.some(card => ['10', 'J', 'Q', 'K'].includes(card.face))
+    hand.some((card) => card.face === 'A') &&
+    hand.some((card) => ['10', 'J', 'Q', 'K'].includes(card.face))
   );
 }

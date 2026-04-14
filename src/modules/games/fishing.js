@@ -13,8 +13,8 @@ const logger = require('../../utils/logger');
  */
 
 module.exports = async function fish(userId, guildId) {
-  const player = await Player.findOne({userId, guildId});
-  const lake = await Lake.findOne({guildId});
+  const player = await Player.findOne({ userId, guildId });
+  const lake = await Lake.findOne({ guildId });
 
   if (!player) {
     return {
@@ -42,7 +42,7 @@ module.exports = async function fish(userId, guildId) {
   // Use the updatePlayerCash function to handle cash updates
   const updateCashResult = await balance.updatePlayerCash(
     player,
-    outcome.reward
+    outcome.reward,
   );
 
   if (!updateCashResult.success) {
@@ -67,7 +67,7 @@ module.exports = async function fish(userId, guildId) {
     };
   } catch (err) {
     logger.error(
-      `An error occured while processing the fishing attempt: ${err}`
+      `An error occured while processing the fishing attempt: ${err}`,
     );
     return {
       success: false,
@@ -83,7 +83,7 @@ module.exports = async function fish(userId, guildId) {
  * @returns {boolean} True if there's at least one fish left, false otherwise.
  */
 function lakeHasFish(lake) {
-  return lake.fishStock.some(fish => fish.count > 0);
+  return lake.fishStock.some((fish) => fish.count > 0);
 }
 
 /**
@@ -94,8 +94,8 @@ function lakeHasFish(lake) {
  */
 function selectFishFromLake(lake) {
   // Convert the fish array into a weighted array
-  const weightedFishes = lake.fishStock.flatMap(fish =>
-    Array(fish.count).fill(fish)
+  const weightedFishes = lake.fishStock.flatMap((fish) =>
+    Array(fish.count).fill(fish),
   );
 
   if (weightedFishes.length === 0) return null;
@@ -105,7 +105,7 @@ function selectFishFromLake(lake) {
     weightedFishes[Math.floor(Math.random() * weightedFishes.length)];
 
   // Decrement the fish count in the lake
-  const fishInLake = lake.fishStock.find(f => f.type === randomFish.type);
+  const fishInLake = lake.fishStock.find((f) => f.type === randomFish.type);
   fishInLake.count -= 1;
 
   return randomFish;

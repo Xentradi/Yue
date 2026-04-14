@@ -1,6 +1,6 @@
-const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const dailyBonus = require('../../modules/economy/bonuses/dailyBonus');
-const {createEmbed} = require('../../utils/embedUtils');
+const { createEmbed } = require('../../utils/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -9,9 +9,6 @@ module.exports = {
   cooldown: '1s',
   deployGlobal: true,
 
-  /**
-   * @param {BaseInteraction} interaction
-   */
   async execute(interaction) {
     await interaction.deferReply();
     const data = await dailyBonus(interaction.user.id, interaction.guildId);
@@ -39,6 +36,6 @@ module.exports = {
     }
 
     const responseEmbed = createEmbed(embedOptions);
-    interaction.editReply({embeds: [responseEmbed]});
+    interaction.editReply({ embeds: [responseEmbed] });
   },
 };

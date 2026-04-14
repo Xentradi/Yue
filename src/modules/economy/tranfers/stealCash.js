@@ -17,10 +17,10 @@ module.exports = async function stealCash(
   userId,
   targetUserId,
   guildId,
-  amount
+  amount,
 ) {
-  const player = await Player.findOne({userId, guildId});
-  const target = await Player.findOne({userId: targetUserId, guildId});
+  const player = await Player.findOne({ userId, guildId });
+  const target = await Player.findOne({ userId: targetUserId, guildId });
 
   if (!player || !target) return null; // Handle players not found
 
@@ -82,7 +82,7 @@ module.exports = async function stealCash(
   return result;
 };
 
-const getPenalty = amount => {
+const getPenalty = (amount) => {
   let penaltyRate = 1.5; // 150% base penalty
 
   if (amount > 1000) {

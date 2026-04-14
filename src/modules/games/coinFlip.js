@@ -27,7 +27,7 @@ const balance = require('../economy/balance');
  */
 
 module.exports = async function coinFlip(userId, guildId, choice, betAmount) {
-  const player = await Player.findOne({userId, guildId});
+  const player = await Player.findOne({ userId, guildId });
 
   const result = {
     success: false,

@@ -5,7 +5,8 @@
  * @requires statsSchema
  */
 
-const {Schema} = require('mongoose');
+const mongoose = require('mongoose');
+const { Schema } = require('mongoose');
 const statsSchema = require('./statsSchema');
 
 /**
@@ -83,7 +84,7 @@ const playerSchema = new Schema({
   },
 });
 
-playerSchema.index({userId: 1, guildId: 1});
+playerSchema.index({ userId: 1, guildId: 1 });
 
 /**
  * Updates the player's cash by a specified amount.
@@ -94,11 +95,11 @@ playerSchema.index({userId: 1, guildId: 1});
  */
 playerSchema.method('updateCash', async function (amount) {
   if (amount < 0 && Math.abs(amount) > this.cash) {
-    return {success: false, error: 'Insufficient funds.'};
+    return { success: false, error: 'Insufficient funds.' };
   }
   this.cash += amount;
   await this.save();
-  return {success: true, newBalance: this.cash};
+  return { success: true, newBalance: this.cash };
 });
 
 /**
@@ -111,7 +112,7 @@ playerSchema.method('updateCash', async function (amount) {
 playerSchema.method('updateExp', async function (amount) {
   this.exp += amount;
   await this.save();
-  return {success: true, newExp: this.exp};
+  return { success: true, newExp: this.exp };
 });
 
 /**
@@ -123,11 +124,11 @@ playerSchema.method('updateExp', async function (amount) {
  */
 playerSchema.method('setCash', async function (amount) {
   if (amount < 0) {
-    return {success: false, error: 'Amount must be a positive value.'};
+    return { success: false, error: 'Amount must be a positive value.' };
   }
   this.cash = amount;
   await this.save();
-  return {success: true, newBalance: this.cash};
+  return { success: true, newBalance: this.cash };
 });
 
 /**
@@ -135,15 +136,15 @@ playerSchema.method('setCash', async function (amount) {
  * @async
  * @function setExp
  * @param {number} amount - The amount to set the experience points to.
- * @returns {Promise<Object>} An object indicating success and the new experience points or an error message.
+ * @returns {Promise<Object>} Success state and the new experience points.
  */
-playerSchema.method('setExp', async amount => {
+playerSchema.method('setExp', async function (amount) {
   if (amount < 0) {
-    return {success: false, error: 'Amount must be a positive value.'};
+    return { success: false, error: 'Amount must be a positive value.' };
   }
   this.exp = amount;
   await this.save();
-  return {success: true, newBalance: this.cash};
+  return { success: true, newExp: this.exp };
 });
 
 /**
@@ -156,7 +157,7 @@ playerSchema.method('setExp', async amount => {
 playerSchema.method('setValues', async function (values) {
   Object.assign(this, values);
   await this.save();
-  return {success: true, updatedPlayer: this};
+  return { success: true, updatedPlayer: this };
 });
 
 /**
@@ -177,40 +178,40 @@ playerSchema.method('hasEnoughCash', function (amount) {
  * @param {string} playerAId - The ID of the player transferring currency.
  * @param {string} playerBId - The ID of the player receiving currency.
  * @param {number} amount - The amount of currency to transfer.
- * @returns {Promise<Object>} An object indicating success and the updated player documents or an error message.
+ * @returns {Promise<Object>} Success state and the updated player documents.
  */
 playerSchema.statics.transferCurrency = async function (
   playerAId,
   playerBId,
-  amount
+  amount,
 ) {
   const session = await mongoose.startSession();
-  session.startTransaction();
   try {
-    const opts = {session, new: true}; // new: true to return the updated document
-    const playerA = await this.findByIdAndUpdate(
-      playerAId,
-      {$inc: {cash: -amount}},
-      opts
-    );
-    const playerB = await this.findByIdAndUpdate(
-      playerBId,
-      {$inc: {cash: amount}},
-      opts
-    );
+    session.startTransaction();
+    const [playerA, playerB] = await Promise.all([
+      this.findById(playerAId).session(session),
+      this.findById(playerBId).session(session),
+    ]);
 
-    if (playerA.cash < 0) {
-      // Insufficient funds check
+    if (!playerA || !playerB) {
+      throw new Error('One or more players were not found.');
+    }
+
+    if (playerA.cash < amount) {
       throw new Error('Insufficient funds');
     }
 
+    playerA.cash -= amount;
+    playerB.cash += amount;
+
+    await Promise.all([playerA.save({ session }), playerB.save({ session })]);
     await session.commitTransaction();
-    session.endSession();
-    return {success: true, playerA, playerB};
+    return { success: true, playerA, playerB };
   } catch (error) {
     await session.abortTransaction();
-    session.endSession();
     throw error; // Propagate the error to be handled by calling function
+  } finally {
+    session.endSession();
   }
 };
 
@@ -235,7 +236,7 @@ playerSchema.statics.getPlayer = async function (playerId) {
  * @returns {Promise<Array>} An array of player documents.
  */
 playerSchema.statics.getPlayersByGuild = async function (guildId) {
-  return await this.find({guildId});
+  return await this.find({ guildId });
 };
 
 /**
@@ -247,7 +248,7 @@ playerSchema.statics.getPlayersByGuild = async function (guildId) {
  * @returns {Promise<Array>} An array of player documents.
  */
 playerSchema.statics.getTopPlayersByCash = async function (limit = 10) {
-  return await this.find().sort({cash: -1}).limit(limit);
+  return await this.find().sort({ cash: -1 }).limit(limit);
 };
 
 /**
@@ -259,7 +260,7 @@ playerSchema.statics.getTopPlayersByCash = async function (limit = 10) {
  * @returns {Promise<Array>} An array of player documents.
  */
 playerSchema.statics.getTopPlayersByDebt = async function (limit = 10) {
-  return await this.find().sort({debt: -1}).limit(limit);
+  return await this.find().sort({ debt: -1 }).limit(limit);
 };
 
 /**
@@ -271,7 +272,7 @@ playerSchema.statics.getTopPlayersByDebt = async function (limit = 10) {
  * @returns {Promise<Array>} An array of player documents.
  */
 playerSchema.statics.getTopPlayersByLevel = async function (limit = 10) {
-  return await this.find().sort({level: -1}).limit(limit);
+  return await this.find().sort({ level: -1 }).limit(limit);
 };
 
 /**
@@ -283,7 +284,7 @@ playerSchema.statics.getTopPlayersByLevel = async function (limit = 10) {
  * @returns {Promise<Array>} An array of player documents.
  */
 playerSchema.statics.getTopPlayersByExp = async function (limit = 10) {
-  return await this.find().sort({level: -1, exp: -1}).limit(limit);
+  return await this.find().sort({ level: -1, exp: -1 }).limit(limit);
 };
 
 /**
@@ -291,52 +292,52 @@ playerSchema.statics.getTopPlayersByExp = async function (limit = 10) {
  * @async
  * @function getTotalCurrencyByGuild
  * @static
- * @param {string} guildId - The ID of the guild to retrieve total currency from.
+ * @param {string} guildId - The guild to total currency for.
  * @returns {Promise<number>} The total currency of the guild.
  */
 playerSchema.statics.getTotalCurrencyByGuild = async function (guildId) {
   const result = await this.aggregate([
-    {$match: {guildId: guildId}},
+    { $match: { guildId: guildId } },
     {
       $group: {
         _id: null,
-        totalCash: {$sum: '$cash'},
-        totalBank: {$sum: '$bank'},
+        totalCash: { $sum: '$cash' },
+        totalBank: { $sum: '$bank' },
       },
     },
-    {$project: {totalCurrency: {$add: ['$totalCash', '$totalBank']}}},
+    { $project: { totalCurrency: { $add: ['$totalCash', '$totalBank'] } } },
   ]);
   return result[0] ? result[0].totalCurrency : 0;
 };
 
 /**
- * Compares a given net worth value against the top 10 players' net worth within a specific guild.
+ * Compares a net worth value against top players in a guild.
  * @async
  * @function compareNetWorthToTopInGuild
  * @static
  * @param {number} netWorth - The net worth value to compare.
- * @param {string} guildId - The guild's unique identifier to constrain the top 10 players.
+ * @param {string} guildId - The guild to compare against.
  * @returns {Promise<Object>} An object with comparison data.
  */
 playerSchema.statics.compareNetWorthToTopInGuild = async function (
   netWorth,
-  guildId
+  guildId,
 ) {
   // Retrieve the top 10 players by net worth within the specific guild
-  const topPlayers = await this.find({guildId: guildId})
-    .sort({cash: -1, bank: -1})
+  const topPlayers = await this.find({ guildId: guildId })
+    .sort({ cash: -1, bank: -1 })
     .limit(30)
     .lean();
 
   // Calculate the total net worth of the top 10 players in the guild
   const totalTopNetWorth = topPlayers.reduce(
     (acc, player) => acc + player.cash + player.bank,
-    0
+    0,
   );
 
   // Determine where the given net worth stands in comparison to the top 10 players
   const sortedNetWorths = topPlayers
-    .map(player => player.cash + player.bank)
+    .map((player) => player.cash + player.bank)
     .concat(netWorth)
     .sort((a, b) => b - a);
   const rank = sortedNetWorths.indexOf(netWorth) + 1; // Add 1 to get the 1-based rank
@@ -356,4 +357,4 @@ playerSchema.statics.compareNetWorthToTopInGuild = async function (
   };
 };
 
-module.exports = {playerSchema};
+module.exports = { playerSchema };

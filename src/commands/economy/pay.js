@@ -1,34 +1,26 @@
-const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const giveCash = require('../../modules/economy/tranfers/giveCash');
-const {createEmbed} = require('../../utils/embedUtils');
+const { createEmbed } = require('../../utils/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('pay')
     .setDescription('Transfer virtual cash to another member.')
-    .addUserOption(option =>
+    .addUserOption((option) =>
       option
         .setName('target_user')
         .setDescription('Person to receive the cash')
-        .setRequired(true)
+        .setRequired(true),
     )
-    .addIntegerOption(option =>
+    .addIntegerOption((option) =>
       option
         .setName('cash_amount')
         .setDescription('The amount of virtual cash you wish to send')
-        .setRequired(true)
+        .setRequired(true),
     ),
   cooldown: 2,
   deployGlobal: true,
 
-  /**
-   * Executes the pay command, allowing users to transfer cash to others.
-   *
-   * @async
-   * @function
-   * @param {BaseInteraction} interaction - The interaction that triggered the command.
-   * @throws Will send an error response to the user if there's an issue processing the transaction.
-   */
   async execute(interaction) {
     await interaction.deferReply();
 
@@ -38,7 +30,7 @@ module.exports = {
       interaction.user.id,
       recipient.id,
       interaction.guildId,
-      amount
+      amount,
     );
 
     let embedOptions;
@@ -60,6 +52,6 @@ module.exports = {
     }
 
     const responseEmbed = createEmbed(embedOptions);
-    interaction.editReply({embeds: [responseEmbed]});
+    interaction.editReply({ embeds: [responseEmbed] });
   },
 };

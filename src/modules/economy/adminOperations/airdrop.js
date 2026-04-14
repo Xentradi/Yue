@@ -5,10 +5,10 @@ module.exports = async function airdrop(interaction) {
   const guildId = interaction.guildId;
 
   if (amount < 0)
-    return {success: false, error: 'Amount must be a positive value.'};
+    return { success: false, error: 'Amount must be a positive value.' };
 
   try {
-    const players = await Player.find({guildId});
+    const players = await Player.find({ guildId });
 
     for (const player of players) {
       player.cash += amount;
@@ -21,6 +21,6 @@ module.exports = async function airdrop(interaction) {
       total: players.length * amount,
     };
   } catch (error) {
-    return {success: false, error: error.message};
+    return { success: false, error: error.message };
   }
 };

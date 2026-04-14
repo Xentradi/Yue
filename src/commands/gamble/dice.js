@@ -1,32 +1,31 @@
-const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const diceRoll = require('../../modules/games/diceRoll');
-const {createEmbed} = require('../../utils/embedUtils');
-const logger = require('../../utils/logger');
+const { createEmbed } = require('../../utils/embedUtils');
 const Player = require('../../models/Player');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('dice')
     .setDescription('Bet on the outcome of a dice roll (1-6)')
-    .addIntegerOption(option =>
+    .addIntegerOption((option) =>
       option
         .setName('guess')
         .setDescription('Your guessed outcome of the dice roll')
         .setRequired(true)
         .addChoices(
-          {name: '1', value: 1},
-          {name: '2', value: 2},
-          {name: '3', value: 3},
-          {name: '4', value: 4},
-          {name: '5', value: 5},
-          {name: '6', value: 6}
-        )
+          { name: '1', value: 1 },
+          { name: '2', value: 2 },
+          { name: '3', value: 3 },
+          { name: '4', value: 4 },
+          { name: '5', value: 5 },
+          { name: '6', value: 6 },
+        ),
     )
-    .addIntegerOption(option =>
+    .addIntegerOption((option) =>
       option
         .setName('bet')
         .setDescription('The amount you wish to wager')
-        .setRequired(true)
+        .setRequired(true),
     ),
   cooldown: 3,
   deployGlobal: true,
@@ -49,7 +48,7 @@ module.exports = {
       return; // Exit early
     } else if (player.cash < betAmount) {
       await interaction.editReply(
-        'You do not have sufficient funds for this bet.'
+        'You do not have sufficient funds for this bet.',
       );
       return; // Exit early
     }
@@ -58,7 +57,7 @@ module.exports = {
       interaction.user.id,
       interaction.guildId,
       guessedNumber,
-      betAmount
+      betAmount,
     );
 
     const victoryMessage = [
@@ -93,6 +92,6 @@ module.exports = {
     };
 
     const responseEmbed = createEmbed(embedOptions);
-    interaction.editReply({embeds: [responseEmbed]});
+    interaction.editReply({ embeds: [responseEmbed] });
   },
 };

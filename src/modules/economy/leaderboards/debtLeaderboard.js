@@ -11,8 +11,8 @@ const Player = require('../../../models/Player');
  */
 
 module.exports = async function getDebtLeaderboard(guildId, topN = 10) {
-  const players = await Player.find({guildId})
-    .sort({debt: -1})
+  const players = await Player.find({ guildId })
+    .sort({ debt: -1 })
     .limit(topN)
     .select('userId debt -_id');
   return players;

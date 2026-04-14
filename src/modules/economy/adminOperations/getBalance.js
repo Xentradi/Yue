@@ -9,10 +9,10 @@ module.exports = async function getBalance(interaction) {
   try {
     logger.debug(`'UserId: ${userId}`);
     logger.debug(`GuildId: ${guildId}`);
-    const player = await Player.findOne({userId, guildId});
+    const player = await Player.findOne({ userId, guildId });
     logger.debug(`Player: ${player}`);
 
-    if (!player) return {success: false, error: 'User not found.'};
+    if (!player) return { success: false, error: 'User not found.' };
 
     return {
       success: true,
@@ -23,6 +23,6 @@ module.exports = async function getBalance(interaction) {
     };
   } catch (error) {
     logger.error(`An error occurred retrieving the player balance: ${error}`);
-    return {success: false, error: error.message};
+    return { success: false, error: error.message };
   }
 };

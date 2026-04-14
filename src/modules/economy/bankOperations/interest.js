@@ -33,7 +33,7 @@ module.exports = async function applyBankInterest() {
   const baseBankInterestRate = 0.001 + Math.random() * 0.002; // 0.1% to 0.3%
   const debtInterestRate = 0.002 + Math.random() * 0.003; // 0.2% to 0.5%
 
-  players.forEach(player => {
+  players.forEach((player) => {
     const interestMultiplier = player.interestMultiplier || 1;
     const bankInterestRate = baseBankInterestRate * interestMultiplier;
 
@@ -51,14 +51,14 @@ module.exports = async function applyBankInterest() {
   });
 
   try {
-    await Promise.all(players.map(player => player.save()));
+    await Promise.all(players.map((player) => player.save()));
     return {
       success: true,
       message: 'Bank and debt interests successfully applied.',
     };
   } catch (err) {
     logger.error(
-      `An error occurred while applying bank and debt interests: ${err}`
+      `An error occurred while applying bank and debt interests: ${err}`,
     );
     return {
       success: false,

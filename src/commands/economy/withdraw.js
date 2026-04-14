@@ -1,16 +1,16 @@
-const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const withdraw = require('../../modules/economy/bankOperations/withdraw');
-const {createEmbed} = require('../../utils/embedUtils');
+const { createEmbed } = require('../../utils/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('withdraw')
     .setDescription('Withdraw cash from your bank.')
-    .addIntegerOption(option =>
+    .addIntegerOption((option) =>
       option
         .setName('amount')
         .setDescription('Amount to withdraw')
-        .setRequired(true)
+        .setRequired(true),
     ),
   cooldown: 2,
   deployGlobal: true,
@@ -21,7 +21,7 @@ module.exports = {
     const data = await withdraw(
       interaction.user.id,
       interaction.guildId,
-      amount
+      amount,
     );
     let embedOptions = {};
 
@@ -49,14 +49,14 @@ module.exports = {
         description: `Your withdrawal of $${data.amount.toLocaleString()} is completed.`,
         color: '#33CC33',
         fields: [
-          {name: '💵 Cash', value: `$${data.cash.toLocaleString()}`},
-          {name: '🏦 Bank', value: `$${data.bank.toLocaleString()}`},
+          { name: '💵 Cash', value: `$${data.cash.toLocaleString()}` },
+          { name: '🏦 Bank', value: `$${data.bank.toLocaleString()}` },
         ],
-        footer: {text: 'Yue Bank Corp.'},
+        footer: { text: 'Yue Bank Corp.' },
       };
     }
 
     const responseEmbed = createEmbed(embedOptions);
-    interaction.editReply({embeds: [responseEmbed]});
+    interaction.editReply({ embeds: [responseEmbed] });
   },
 };

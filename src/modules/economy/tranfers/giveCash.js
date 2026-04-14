@@ -16,10 +16,10 @@ module.exports = async function giveCash(
   fromUserId,
   toUserId,
   guildId,
-  amount
+  amount,
 ) {
-  const fromPlayer = await Player.findOne({userId: fromUserId, guildId});
-  const toPlayer = await Player.findOne({userId: toUserId, guildId});
+  const fromPlayer = await Player.findOne({ userId: fromUserId, guildId });
+  const toPlayer = await Player.findOne({ userId: toUserId, guildId });
 
   if (!fromPlayer) {
     return {

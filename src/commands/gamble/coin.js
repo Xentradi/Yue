@@ -1,33 +1,30 @@
-const {SlashCommandBuilder, BaseInteraction} = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const coinFlip = require('../../modules/games/coinFlip');
-const {createEmbed} = require('../../utils/embedUtils');
+const { createEmbed } = require('../../utils/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('coin')
     .setDescription('Bet on heads or tails')
-    .addStringOption(option =>
+    .addStringOption((option) =>
       option
         .setName('choice')
         .setDescription('The side you think the coin will land on')
         .setRequired(true)
         .addChoices(
-          {name: 'Heads', value: 'heads'},
-          {name: 'Tails', value: 'tails'}
-        )
+          { name: 'Heads', value: 'heads' },
+          { name: 'Tails', value: 'tails' },
+        ),
     )
-    .addIntegerOption(option =>
+    .addIntegerOption((option) =>
       option
         .setName('bet')
         .setDescription('The amount you wish to wager')
-        .setRequired(true)
+        .setRequired(true),
     ),
   cooldown: 3,
   deployGlobal: true,
 
-  /**
-   * @param {BaseInteraction} interaction
-   */
   async execute(interaction) {
     await interaction.deferReply();
     const choice = interaction.options.getString('choice');
@@ -36,7 +33,7 @@ module.exports = {
       interaction.user.id,
       interaction.guildId,
       choice,
-      betAmount
+      betAmount,
     );
 
     let embedOptions;
@@ -80,6 +77,6 @@ module.exports = {
     }
 
     const responseEmbed = createEmbed(embedOptions);
-    interaction.editReply({embeds: [responseEmbed]});
+    interaction.editReply({ embeds: [responseEmbed] });
   },
 };

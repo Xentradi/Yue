@@ -13,7 +13,7 @@ const logger = require('../../../utils/logger');
  * @throws Will log an error if saving to the database fails.
  */
 module.exports = async function takeLoan(userId, guildId, amount) {
-  const player = await Player.findOne({userId, guildId});
+  const player = await Player.findOne({ userId, guildId });
 
   if (!player) {
     return {

@@ -1,24 +1,24 @@
-const {SlashCommandBuilder} = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const stealCash = require('../../modules/economy/tranfers/stealCash');
-const {createEmbed} = require('../../utils/embedUtils');
+const { createEmbed } = require('../../utils/embedUtils');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('steal')
     .setDescription(
-      'Embark on a daring heist to snatch cash from a fellow member.'
+      'Embark on a daring heist to snatch cash from a fellow member.',
     )
-    .addUserOption(option =>
+    .addUserOption((option) =>
       option
         .setName('victim')
         .setDescription('The unsuspecting member you aim to rob')
-        .setRequired(true)
+        .setRequired(true),
     )
-    .addIntegerOption(option =>
+    .addIntegerOption((option) =>
       option
         .setName('amount')
         .setDescription('The pile of cash you have your eyes set on')
-        .setRequired(true)
+        .setRequired(true),
     ),
   cooldown: '1h',
   deployGlobal: true,
@@ -33,7 +33,7 @@ module.exports = {
       interaction.user.id,
       victim.id,
       interaction.guildId,
-      amount
+      amount,
     );
 
     const victoryMessage = [
@@ -62,7 +62,7 @@ module.exports = {
         color: '#FF8C00', // Suggesting an orange for error
       };
       const responseEmbed = createEmbed(embedOptions);
-      interaction.editReply({embeds: [responseEmbed]});
+      interaction.editReply({ embeds: [responseEmbed] });
       return;
     }
 
@@ -91,6 +91,6 @@ module.exports = {
     }
 
     const responseEmbed = createEmbed(embedOptions);
-    interaction.editReply({embeds: [responseEmbed]});
+    interaction.editReply({ embeds: [responseEmbed] });
   },
 };

@@ -1,14 +1,14 @@
-const {SlashCommandBuilder, PermissionFlagsBits} = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const Player = require('../../models/Player');
-const {manageRoles} = require('../../utils/manageRoles');
-const {createEmbed} = require('../../utils/embedUtils');
+const { manageRoles } = require('../../utils/manageRoles');
+const { createEmbed } = require('../../utils/embedUtils');
 const logger = require('../../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('syncroles')
     .setDescription(
-      'Reconscile roles to users based on their levels in the database.'
+      'Reconscile roles to users based on their levels in the database.',
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   cooldown: 0,
@@ -26,12 +26,12 @@ module.exports = {
           'You need administrator permissions to execute this command.',
         color: '#FF0000',
       });
-      return interaction.editReply({embeds: [responseEmbed]});
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
 
     try {
       const guildId = interaction.guild.id;
-      const players = await Player.find({guildId});
+      const players = await Player.find({ guildId });
 
       if (!players || players.length === 0) {
         const responseEmbed = createEmbed({
@@ -39,15 +39,19 @@ module.exports = {
           description: 'No players found in the database.',
           color: '#FF0000',
         });
-        return interaction.editReply({embeds: [responseEmbed]});
+        return interaction.editReply({ embeds: [responseEmbed] });
       }
 
-      players.forEach(async player => {
-        const member = await interaction.guild.members.fetch(player.userId);
-        if (member) {
-          await manageRoles(member, player.level);
-        }
-      });
+      await Promise.all(
+        players.map(async (player) => {
+          const member = await interaction.guild.members
+            .fetch(player.userId)
+            .catch(() => null);
+          if (member) {
+            await manageRoles(member, player.level);
+          }
+        }),
+      );
 
       const responseEmbed = createEmbed({
         title: '✅ Roles Updated',
@@ -55,7 +59,7 @@ module.exports = {
           'Roles have been successfully updated based on player levels.',
         color: '#00FF00',
       });
-      interaction.editReply({embeds: [responseEmbed]});
+      interaction.editReply({ embeds: [responseEmbed] });
     } catch (err) {
       logger.error(`An error occured while syncing roles: ${err}`);
       const responseEmbed = createEmbed({
@@ -63,7 +67,7 @@ module.exports = {
         description: 'An error occurred while updating roles.',
         color: '#FF0000',
       });
-      interaction.editReply({embeds: [responseEmbed]});
+      interaction.editReply({ embeds: [responseEmbed] });
     }
   },
 };

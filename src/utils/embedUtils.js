@@ -1,4 +1,4 @@
-const {EmbedBuilder} = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 
 /**
  * Creates a customized embed for various commands.

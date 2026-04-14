@@ -1,4 +1,4 @@
-const {Schema} = require('mongoose');
+const { Schema } = require('mongoose');
 
 const fishSchema = new Schema({
   type: String,
@@ -6,6 +6,6 @@ const fishSchema = new Schema({
   reward: Number,
 });
 
-fishSchema.index({type: 1});
+fishSchema.index({ type: 1 });
 
-module.exports = {fishSchema};
+module.exports = { fishSchema };

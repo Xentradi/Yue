@@ -3,9 +3,7 @@
   "devServer": "519794897348329484",
   "clientId": "1161428778682155078",
   "boosterRole": "1151239952651255849",
-  "devs": [
-    "135206040080744448"
-  ],
+  "devs": ["135206040080744448"],
   "inviteLink": "https://discord.com/oauth2/authorize?client_id=1161428778682155078&scope=bot&permissions=541668666463",
   "boosterExpBonus": 3,
   "boosterCashBonus": 3,

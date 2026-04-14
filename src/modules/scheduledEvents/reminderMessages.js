@@ -1,6 +1,5 @@
-const {EmbedBuilder} = require('discord.js');
-const {CronJob} = require('cron').CronJob;
-const {Client} = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
+const cron = require('node-cron');
 const logger = require('../../utils/logger');
 
 function createReminderEmbed(title, description) {
@@ -11,149 +10,92 @@ function createReminderEmbed(title, description) {
   return embed;
 }
 
-/**
- *
- * @param {Client} client
- */
 function cronJobs(client) {
-  const beastInvasion1 = new CronJob(
-    '59 11 * * *',
-    async () => {
-      try {
-        const channel = await client.channels.cache.get('1159615863004078170');
-        await channel.send({
-          content: '<@1159618825646514266>',
-          embeds: [beastInvasion],
-        });
-      } catch (error) {
-        logger.error(`An error occurred in job beastInvasion1: ${error}`);
-      }
-    },
-    null,
-    true,
-    'America/New_York'
-  );
+  scheduleMessage('59 11 * * *', 'beastInvasion1', async () => {
+    await sendReminder(client, {
+      content: '<@1159618825646514266>',
+      embeds: [beastInvasion],
+    });
+  });
 
-  const beastInvasion2 = new CronJob(
-    '59 17 * * *',
-    async () => {
-      try {
-        const channel = await client.channels.cache.get('1159615863004078170');
-        await channel.send({
-          content: '<@1159618825646514266>',
-          embeds: [beastInvasion],
-        });
-      } catch (error) {
-        logger.error(`An error occurred in job beastInvasion2: ${error}`);
-      }
-    },
-    null,
-    true,
-    'America/New_York'
-  );
+  scheduleMessage('59 17 * * *', 'beastInvasion2', async () => {
+    await sendReminder(client, {
+      content: '<@1159618825646514266>',
+      embeds: [beastInvasion],
+    });
+  });
 
-  const worldApex1 = new CronJob(
-    '59 14 * * 0',
-    async () => {
-      try {
-        const channel = await client.channels.cache.get('1159615863004078170');
-        channel.send({
-          content: '<@1159618938905305198>',
-          embeds: [worldApex],
-        });
-      } catch (error) {
-        logger.error(`An error occurred in job worldApex1: ${error}`);
-      }
-    },
-    null,
-    true,
-    'America/New_York'
-  );
+  scheduleMessage('59 14 * * 0', 'worldApex1', async () => {
+    await sendReminder(client, {
+      content: '<@1159618938905305198>',
+      embeds: [worldApex],
+    });
+  });
 
-  const worldApex2 = new CronJob(
-    '29 15 * * 0',
-    async () => {
-      try {
-        const channel = await client.channels.cache.get('1159615863004078170');
-        await channel.send({
-          content: '<@1159618938905305198>',
-          embeds: [worldApex],
-        });
-      } catch (error) {
-        logger.error(`An error occurred in job worldApex2: ${error}`);
-      }
-    },
-    null,
-    true,
-    'America/New_York'
-  );
+  scheduleMessage('29 15 * * 0', 'worldApex2', async () => {
+    await sendReminder(client, {
+      content: '<@1159618938905305198>',
+      embeds: [worldApex],
+    });
+  });
 
-  const sectClash1 = new CronJob(
-    '59 14 * * 0',
-    async () => {
-      try {
-        const channel = await client.channels.cache.get('1159615863004078170');
-        await channel.send({
-          content: '<@1159618905258598520>',
-          embeds: [sectClash],
-        });
-      } catch (error) {
-        logger.error(`An error occurred in job sectClash1: ${error}`);
-      }
-    },
-    null,
-    true,
-    'America/New_York'
-  );
+  scheduleMessage('59 14 * * 0', 'sectClash1', async () => {
+    await sendReminder(client, {
+      content: '<@1159618905258598520>',
+      embeds: [sectClash],
+    });
+  });
 
-  const sectDuel1 = new CronJob(
-    '59 14 * * 0',
+  scheduleMessage('59 14 * * 0', 'sectDuel1', async () => {
+    await sendReminder(client, {
+      content:
+        '<@1171139195104923698> <@1144733018829889647> <@1152709357633536080>',
+      embeds: [sectDuel],
+    });
+  });
+}
+
+module.exports = { cronJobs };
+
+function scheduleMessage(expression, jobName, handler) {
+  cron.schedule(
+    expression,
     async () => {
       try {
-        const channel = await client.channels.cache.get('1159615863004078170');
-        await channel.send({
-          content:
-            '<@1171139195104923698> <@1144733018829889647> <@1152709357633536080>',
-          embeds: [sectDuel],
-        });
+        await handler();
       } catch (error) {
-        logger.error(`An error occurred in job sectDuel1: ${error}`);
+        logger.error(`An error occurred in job ${jobName}: ${error}`);
       }
     },
-    null,
-    true,
-    'America/New_York'
+    { timezone: 'America/New_York' },
   );
 }
 
-module.exports = {cronJobs};
+async function sendReminder(client, payload) {
+  const channel = await client.channels.fetch('1159615863004078170');
+  if (!channel) {
+    throw new Error('Reminder channel not found.');
+  }
+
+  await channel.send(payload);
+}
 
 const beastInvasion = createReminderEmbed(
   'Beast Invasion',
-  '🛡️ Beast Invasion starts in 1 minute.'
+  '🛡️ Beast Invasion starts in 1 minute.',
 );
 
 const worldApex = createReminderEmbed(
   'World Apex',
-  '⚔️ World Apex starts in 1 minute.'
+  '⚔️ World Apex starts in 1 minute.',
 );
 
 const sectClash = createReminderEmbed(
   'Sect Clash',
-  '⚔️ Sect Clash starts in 1 minute.'
+  '⚔️ Sect Clash starts in 1 minute.',
 );
 
 const sectDuel = createReminderEmbed(
   'Sect Duel',
-  '⚔️ DUEL OR DIE! Complete your Sect Duel offense!'
-);
-
-const sectMeditation = createReminderEmbed(
-  'Sect Duel',
-  '☯️ Sect Meditation immediately after Beast Invasion. Be there or be square.'
-);
-
-const demonbendAbyss = createReminderEmbed(
-  'Sect Duel',
-  '☯️ Sect Meditation immediately after Beast Invasion. Be there or be square.'
+  '⚔️ DUEL OR DIE! Complete your Sect Duel offense!',
 );

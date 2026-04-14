@@ -1,6 +1,5 @@
 const Player = require('../../../models/Player');
 const config = require('../../../config.json');
-const balance = require('../../economy/balance');
 const logger = require('../../../utils/logger');
 
 /**
@@ -15,7 +14,7 @@ const logger = require('../../../utils/logger');
  */
 
 module.exports = async function dailyBonus(userId, guildId) {
-  const player = await Player.findOne({userId, guildId});
+  const player = await Player.findOne({ userId, guildId });
 
   if (!player) {
     return {

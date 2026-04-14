@@ -1,4 +1,4 @@
-const {Events} = require('discord.js');
+const { Events } = require('discord.js');
 const messageReward = require('../modules/messageReward');
 
 module.exports = {

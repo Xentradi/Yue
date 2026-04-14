@@ -1,8 +1,7 @@
-const {Message} = require('discord.js');
 const config = require('../config.json');
 const Player = require('../models/Player');
-const {levelUp} = require('../utils/calculate');
-const {manageRoles} = require('../utils/manageRoles');
+const { levelUp } = require('../utils/calculate');
+const { manageRoles } = require('../utils/manageRoles');
 const logger = require('../utils/logger');
 
 /**
@@ -12,7 +11,7 @@ const logger = require('../utils/logger');
  *
  * @async
  * @function
- * @param {Message} message - The message sent by the player in the guild.
+ * @param {import('discord.js').Message} message - The message sent by the player in the guild.
  * @throws Will log an error if any database operation fails.
  */
 
@@ -36,7 +35,7 @@ module.exports = async function messageReward(message) {
         cashToGive *= config.boosterCashBonus;
       }
       logger.debug(
-        `Message received from existing player ${message.author.id} in ${message.guild.id}`
+        `Message received from existing player ${message.author.id} in ${message.guild.id}`,
       );
       player.exp += expToGive;
       player.cash += cashToGive;
@@ -49,7 +48,7 @@ module.exports = async function messageReward(message) {
         player.exp = 0;
         player.level += 1;
         message.channel.send(
-          `:tada: *${message.member} is ** level ${player.level}** *`
+          `:tada: *${message.member} is ** level ${player.level}** *`,
         );
         await manageRoles(message.member, player.level);
       }
@@ -63,7 +62,7 @@ module.exports = async function messageReward(message) {
         cash: cashToGive,
       });
       logger.debug(
-        `Message received from new player ${message.author.id} in ${message.guild.id}`
+        `Message received from new player ${message.author.id} in ${message.guild.id}`,
       );
       await newPlayer.save();
     }

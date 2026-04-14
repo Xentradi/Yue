@@ -1,5 +1,5 @@
-const {Events, Collection} = require('discord.js');
-const {convertToSeconds} = require('../utils/calculate');
+const { Events, Collection } = require('discord.js');
+const { convertToSeconds } = require('../utils/calculate');
 const logger = require('../utils/logger');
 
 module.exports = {
@@ -15,7 +15,7 @@ module.exports = {
 
     const commandName = command.data.name;
     const userId = interaction.user.id;
-    const guildId = interaction.guild.id;
+    const guildId = interaction.guildId ?? 'dm';
 
     const cooldownKey = `${commandName}_${guildId}_${userId}`;
 
@@ -36,7 +36,9 @@ module.exports = {
       if (now < expirationTime) {
         const expiredTimestamp = Math.round(expirationTime / 1000);
         return interaction.reply({
-          content: `Please wait, you are on a cooldown for \`${commandName}\`. You can use it again <t:${expiredTimestamp}:R>.`,
+          content:
+            `Please wait, you are on a cooldown for \`${commandName}\`. ` +
+            `You can use it again <t:${expiredTimestamp}:R>.`,
           ephemeral: true,
         });
       }
@@ -55,8 +57,8 @@ module.exports = {
 };
 
 function logCommandInvocation(interaction) {
-  const args = interaction.options._hoistedOptions
-    .map(option => `${option.name}: ${option.value}`)
+  const args = flattenCommandOptions(interaction.options.data)
+    .map((option) => `${option.name}: ${option.value}`)
     .join(', ');
   const argsString = args.length > 0 ? ` with arguements ${args}` : '';
 
@@ -64,12 +66,31 @@ function logCommandInvocation(interaction) {
   if (interaction.guild) {
     const guildName = interaction.guild.name;
     const guildId = interaction.guild.id;
-    logMessage = `Command ${interaction.commandName} invoked by ${interaction.user.tag}${argsString} in guild ${guildName} (ID: ${guildId})`;
+    logMessage =
+      `Command ${interaction.commandName} invoked by ` +
+      `${interaction.user.tag}${argsString} in guild ${guildName} ` +
+      `(ID: ${guildId})`;
   } else {
-    logMessage = `Command ${interaction.commandName} invoked by ${interaction.user.tag}${argsString} in a Direct Message`;
+    logMessage =
+      `Command ${interaction.commandName} invoked by ` +
+      `${interaction.user.tag}${argsString} in a Direct Message`;
   }
 
   logger.info(logMessage);
+}
+
+function flattenCommandOptions(options = []) {
+  return options.flatMap((option) => {
+    if (option.options?.length) {
+      return flattenCommandOptions(option.options);
+    }
+
+    if (option.value === undefined) {
+      return [];
+    }
+
+    return [{ name: option.name, value: option.value }];
+  });
 }
 
 async function handleCommandError(err, interaction) {
@@ -77,13 +98,13 @@ async function handleCommandError(err, interaction) {
   logger.error(
     `Error context: commandName=${interaction.commandName}, userId=${
       interaction.user.id
-    }, guildId=${interaction.guild ? interaction.guild.id : 'DM'}`
+    }, guildId=${interaction.guild ? interaction.guild.id : 'DM'}`,
   );
 
   const errorMessage = 'There was an error while executing this command!';
   if (interaction.replied || interaction.deferred) {
-    await interaction.followUp({content: errorMessage, ephemeral: true});
+    await interaction.followUp({ content: errorMessage, ephemeral: true });
   } else {
-    await interaction.reply({content: errorMessage, ephemeral: true});
+    await interaction.reply({ content: errorMessage, ephemeral: true });
   }
 }
