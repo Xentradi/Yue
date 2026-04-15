@@ -1,4 +1,4 @@
-const Lake = require('../../../models/Lake'); // Make sure to adjust the path as necessary
+const Lake = require('../../../models/Lake');
 const logger = require('../../../utils/logger');
 
 /**
@@ -49,6 +49,8 @@ module.exports = async function restockLake(guildId, size = 1000) {
   });
 
   let lake = await Lake.findOne({ guildId });
+  const previousFishStock = lake?.fishStock?.map((fish) => ({ ...fish }));
+  const previousLastStocked = lake?.lastStocked;
 
   if (!lake) {
     lake = new Lake({ guildId, fishStock, lastStocked: new Date() });
@@ -66,10 +68,17 @@ module.exports = async function restockLake(guildId, size = 1000) {
     return {
       success: true,
       newFishCount: totalFishCount,
-      message: 'Lake restocked successfully!',
+      speciesCount: fishStock.length,
+      message: `Lake restocked with ${totalFishCount.toLocaleString()} fish across ${fishStock.length} species.`,
     };
   } catch (err) {
     logger.error(`An error occurred while restocking the lake: ${err}`);
+    if (previousFishStock) {
+      lake.fishStock = previousFishStock;
+    }
+    if (previousLastStocked) {
+      lake.lastStocked = previousLastStocked;
+    }
     return {
       success: false,
       message: 'An error occurred while restocking the lake.',

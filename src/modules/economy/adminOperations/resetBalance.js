@@ -2,6 +2,10 @@ const Player = require('../../../models/Player');
 
 module.exports = async function resetBalance(interaction) {
   const user = interaction.options.getUser('user');
+  if (!user) {
+    return { success: false, error: 'User not found.' };
+  }
+
   const userId = user.id;
   const guildId = interaction.guildId;
 

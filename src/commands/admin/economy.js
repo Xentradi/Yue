@@ -304,16 +304,24 @@ function buildConfirmationPreview(interaction) {
       return {
         title: '⚠️ Confirm Economy Reset',
         description: `This will reset ${resolvedName}'s cash, bank, and debt to zero.`,
-        fields: [{ name: 'Target', value: resolvedName, inline: false }],
+        fields: [
+          { name: 'Target User', value: resolvedName, inline: false },
+          { name: 'Affected Fields', value: 'cash, bank, debt', inline: false },
+        ],
       };
-    case 'airdrop':
+    case 'airdrop': {
+      const channelLabel = interaction.channel?.name
+        ? `#${interaction.channel.name}`
+        : 'the current channel';
       return {
         title: '⚠️ Confirm Airdrop',
-        description: `This will give ${formatCurrency(amount)} to every active member currently in the channel.`,
+        description: `This will give ${formatCurrency(amount)} to every active member currently in ${channelLabel}.`,
         fields: [
+          { name: 'Target Channel', value: channelLabel, inline: true },
           { name: 'Amount', value: formatCurrency(amount), inline: true },
         ],
       };
+    }
     default:
       return {
         title: '⚠️ Confirm Change',

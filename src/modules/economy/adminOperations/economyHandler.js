@@ -35,7 +35,7 @@ module.exports = async function economyHandler(interaction) {
   } catch (error) {
     // Log the error and return a user-friendly message
     logger.error(
-      `An error occured while handling the economy action. ${error}`,
+      `An error occurred while handling the economy action. ${error}`,
     );
     return {
       title: '❌ An error occurred',

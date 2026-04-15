@@ -4,6 +4,10 @@ const ALLOWED_FIELDS = new Set(['cash', 'bank', 'debt']);
 
 module.exports = async function giveBalance(interaction) {
   const user = interaction.options.getUser('user');
+  if (!user) {
+    return { success: false, error: 'User not found.' };
+  }
+
   const userId = user.id;
   const guildId = interaction.guildId;
   const field = interaction.options.getString('field');
@@ -13,8 +17,8 @@ module.exports = async function giveBalance(interaction) {
     return { success: false, error: 'Invalid balance field.' };
   }
 
-  if (amount < 0) {
-    return { success: false, error: 'Amount must be a positive value.' };
+  if (!Number.isInteger(amount) || amount < 0) {
+    return { success: false, error: 'Amount must be a non-negative integer.' };
   }
 
   try {

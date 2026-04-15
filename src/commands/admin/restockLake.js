@@ -1,6 +1,9 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const restockLake = require('../../modules/games/adminOperations/restockLake');
-const { createStatusEmbed } = require('../../utils/economyFeedback');
+const {
+  createConfirmationEmbed,
+  createStatusEmbed,
+} = require('../../utils/economyFeedback');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -12,12 +15,18 @@ module.exports = {
         .setDescription('How many fish you want to stock in the lake')
         .setRequired(false),
     )
+    .addBooleanOption((option) =>
+      option
+        .setName('confirm')
+        .setDescription('Confirm this destructive change before applying it')
+        .setRequired(false),
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
   cooldown: 0,
   deployGlobal: true,
 
   async execute(interaction) {
-    await interaction.deferReply();
+    await interaction.deferReply({ ephemeral: true });
     if (
       !interaction.inGuild() ||
       !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
@@ -32,6 +41,7 @@ module.exports = {
     }
 
     let lakeSize = interaction.options.getInteger('lake_size') || 1000;
+    const confirm = interaction.options.getBoolean('confirm') ?? false;
 
     if (lakeSize <= 0) {
       const responseEmbed = createStatusEmbed({
@@ -42,6 +52,13 @@ module.exports = {
       return interaction.editReply({ embeds: [responseEmbed] });
     }
     if (lakeSize > 1000000) lakeSize = 1000000;
+
+    if (!confirm) {
+      const responseEmbed = createConfirmationEmbed(
+        buildConfirmationPreview(interaction, lakeSize),
+      );
+      return interaction.editReply({ embeds: [responseEmbed] });
+    }
 
     const restockResult = await restockLake(interaction.guildId, lakeSize);
 
@@ -66,3 +83,24 @@ module.exports = {
     interaction.editReply({ embeds: [responseEmbed] });
   },
 };
+
+module.exports.buildConfirmationPreview = buildConfirmationPreview;
+
+function buildConfirmationPreview(interaction, lakeSize) {
+  const channelLabel = interaction.channel?.name
+    ? `#${interaction.channel.name}`
+    : 'the current channel';
+
+  return {
+    title: '⚠️ Confirm Lake Restock',
+    description: `This will replace the current lake stock in ${channelLabel} with ${lakeSize.toLocaleString()} fish.`,
+    fields: [
+      { name: 'Target Channel', value: channelLabel, inline: true },
+      {
+        name: 'Lake Size',
+        value: `${lakeSize.toLocaleString()} fish`,
+        inline: true,
+      },
+    ],
+  };
+}

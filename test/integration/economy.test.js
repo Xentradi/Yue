@@ -24,6 +24,8 @@ const getDebtLeaderboard = require('../../src/modules/economy/leaderboards/debtL
 const getNetWorthLeaderboard = require('../../src/modules/economy/leaderboards/netWorthLeaderboard');
 const leaderboardCommand = require('../../src/commands/economy/leaderboard');
 const adminEconomyCommand = require('../../src/commands/admin/economy');
+const adminRestockLakeCommand = require('../../src/commands/admin/restockLake');
+const logger = require('../../src/utils/logger');
 
 let mongod;
 
@@ -380,6 +382,49 @@ test('scheduled maintenance updates player guilds and lake-only guilds', async (
   );
 });
 
+test('scheduled task logging summarizes successes and failures', async () => {
+  const infoMessages = [];
+  const errorMessages = [];
+  const originalInfo = logger.info;
+  const originalError = logger.error;
+
+  logger.info = (message) => {
+    infoMessages.push(message);
+  };
+  logger.error = (message) => {
+    errorMessages.push(message);
+  };
+
+  try {
+    await scheduledTasks.logJobResult(
+      'Lake restock for guild guild-log',
+      Promise.resolve({
+        success: true,
+        newFishCount: 5500,
+        speciesCount: 10,
+      }),
+    );
+
+    await scheduledTasks.logJobResult(
+      'Bank interest for guild guild-log',
+      Promise.resolve({
+        success: false,
+        message: 'No players found.',
+      }),
+    );
+  } finally {
+    logger.info = originalInfo;
+    logger.error = originalError;
+  }
+
+  assert.deepEqual(infoMessages, [
+    'Lake restock for guild guild-log: Restocked 5,500 fish across 10 species.',
+  ]);
+  assert.deepEqual(errorMessages, [
+    'Bank interest for guild guild-log: No players found.',
+  ]);
+});
+
 test('hourly maintenance restocks lake-only guilds', async () => {
   await Lake.create({ guildId: 'guild-hourly', fishStock: [] });
 
@@ -472,6 +517,7 @@ test('leaderboard command skips deleted members and replies with active names on
 
 test('admin confirmation previews stay explicit for destructive actions', () => {
   const setPreview = adminEconomyCommand.buildConfirmationPreview({
+    channel: { name: 'general' },
     options: {
       getSubcommand: () => 'set',
       getUser: () => ({ id: 'target-user', username: 'TargetUser' }),
@@ -481,6 +527,7 @@ test('admin confirmation previews stay explicit for destructive actions', () => 
   });
 
   const airdropPreview = adminEconomyCommand.buildConfirmationPreview({
+    channel: { name: 'trade-hall' },
     options: {
       getSubcommand: () => 'airdrop',
       getUser: () => null,
@@ -493,6 +540,26 @@ test('admin confirmation previews stay explicit for destructive actions', () => 
   assert.match(setPreview.description, /TargetUser's cash balance to \$500/);
   assert.equal(airdropPreview.title, '⚠️ Confirm Airdrop');
   assert.match(airdropPreview.description, /give \$250 to every active member/);
+  assert.deepEqual(
+    airdropPreview.fields.map((field) => field.name),
+    ['Target Channel', 'Amount'],
+  );
+});
+
+test('lake restock preview makes the target channel and size explicit', () => {
+  const preview = adminRestockLakeCommand.buildConfirmationPreview(
+    {
+      channel: { name: 'fish-market' },
+    },
+    5500,
+  );
+
+  assert.equal(preview.title, '⚠️ Confirm Lake Restock');
+  assert.match(preview.description, /#fish-market/);
+  assert.deepEqual(
+    preview.fields.map((field) => field.name),
+    ['Target Channel', 'Lake Size'],
+  );
 });
 
 test('lake restock persists the expected fish stock', async () => {

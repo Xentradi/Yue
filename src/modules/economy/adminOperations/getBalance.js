@@ -3,6 +3,10 @@ const logger = require('../../../utils/logger');
 
 module.exports = async function getBalance(interaction) {
   const user = interaction.options.getUser('user');
+  if (!user) {
+    return { success: false, error: 'User not found.' };
+  }
+
   const userId = user.id;
   const guildId = interaction.guildId;
 

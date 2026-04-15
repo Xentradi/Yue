@@ -5,8 +5,8 @@ module.exports = async function airdrop(interaction) {
   const guildId = interaction.guildId;
   const channelMembers = interaction.channel?.members;
 
-  if (amount <= 0) {
-    return { success: false, error: 'Amount must be a positive value.' };
+  if (!Number.isInteger(amount) || amount <= 0) {
+    return { success: false, error: 'Amount must be a positive integer.' };
   }
 
   if (!channelMembers || typeof channelMembers.values !== 'function') {

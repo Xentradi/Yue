@@ -90,21 +90,21 @@ Goal: make background work and admin actions explicit, safe, and easy to reason 
 
 ### Step 3.1: Verify scheduled maintenance
 
-- [ ] Confirm interest calculation, lake restock, and any related scheduled actions are correct.
-- [ ] Make scheduled task output clear about what ran and what changed.
-- [ ] Decide whether any scheduled job should become configurable, and document the result.
+- [x] Confirm interest calculation, lake restock, and any related scheduled actions are correct.
+- [x] Make scheduled task output clear about what ran and what changed.
+- [x] Decide whether any scheduled job should become configurable, and document the result. Maintenance cron expressions and lake restock sizes are configurable via environment variables; reminder jobs remain fixed.
 
 ### Step 3.2: Harden admin economy actions
 
-- [ ] Review airdrops, resets, balance updates, and other destructive admin flows.
-- [ ] Require explicit previews before changes are applied.
-- [ ] Keep validation strict for missing targets, invalid amounts, and illegal state changes.
+- [x] Review airdrops, resets, balance updates, and other destructive admin flows.
+- [x] Require explicit previews before changes are applied.
+- [x] Keep validation strict for missing targets, invalid amounts, and illegal state changes.
 
 ### Step 3.3: Align admin confirmation flows
 
-- [ ] Make the confirmation copy explicit about target, field, and amount.
-- [ ] Keep preview titles and descriptions consistent with the rest of the bot.
-- [ ] Ensure a cancelled action leaves state unchanged.
+- [x] Make the confirmation copy explicit about target, field, and amount.
+- [x] Keep preview titles and descriptions consistent with the rest of the bot.
+- [x] Ensure a cancelled action leaves state unchanged.
 
 ### Phase 3 Done When
 
