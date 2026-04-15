@@ -19,21 +19,21 @@ module.exports = async function deposit(userId, guildId, amount) {
   if (!player) {
     return {
       success: false,
-      message: 'Player not found in the database.',
+      message: 'User not found.',
     };
   }
 
   if (amount <= 0) {
     return {
       success: false,
-      message: 'Invalid deposit amount.',
+      message: 'Invalid amount.',
     };
   }
 
   if (player.cash < amount) {
     return {
       success: false,
-      message: 'Insufficient funds to deposit.',
+      message: 'Insufficient cash.',
     };
   }
 

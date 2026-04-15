@@ -18,7 +18,7 @@ module.exports = async function getBalance(userId, guildId) {
     if (!player) {
       return {
         success: false,
-        message: 'Player not found in the database.',
+        message: 'User not found.',
       };
     }
 
@@ -34,7 +34,7 @@ module.exports = async function getBalance(userId, guildId) {
     logger.error(`Error occured while fetching the player's balance: ${err}`);
     return {
       success: false,
-      message: "An error occurred while fetching the player's balance.",
+      message: 'An error occurred while fetching the balance.',
     };
   }
 };

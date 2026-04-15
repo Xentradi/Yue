@@ -21,6 +21,9 @@ module.exports = {
           getFolderOrder(left) - getFolderOrder(right) ||
           left.localeCompare(right),
       );
+    const canViewAdminCommands =
+      interaction.inGuild() &&
+      interaction.member.permissions.has(PermissionFlagsBits.Administrator);
 
     const fields = [];
 
@@ -36,9 +39,6 @@ module.exports = {
       for (const file of commandFiles) {
         const command = require(path.join(commandsPath, file));
         const isAdminCommand = folder.toLowerCase() === 'admin';
-        const canViewAdminCommands =
-          interaction.inGuild() &&
-          interaction.member.permissions.has(PermissionFlagsBits.Administrator);
 
         if (command.data) {
           if (isAdminCommand && !canViewAdminCommands) {

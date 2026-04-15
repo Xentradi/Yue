@@ -5,6 +5,7 @@ const path = require('node:path');
 const test = require('node:test');
 
 const repoRoot = path.resolve(__dirname, '..');
+const helpCommand = require('../src/commands/utilities/help');
 
 test('core entrypoints parse cleanly', () => {
   const files = [
@@ -75,6 +76,33 @@ test('command handler registers the current command surface', () => {
 
   assert.deepEqual([...client.commands.keys()].sort(), expectedNames);
   assert.equal(client.commands.has('leaderboards'), false);
+});
+
+test('help groups commands by product area and hides admin commands from non-admin users', async () => {
+  let replyPayload;
+  const interaction = {
+    inGuild: () => true,
+    member: {
+      permissions: {
+        has: () => false,
+      },
+    },
+    reply: async (payload) => {
+      replyPayload = payload;
+    },
+  };
+
+  await helpCommand.execute(interaction);
+
+  assert.ok(replyPayload);
+  assert.deepEqual(
+    replyPayload.embeds[0].data.fields.map((field) => field.name),
+    ['Economy', 'Games', 'Utilities'],
+  );
+  assert.equal(
+    replyPayload.embeds[0].data.fields.some((field) => field.name === 'Admin'),
+    false,
+  );
 });
 
 test('event modules export the expected surface', () => {

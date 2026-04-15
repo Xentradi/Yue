@@ -16,22 +16,28 @@ module.exports = {
     .addSubcommand((subcommand) =>
       subcommand
         .setName('get')
-        .setDescription("Check a user's balances")
+        .setDescription("Check a user's balances.")
         .addUserOption((option) =>
-          option.setName('user').setDescription('The user').setRequired(true),
+          option
+            .setName('user')
+            .setDescription('Target user')
+            .setRequired(true),
         ),
     )
     .addSubcommand((subcommand) =>
       subcommand
         .setName('set')
-        .setDescription('Set the cash, bank, or debt of a user')
+        .setDescription('Set a user cash, bank, or debt balance.')
         .addUserOption((option) =>
-          option.setName('user').setDescription('The user').setRequired(true),
+          option
+            .setName('user')
+            .setDescription('Target user')
+            .setRequired(true),
         )
         .addStringOption((option) =>
           option
             .setName('field')
-            .setDescription('Field to set')
+            .setDescription('Balance field to set')
             .setRequired(true)
             .addChoices(
               { name: 'cash', value: 'cash' },
@@ -42,7 +48,7 @@ module.exports = {
         .addIntegerOption((option) =>
           option
             .setName('amount')
-            .setDescription('Amount to set')
+            .setDescription('New balance amount')
             .setRequired(true),
         )
         .addBooleanOption((option) =>
@@ -57,14 +63,17 @@ module.exports = {
     .addSubcommand((subcommand) =>
       subcommand
         .setName('give')
-        .setDescription('Adjust cash, bank, or debt of a user')
+        .setDescription('Adjust a user cash, bank, or debt balance.')
         .addUserOption((option) =>
-          option.setName('user').setDescription('The user').setRequired(true),
+          option
+            .setName('user')
+            .setDescription('Target user')
+            .setRequired(true),
         )
         .addStringOption((option) =>
           option
             .setName('field')
-            .setDescription('Field to adjust')
+            .setDescription('Balance field to adjust')
             .setRequired(true)
             .addChoices(
               { name: 'cash', value: 'cash' },
@@ -75,7 +84,7 @@ module.exports = {
         .addIntegerOption((option) =>
           option
             .setName('amount')
-            .setDescription('Amount to give')
+            .setDescription('Adjustment amount')
             .setRequired(true),
         )
         .addBooleanOption((option) =>
@@ -90,11 +99,11 @@ module.exports = {
     .addSubcommand((subcommand) =>
       subcommand
         .setName('reset')
-        .setDescription("Reset all of a user's economy values to 0")
+        .setDescription("Reset all of a user's economy values to zero.")
         .addUserOption((option) =>
           option
             .setName('user')
-            .setDescription('The user to reset')
+            .setDescription('Target user')
             .setRequired(true),
         )
         .addBooleanOption((option) =>
@@ -110,12 +119,12 @@ module.exports = {
       subcommand
         .setName('airdrop')
         .setDescription(
-          'Give everyone active in the current channel an entered amount of cash',
+          'Give every active member in the current channel the same cash amount.',
         )
         .addIntegerOption((option) =>
           option
             .setName('amount')
-            .setDescription('Amount to airdrop to each active user')
+            .setDescription('Amount to give each active member')
             .setRequired(true),
         )
         .addBooleanOption((option) =>

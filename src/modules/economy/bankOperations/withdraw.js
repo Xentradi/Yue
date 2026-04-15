@@ -19,21 +19,21 @@ module.exports = async function withdraw(userId, guildId, amount) {
   if (!player) {
     return {
       success: false,
-      message: 'Player not found.',
+      message: 'User not found.',
     };
   }
 
   if (amount <= 0) {
     return {
       success: false,
-      message: 'Invalid withdrawal amount.',
+      message: 'Invalid amount.',
     };
   }
 
   if (player.bank < amount) {
     return {
       success: false,
-      message: 'Insufficient funds in the bank for withdrawal.',
+      message: 'Insufficient bank funds.',
     };
   }
 
