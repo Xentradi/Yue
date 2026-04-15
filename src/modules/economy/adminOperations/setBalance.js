@@ -18,13 +18,18 @@ module.exports = async function setBalance(interaction) {
   }
 
   try {
-    const player = await Player.findOneAndUpdate(
-      { userId, guildId },
-      { $set: { [field]: amount } },
-      { returnDocument: 'after' },
-    );
+    const player = await Player.findOne({ userId, guildId });
 
     if (!player) return { success: false, error: 'User not found.' };
+
+    if (!Number.isFinite(player[field]) || player[field] < 0) {
+      return { success: false, error: `Current ${field} balance is invalid.` };
+    }
+
+    const updateResult = await player.setValues({ [field]: amount });
+    if (!updateResult.success) {
+      return { success: false, error: updateResult.error };
+    }
 
     return {
       success: true,

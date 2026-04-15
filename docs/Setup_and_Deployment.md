@@ -72,3 +72,5 @@ node src/registerCommands/deployCommands.js
 - The bot validates `DISCORD_TOKEN` and `DB_URL` at startup.
 - Logs are written locally through Winston. If `LOG_TOKEN` is set, Logtail becomes an optional remote transport.
 - The project does not include a web dashboard or Docker setup.
+- Scheduled jobs run from the Discord bot process through `src/modules/scheduledEvents/scheduledTasks.js`, so keep MongoDB backups current before changing interest or lake-restock timing.
+- The current command inventory lives in [Command_Surface.md](./Command_Surface.md).

@@ -33,6 +33,10 @@ function createEmbed(options) {
     embed.addFields(options.fields);
   }
 
+  if (options.footer) {
+    embed.setFooter(options.footer);
+  }
+
   return embed;
 }
 

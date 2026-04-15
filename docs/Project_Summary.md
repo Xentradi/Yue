@@ -11,10 +11,16 @@ Yue is a Discord bot for a server economy and progression system. It combines sl
 
 ## Current Scope
 
-- Economy: cash, bank, debt, loans, transfers, daily rewards
+- Economy: cash, bank, debt, loans, transfers, daily rewards, and leaderboards
 - Games: fishing, coin flip, dice, blackjack
 - Progression: XP, levels, and level-based roles
 - Admin: balance control, lake restocking, role syncing
+
+## Operational Notes
+
+- The command surface is grouped by economy, games, utilities, and admin so help output matches how users think about the bot
+- Admin commands are intended for guild use only and require administrator permissions
+- The current command inventory is documented in [Command_Surface.md](./Command_Surface.md)
 
 ## Maintenance Notes
 

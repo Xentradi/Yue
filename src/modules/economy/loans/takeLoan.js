@@ -1,5 +1,4 @@
 const Player = require('../../../models/Player');
-const logger = require('../../../utils/logger');
 
 /**
  * Allows a player to take a loan from the bank. The loan incurs a 10% immediate interest.
@@ -37,16 +36,27 @@ module.exports = async function takeLoan(userId, guildId, amount) {
     };
   }
 
-  player.cash += amount;
-  player.debt += amount * 1.1; // Loan with 10% immediate interest
-
-  try {
-    await player.save();
-  } catch (err) {
-    logger.error(`Failed to save changes to the database: ${err}`);
+  if (
+    !Number.isFinite(player.cash) ||
+    player.cash < 0 ||
+    !Number.isFinite(player.debt) ||
+    player.debt < 0
+  ) {
     return {
       success: false,
-      message: 'Failed to save changes to the database.',
+      message: 'Player balances are invalid.',
+    };
+  }
+
+  const updateResult = await player.setValues({
+    cash: player.cash + amount,
+    debt: player.debt + amount * 1.1,
+  });
+
+  if (!updateResult.success) {
+    return {
+      success: false,
+      message: updateResult.error,
     };
   }
 

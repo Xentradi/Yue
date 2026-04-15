@@ -34,36 +34,59 @@ module.exports = async function applyBankInterest(guildId) {
   const baseBankInterestRate = 0.001 + Math.random() * 0.002; // 0.1% to 0.3%
   const debtInterestRate = 0.002 + Math.random() * 0.003; // 0.2% to 0.5%
 
-  players.forEach((player) => {
-    const interestMultiplier = player.interestMultiplier || 1;
-    const bankInterestRate = baseBankInterestRate * interestMultiplier;
+  let updatedCount = 0;
+  let skippedCount = 0;
+
+  for (const player of players) {
+    if (
+      !Number.isFinite(player.bank) ||
+      player.bank < 0 ||
+      !Number.isFinite(player.debt) ||
+      player.debt < 0 ||
+      !Number.isFinite(player.interestMultiplier) ||
+      player.interestMultiplier < 0
+    ) {
+      skippedCount += 1;
+      logger.error(
+        `Skipping invalid player record during interest application: guildId=${player.guildId}, userId=${player.userId}`,
+      );
+      continue;
+    }
+
+    const bankInterestRate = baseBankInterestRate * player.interestMultiplier;
+    const nextValues = {
+      bank: player.bank,
+      debt: player.debt,
+    };
 
     if (player.bank > 1000) {
       // Minimum balance threshold for bank interest
       const bankInterest = Math.round(player.bank * bankInterestRate);
-      player.bank += bankInterest;
+      nextValues.bank += bankInterest;
     }
 
     // Assuming debt is a property on the player model and is a negative value
     if (player.debt && player.debt > 0) {
       const debtInterest = Math.round(player.debt * debtInterestRate);
-      player.debt += debtInterest;
+      nextValues.debt += debtInterest;
     }
-  });
 
-  try {
-    await Promise.all(players.map((player) => player.save()));
-    return {
-      success: true,
-      message: 'Bank and debt interests successfully applied.',
-    };
-  } catch (err) {
-    logger.error(
-      `An error occurred while applying bank and debt interests: ${err}`,
-    );
-    return {
-      success: false,
-      message: 'An error occurred while applying bank and debt interests.',
-    };
+    const updateResult = await player.setValues(nextValues);
+    if (!updateResult.success) {
+      skippedCount += 1;
+      logger.error(
+        `An error occurred while applying bank and debt interests: ${updateResult.error}`,
+      );
+      continue;
+    }
+
+    updatedCount += 1;
   }
+
+  return {
+    success: true,
+    message: `Bank and debt interests successfully applied for ${updatedCount} player(s). Skipped ${skippedCount} invalid record(s).`,
+    updatedCount,
+    skippedCount,
+  };
 };

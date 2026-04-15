@@ -51,16 +51,21 @@ module.exports = async function restockLake(guildId, size = 1000) {
   let lake = await Lake.findOne({ guildId });
 
   if (!lake) {
-    lake = new Lake({ guildId, fishStock });
+    lake = new Lake({ guildId, fishStock, lastStocked: new Date() });
   } else {
     lake.fishStock = fishStock;
+    lake.lastStocked = new Date();
   }
 
   try {
     await lake.save();
+    const totalFishCount = fishStock.reduce(
+      (total, fish) => total + fish.count,
+      0,
+    );
     return {
       success: true,
-      newFishCount: size,
+      newFishCount: totalFishCount,
       message: 'Lake restocked successfully!',
     };
   } catch (err) {

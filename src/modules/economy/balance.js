@@ -4,6 +4,37 @@ function isFiniteNumber(amount) {
   return typeof amount === 'number' && Number.isFinite(amount);
 }
 
+function getCurrentAmount(player, field) {
+  const value = player?.[field];
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+async function saveIfPossible(player, field, nextAmount) {
+  const methodName = `set${field[0].toUpperCase()}${field.slice(1)}`;
+  if (typeof player[methodName] === 'function') {
+    const result = await player[methodName](nextAmount);
+    if (result.success) {
+      return { success: true, [field]: nextAmount };
+    }
+    return {
+      success: false,
+      message: result.error ?? `Error updating ${field} balance.`,
+    };
+  }
+
+  const previousAmount = player[field];
+  player[field] = nextAmount;
+
+  try {
+    await player.save();
+    return { success: true, [field]: nextAmount };
+  } catch (err) {
+    player[field] = previousAmount;
+    logger.error(`Error updating ${field} balance: ${err}`);
+    return { success: false, message: `Error updating ${field} balance.` };
+  }
+}
+
 /**
  * Updates a player's cash balance.
  *
@@ -17,16 +48,16 @@ module.exports.updatePlayerCash = async function (player, amount) {
   if (!isFiniteNumber(amount)) {
     return { success: false, message: 'Invalid amount.' };
   }
-
-  player.cash = Math.max(player.cash + amount, 0);
-
-  try {
-    await player.save();
-    return { success: true, cash: player.cash };
-  } catch (err) {
-    logger.error(`Error updating cash balance: ${err}`);
-    return { success: false, message: 'Error updating cash balance.' };
+  const currentCash = getCurrentAmount(player, 'cash');
+  if (currentCash === null) {
+    return { success: false, message: 'Player cash balance is invalid.' };
   }
+
+  if (currentCash + amount < 0) {
+    return { success: false, message: 'Insufficient cash.' };
+  }
+
+  return saveIfPossible(player, 'cash', currentCash + amount);
 };
 
 /**
@@ -42,16 +73,16 @@ module.exports.updatePlayerBank = async function (player, amount) {
   if (!isFiniteNumber(amount)) {
     return { success: false, message: 'Invalid amount.' };
   }
-
-  player.bank = Math.max(player.bank + amount, 0);
-
-  try {
-    await player.save();
-    return { success: true, bank: player.bank };
-  } catch (err) {
-    logger.error(`Error updating bank balance: ${err}`);
-    return { success: false, message: 'Error updating bank balance.' };
+  const currentBank = getCurrentAmount(player, 'bank');
+  if (currentBank === null) {
+    return { success: false, message: 'Player bank balance is invalid.' };
   }
+
+  if (currentBank + amount < 0) {
+    return { success: false, message: 'Insufficient bank funds.' };
+  }
+
+  return saveIfPossible(player, 'bank', currentBank + amount);
 };
 
 /**
@@ -69,23 +100,48 @@ module.exports.transferFunds = async function (player, amount, toBank = true) {
     return { success: false, message: 'Invalid transfer amount.' };
   }
 
-  if (toBank) {
-    if (player.cash < amount)
-      return { success: false, message: 'Insufficient cash.' };
-    player.cash -= amount;
-    player.bank += amount;
-  } else {
-    if (player.bank < amount)
-      return { success: false, message: 'Insufficient bank funds.' };
-    player.bank -= amount;
-    player.cash += amount;
+  const currentCash = getCurrentAmount(player, 'cash');
+  const currentBank = getCurrentAmount(player, 'bank');
+  if (currentCash === null) {
+    return { success: false, message: 'Player cash balance is invalid.' };
+  }
+  if (currentBank === null) {
+    return { success: false, message: 'Player bank balance is invalid.' };
   }
 
-  try {
-    await player.save();
-    return { success: true, cash: player.cash, bank: player.bank };
-  } catch (err) {
-    logger.error(`Error updating transfering funds: ${err}`);
-    return { success: false, message: 'Error transferring funds.' };
+  if (toBank) {
+    if (currentCash < amount)
+      return { success: false, message: 'Insufficient cash.' };
+    const previousCash = player.cash;
+    const previousBank = player.bank;
+    player.cash = currentCash - amount;
+    player.bank = currentBank + amount;
+
+    try {
+      await player.save();
+      return { success: true, cash: player.cash, bank: player.bank };
+    } catch (err) {
+      player.cash = previousCash;
+      player.bank = previousBank;
+      logger.error(`Error updating transfering funds: ${err}`);
+      return { success: false, message: 'Error transferring funds.' };
+    }
+  } else {
+    if (currentBank < amount)
+      return { success: false, message: 'Insufficient bank funds.' };
+    const previousBank = player.bank;
+    const previousCash = player.cash;
+    player.bank = currentBank - amount;
+    player.cash = currentCash + amount;
+
+    try {
+      await player.save();
+      return { success: true, cash: player.cash, bank: player.bank };
+    } catch (err) {
+      player.bank = previousBank;
+      player.cash = previousCash;
+      logger.error(`Error updating transfering funds: ${err}`);
+      return { success: false, message: 'Error transferring funds.' };
+    }
   }
 };

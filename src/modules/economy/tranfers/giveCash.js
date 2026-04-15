@@ -1,5 +1,4 @@
 const Player = require('../../../models/Player');
-const balance = require('../../economy/balance');
 
 /**
  * Transfers cash from one player to another.
@@ -18,41 +17,25 @@ module.exports = async function giveCash(
   guildId,
   amount,
 ) {
-  const fromPlayer = await Player.findOne({ userId: fromUserId, guildId });
-  const toPlayer = await Player.findOne({ userId: toUserId, guildId });
+  const transferResult = await Player.transferCurrency(
+    guildId,
+    fromUserId,
+    toUserId,
+    amount,
+  );
 
-  if (!fromPlayer) {
-    return {
-      success: false,
-      message: 'Sender not found in the database.',
-    };
+  if (!transferResult.success) {
+    return transferResult;
   }
-
-  if (!toPlayer) {
-    return {
-      success: false,
-      message: 'Recipient not found in the database.',
-    };
-  }
-
-  if (amount <= 0 || fromPlayer.cash < amount) {
-    return {
-      success: false,
-      message:
-        amount <= 0
-          ? 'Invalid transfer amount.'
-          : 'Insufficient funds to complete the transfer.',
-    };
-  }
-
-  await balance.updatePlayerCash(fromPlayer, -amount);
-  await balance.updatePlayerCash(toPlayer, amount);
 
   return {
     success: true,
-    transferredAmount: amount,
+    transferredAmount: transferResult.transferredAmount,
     toUser: toUserId,
     fromUser: fromUserId,
-    newBalance: fromPlayer.cash,
+    newBalance: transferResult.playerA.cash,
+    cash: transferResult.playerA.cash,
+    bank: transferResult.playerA.bank,
+    debt: transferResult.playerA.debt,
   };
 };

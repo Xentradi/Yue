@@ -15,47 +15,69 @@ const logger = require('../../../utils/logger');
 
 module.exports = async function dailyBonus(userId, guildId) {
   const player = await Player.findOne({ userId, guildId });
+  const now = new Date();
+  const claimStart = new Date(now);
+  claimStart.setHours(0, 0, 0, 0);
+  const nextClaimAt = new Date(claimStart.getTime() + 24 * 60 * 60 * 1000);
 
   if (!player) {
     return {
       success: false,
       message: 'Player not found.',
+      nextClaimAt,
     };
   }
 
-  const today = new Date().setHours(0, 0, 0, 0);
+  if (!Number.isFinite(player.cash) || player.cash < 0) {
+    return {
+      success: false,
+      message: 'Player cash balance is invalid.',
+      nextClaimAt,
+    };
+  }
+
+  const today = claimStart.getTime();
   const lastClaimDate = player.lastDailyBonusClaim
-    ? player.lastDailyBonusClaim.setHours(0, 0, 0, 0)
+    ? new Date(player.lastDailyBonusClaim).setHours(0, 0, 0, 0)
     : null;
 
   if (lastClaimDate === today) {
     return {
       success: false,
       message: 'Daily bonus already claimed today.',
+      nextClaimAt,
     };
   }
 
   const bonusAmount = config.dailyWage ?? 500; // Default to 500 if dailyWage isn't set in the config
 
   try {
-    const updateCashResult = await player.updateCash(bonusAmount);
+    const nextCash = player.cash + bonusAmount;
+    const updateResult = await player.setValues({
+      cash: nextCash,
+      lastDailyBonusClaim: new Date(today),
+    });
 
-    if (!updateCashResult.success) {
-      return updateCashResult;
+    if (!updateResult.success) {
+      return {
+        success: false,
+        message: updateResult.error,
+        nextClaimAt,
+      };
     }
 
-    player.lastDailyBonusClaim = new Date(today);
-    await player.save();
     return {
       success: true,
       amount: bonusAmount,
-      cash: updateCashResult.newBalance,
+      cash: nextCash,
+      nextClaimAt,
     };
   } catch (err) {
     logger.error(`An error occurred while granting the daily bonus: ${err}`);
     return {
       success: false,
       message: 'An error occurred while granting the daily bonus.',
+      nextClaimAt,
     };
   }
 };

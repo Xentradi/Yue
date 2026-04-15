@@ -1,48 +1,58 @@
 const { SlashCommandBuilder } = require('discord.js');
 const deposit = require('../../modules/economy/bankOperations/deposit');
-const { createEmbed } = require('../../utils/embedUtils');
+const {
+  createBalanceEmbed,
+  createStatusEmbed,
+  formatCurrency,
+} = require('../../utils/economyFeedback');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('deposit')
-    .setDescription('Move virtual cash from your wallet to the bank.')
+    .setDescription('Move cash from your wallet to your bank.')
     .addIntegerOption((option) =>
       option
-        .setName('deposit_amount')
-        .setDescription('Amount of virtual cash to deposit')
+        .setName('amount')
+        .setDescription('Amount to deposit')
         .setRequired(true),
     ),
   cooldown: 2,
   deployGlobal: true,
 
   async execute(interaction) {
+    if (!interaction.inGuild()) {
+      const responseEmbed = createStatusEmbed({
+        title: '❌ Guild Only',
+        description: 'Deposits can only be made inside a server.',
+        color: '#FF3333',
+      });
+      return interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+    }
+
     await interaction.deferReply();
-    const amount = interaction.options.getInteger('deposit_amount');
+    const amount = interaction.options.getInteger('amount');
     const data = await deposit(
       interaction.user.id,
       interaction.guildId,
       amount,
     );
 
-    let embedOptions;
-
     if (data.success) {
-      embedOptions = {
-        title: `💰 Deposit Statement for ${interaction.member.displayName}`,
-        description: `Your deposit of $${data.amount} is completed.`,
-        fields: [
-          { name: '💵 Cash', value: `$${data.cash.toLocaleString()}` },
-          { name: '🏦 Bank', value: `$${data.bank.toLocaleString()}` },
-        ],
-      };
-    } else {
-      embedOptions = {
-        title: '⚠️ Deposit Failed!',
-        description: data.message,
-      };
+      const responseEmbed = createBalanceEmbed({
+        title: `🏦 Deposit Completed for ${interaction.member.displayName}`,
+        description: `Deposited ${formatCurrency(data.amount)} into your bank.`,
+        cash: data.cash,
+        bank: data.bank,
+        debt: data.debt,
+      });
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
 
-    const responseEmbed = createEmbed(embedOptions);
+    const responseEmbed = createStatusEmbed({
+      title: '⚠️ Deposit Failed',
+      description: data.message || 'We could not complete the deposit request.',
+      color: '#FF3333',
+    });
     interaction.editReply({ embeds: [responseEmbed] });
   },
 };

@@ -1,11 +1,11 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const restockLake = require('../../modules/games/adminOperations/restockLake');
-const { createEmbed } = require('../../utils/embedUtils');
+const { createStatusEmbed } = require('../../utils/economyFeedback');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('restocklake')
-    .setDescription('Restock the virtual lake with new fish.')
+    .setDescription('Restock the guild lake.')
     .addIntegerOption((option) =>
       option
         .setName('lake_size')
@@ -19,9 +19,10 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
     if (
+      !interaction.inGuild() ||
       !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
     ) {
-      const responseEmbed = createEmbed({
+      const responseEmbed = createStatusEmbed({
         title: '❌ Permission Denied',
         description:
           'You need administrator permissions to execute this command.',
@@ -33,32 +34,35 @@ module.exports = {
     let lakeSize = interaction.options.getInteger('lake_size') || 1000;
 
     if (lakeSize <= 0) {
-      const responseEmbed = createEmbed({
+      const responseEmbed = createStatusEmbed({
         title: '❌ Invalid Lake Size',
         description: 'Please provide a positive integer for the lake size.',
         color: '#FF0000',
       });
       return interaction.editReply({ embeds: [responseEmbed] });
     }
-    if (lakeSize > 999999) lakeSize = 1000000;
+    if (lakeSize > 1000000) lakeSize = 1000000;
 
     const restockResult = await restockLake(interaction.guildId, lakeSize);
 
-    let embedOptions = {
-      title: '🐟 Lake Restocked!',
-      description: `The lake has been restocked successfully! ${restockResult.newFishCount} new fish have been added.`,
-      color: '#00FF00',
-    };
-
-    if (!restockResult.success) {
-      embedOptions = {
-        title: '❌ Restock Failed',
-        description: restockResult.message,
-        color: '#FF0000',
-      };
-    }
-
-    const responseEmbed = createEmbed(embedOptions);
+    const responseEmbed = restockResult.success
+      ? createStatusEmbed({
+          title: '🐟 Lake Restocked',
+          description: `The lake now holds ${restockResult.newFishCount.toLocaleString()} fish total.`,
+          color: '#33CC33',
+          fields: [
+            {
+              name: 'Lake Size',
+              value: `${restockResult.newFishCount.toLocaleString()} fish`,
+              inline: true,
+            },
+          ],
+        })
+      : createStatusEmbed({
+          title: '❌ Restock Failed',
+          description: restockResult.message,
+          color: '#FF0000',
+        });
     interaction.editReply({ embeds: [responseEmbed] });
   },
 };

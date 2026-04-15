@@ -1,11 +1,15 @@
 const { SlashCommandBuilder } = require('discord.js');
 const withdraw = require('../../modules/economy/bankOperations/withdraw');
-const { createEmbed } = require('../../utils/embedUtils');
+const {
+  createBalanceEmbed,
+  createStatusEmbed,
+  formatCurrency,
+} = require('../../utils/economyFeedback');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('withdraw')
-    .setDescription('Withdraw cash from your bank.')
+    .setDescription('Move cash from your bank to your wallet.')
     .addIntegerOption((option) =>
       option
         .setName('amount')
@@ -16,6 +20,15 @@ module.exports = {
   deployGlobal: true,
 
   async execute(interaction) {
+    if (!interaction.inGuild()) {
+      const responseEmbed = createStatusEmbed({
+        title: '❌ Guild Only',
+        description: 'Withdrawals can only be made inside a server.',
+        color: '#FF3333',
+      });
+      return interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+    }
+
     await interaction.deferReply();
     const amount = interaction.options.getInteger('amount');
     const data = await withdraw(
@@ -23,40 +36,24 @@ module.exports = {
       interaction.guildId,
       amount,
     );
-    let embedOptions = {};
 
-    if (data === null) {
-      embedOptions = {
-        title: '💰 Withdrawal Statement',
-        description: 'Account not found.',
-        color: '#FF3333',
-      };
-    } else if (data === false) {
-      embedOptions = {
-        title: '💰 Withdrawal Statement',
-        description: 'Invalid withdrawal amount.',
-        color: '#FF3333',
-      };
-    } else if (!data.success) {
-      embedOptions = {
-        title: '💰 Withdrawal Statement',
-        description: data.message,
-        color: '#FF3333',
-      };
-    } else {
-      embedOptions = {
-        title: `💰 Withdrawal Statement for ${interaction.user.username}`,
-        description: `Your withdrawal of $${data.amount.toLocaleString()} is completed.`,
-        color: '#33CC33',
-        fields: [
-          { name: '💵 Cash', value: `$${data.cash.toLocaleString()}` },
-          { name: '🏦 Bank', value: `$${data.bank.toLocaleString()}` },
-        ],
-        footer: { text: 'Yue Bank Corp.' },
-      };
+    if (data && data.success) {
+      const responseEmbed = createBalanceEmbed({
+        title: `🏦 Withdrawal Completed for ${interaction.member.displayName}`,
+        description: `Withdrew ${formatCurrency(data.amount)} from your bank.`,
+        cash: data.cash,
+        bank: data.bank,
+        debt: data.debt,
+      });
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
 
-    const responseEmbed = createEmbed(embedOptions);
+    const responseEmbed = createStatusEmbed({
+      title: '⚠️ Withdrawal Failed',
+      description:
+        data?.message ?? 'We could not complete the withdrawal request.',
+      color: '#FF3333',
+    });
     interaction.editReply({ embeds: [responseEmbed] });
   },
 };

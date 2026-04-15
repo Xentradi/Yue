@@ -22,13 +22,62 @@ module.exports = async function stealCash(
   const player = await Player.findOne({ userId, guildId });
   const target = await Player.findOne({ userId: targetUserId, guildId });
 
-  if (!player || !target) return null; // Handle players not found
+  if (!player) {
+    return {
+      successful: false,
+      amountStolen: 0,
+      penalty: 0,
+      playerCash: 0,
+      playerBank: 0,
+      playerDebt: 0,
+      targetCash: 0,
+      message: 'Stealing player not found.',
+    };
+  }
+
+  if (!target) {
+    return {
+      successful: false,
+      amountStolen: 0,
+      penalty: 0,
+      playerCash: player.cash,
+      playerBank: player.bank,
+      playerDebt: player.debt,
+      targetCash: 0,
+      message: 'Target player not found.',
+    };
+  }
+
+  if (
+    !Number.isFinite(player.cash) ||
+    !Number.isFinite(player.bank) ||
+    !Number.isFinite(player.debt) ||
+    player.cash < 0 ||
+    player.bank < 0 ||
+    player.debt < 0 ||
+    !Number.isFinite(target.cash) ||
+    target.cash < 0
+  ) {
+    return {
+      successful: false,
+      amountStolen: 0,
+      penalty: 0,
+      playerCash: player.cash,
+      playerBank: player.bank,
+      playerDebt: player.debt,
+      targetCash: target.cash,
+      message: 'Player balances are invalid.',
+    };
+  }
+
   if (!Number.isFinite(amount) || amount <= 0) {
     return {
       successful: false,
       amountStolen: 0,
       penalty: 0,
       playerCash: player.cash,
+      playerBank: player.bank,
+      playerDebt: player.debt,
       targetCash: target.cash,
       message: 'Invalid steal amount.',
     };
@@ -40,6 +89,8 @@ module.exports = async function stealCash(
       amountStolen: 0,
       penalty: 0,
       playerCash: player.cash,
+      playerBank: player.bank,
+      playerDebt: player.debt,
       targetCash: target.cash,
       message: 'Target has no cash to steal.',
     };
@@ -53,11 +104,19 @@ module.exports = async function stealCash(
   const successRate = 0.9 / Math.pow(1 + Math.exp(20 * (percentage - 0.1)), 4);
 
   const successful = Math.random() < successRate;
+  const previousPlayer = {
+    cash: player.cash,
+    bank: player.bank,
+    debt: player.debt,
+  };
+  const previousTargetCash = target.cash;
 
   const result = {
     successful: successful,
     amountStolen: 0,
     playerCash: player.cash,
+    playerBank: player.bank,
+    playerDebt: player.debt,
     targetCash: target.cash,
   };
 
@@ -71,6 +130,8 @@ module.exports = async function stealCash(
 
     result.amountStolen = stealAmount;
     result.playerCash = player.cash;
+    result.playerBank = player.bank;
+    result.playerDebt = player.debt;
     result.targetCash = target.cash;
   } else {
     const penalty = Math.ceil(getPenalty(stealAmount));
@@ -89,6 +150,8 @@ module.exports = async function stealCash(
     }
 
     result.penalty = penalty;
+    result.playerBank = player.bank;
+    result.playerDebt = player.debt;
   }
   // Ensuring bank doesn't go below zero
   player.bank = Math.max(player.bank, 0);
@@ -97,7 +160,26 @@ module.exports = async function stealCash(
     await player.save();
     await target.save();
   } catch (err) {
+    player.cash = previousPlayer.cash;
+    player.bank = previousPlayer.bank;
+    player.debt = previousPlayer.debt;
+    target.cash = previousTargetCash;
+    try {
+      await Promise.all([player.save(), target.save()]);
+    } catch (rollbackErr) {
+      logger.error(`Failed to roll back steal attempt: ${rollbackErr}`);
+    }
     logger.error(`Error updating balance information: ${err}`);
+    return {
+      successful: false,
+      amountStolen: 0,
+      penalty: 0,
+      playerCash: player.cash,
+      playerBank: player.bank,
+      playerDebt: player.debt,
+      targetCash: target.cash,
+      message: 'Failed to persist steal attempt.',
+    };
   }
 
   return result;

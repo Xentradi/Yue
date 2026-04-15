@@ -29,10 +29,15 @@ module.exports = async function repayLoan(userId, guildId, amount) {
     };
   }
 
-  if (player.cash < amount) {
+  if (
+    !Number.isFinite(player.cash) ||
+    player.cash < 0 ||
+    !Number.isFinite(player.debt) ||
+    player.debt < 0
+  ) {
     return {
       success: false,
-      message: 'Insufficient funds to repay the loan.',
+      message: 'Player balances are invalid.',
     };
   }
 
@@ -44,18 +49,22 @@ module.exports = async function repayLoan(userId, guildId, amount) {
   }
 
   const repaymentAmount = Math.min(amount, player.debt);
+
+  if (player.cash < repaymentAmount) {
+    return {
+      success: false,
+      message: 'Insufficient funds to repay the loan.',
+    };
+  }
   const refundAmount = amount - repaymentAmount;
 
-  player.debt -= repaymentAmount;
-  player.cash -= amount;
-  if (refundAmount > 0) {
-    player.cash += refundAmount;
-  }
+  const updateResult = await player.setValues({
+    debt: player.debt - repaymentAmount,
+    cash: player.cash - repaymentAmount,
+  });
 
-  try {
-    await player.save();
-  } catch (err) {
-    logger.error(`Failed to save changes to database: ${err}`);
+  if (!updateResult.success) {
+    logger.error(`Failed to save changes to database: ${updateResult.error}`);
     return {
       success: false,
       message: 'Failed to save changes to the database.',

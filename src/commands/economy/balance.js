@@ -1,12 +1,15 @@
 const { SlashCommandBuilder } = require('discord.js');
 const getBalance = require('../../modules/economy/playerInfo/balance');
-const { createEmbed } = require('../../utils/embedUtils');
+const {
+  createBalanceEmbed,
+  createStatusEmbed,
+} = require('../../utils/economyFeedback');
 const logger = require('../../utils/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('balance')
-    .setDescription('Shows your balance.'),
+    .setDescription('View your balance.'),
   cooldown: 2,
   deployGlobal: true,
 
@@ -27,18 +30,20 @@ module.exports = {
     );
     logger.debug(`playerBalance: ${playerBalance}`);
     if (!playerBalance.success) {
-      return interaction.editReply(playerBalance.message);
+      const responseEmbed = createStatusEmbed({
+        title: '💰 Balance Unavailable',
+        description: playerBalance.message,
+        color: '#FF3333',
+      });
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
 
-    const embedOptions = {
+    const responseEmbed = createBalanceEmbed({
       title: `💰 Financial Statement for ${interaction.member.displayName}`,
-      fields: [
-        { name: '💵 Cash', value: `$${playerBalance.cash.toLocaleString()}` },
-        { name: '🏦 Bank', value: `$${playerBalance.bank.toLocaleString()}` },
-        { name: '📉 Debt', value: `$${playerBalance.debt.toLocaleString()}` },
-      ],
-    };
-    const responseEmbed = createEmbed(embedOptions);
+      cash: playerBalance.cash,
+      bank: playerBalance.bank,
+      debt: playerBalance.debt,
+    });
     interaction.editReply({ embeds: [responseEmbed] });
   },
 };

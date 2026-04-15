@@ -22,19 +22,24 @@ module.exports = async function giveBalance(interaction) {
 
     if (!player) return { success: false, error: 'User not found.' };
 
-    if (field === 'debt') {
-      player.debt = Math.max(player.debt - amount, 0);
-    } else {
-      player[field] += amount;
+    if (!Number.isFinite(player[field]) || player[field] < 0) {
+      return { success: false, error: `Current ${field} balance is invalid.` };
     }
 
-    await player.save();
+    const nextAmount =
+      field === 'debt'
+        ? Math.max(player.debt - amount, 0)
+        : player[field] + amount;
+    const updateResult = await player.setValues({ [field]: nextAmount });
+    if (!updateResult.success) {
+      return { success: false, error: updateResult.error };
+    }
 
     return {
       success: true,
       userId,
       field,
-      newAmount: player[field],
+      newAmount: nextAmount,
     };
   } catch (error) {
     return { success: false, error: error.message };

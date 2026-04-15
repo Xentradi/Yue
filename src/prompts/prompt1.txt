@@ -16,9 +16,8 @@ Here is the tree of the src directory of the bot:
  ┃ ┃ ┣ 📜deposit.js
  ┃ ┃ ┣ 📜pay.js
  ┃ ┃ ┣ 📜steal.js
- ┃ ┃ ┗ 📜withdraw.js
- ┃ ┣ 📂fun
- ┃ ┃ ┗ 📜leaderboards.js
+ ┃ ┃ ┣ 📜withdraw.js
+ ┃ ┃ ┗ 📜leaderboard.js
  ┃ ┣ 📂gamble
  ┃ ┃ ┣ 📜blackjack.js
  ┃ ┃ ┣ 📜coin.js

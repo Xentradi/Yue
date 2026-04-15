@@ -14,6 +14,8 @@
 - `src/modules/` contains business logic for economy, games, rewards, and scheduled jobs
 - `src/models/` and `src/schemas/` define Mongoose persistence
 - `src/utils/` contains shared helpers for embeds, logging, calculations, and role management
+- Blackjack is a split case: `src/commands/gamble/blackjack.js` is a thin command wrapper and `src/modules/games/blackjackGame.js` contains the game engine and response rendering
+- The command inventory and category boundaries are documented in [Command_Surface.md](./Command_Surface.md)
 
 ## Request Paths
 
@@ -21,13 +23,15 @@
 
 Discord interaction -> `interactionCreate` event -> command lookup -> cooldown check -> command module -> response
 
+Most command modules defer the response and delegate work into a module, then render either `createStatusEmbed` or `createBalanceEmbed` so success and failure states stay visually and textually consistent.
+
 ### Message Rewards
 
 Discord message -> `messageCreate` event -> reward module -> player update -> optional level-up role changes
 
 ### Scheduled Work
 
-`ready.js` loads `scheduledTasks.js`, which registers cron jobs for interest accrual and lake restocking.
+`ready.js` calls `scheduledTasks.registerScheduledTasks()`, which registers cron jobs for interest accrual and lake restocking.
 
 ## Data Flow
 

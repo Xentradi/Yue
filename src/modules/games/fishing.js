@@ -39,16 +39,21 @@ module.exports = async function fish(userId, guildId) {
     };
   }
 
-  // Use the updatePlayerCash function to handle cash updates
+  const fishInLake = lake.fishStock.find((fish) => fish.type === outcome.type);
+  const previousFishCount = fishInLake ? fishInLake.count : null;
+
   const updateCashResult = await balance.updatePlayerCash(
     player,
     outcome.reward,
   );
 
   if (!updateCashResult.success) {
+    if (fishInLake && previousFishCount !== null) {
+      fishInLake.count = previousFishCount;
+    }
     return {
       success: false,
-      description: updateCashResult.message, // Using the error message from updatePlayerCash
+      description: updateCashResult.message,
     };
   }
 
@@ -59,6 +64,9 @@ module.exports = async function fish(userId, guildId) {
       success: true,
       type: outcome.type, // Include the type of fish caught in the return object
       reward: outcome.reward,
+      playerCash: player.cash,
+      playerBank: player.bank,
+      playerDebt: player.debt,
       description: `You cast your line and caught a ${outcome.type}!`,
       message:
         outcome.reward >= 0
@@ -66,6 +74,18 @@ module.exports = async function fish(userId, guildId) {
           : `You lost $${Math.abs(outcome.reward)}.`,
     };
   } catch (err) {
+    const rollbackResult = await balance.updatePlayerCash(
+      player,
+      -outcome.reward,
+    );
+    if (fishInLake && previousFishCount !== null) {
+      fishInLake.count = previousFishCount;
+    }
+    if (!rollbackResult.success) {
+      logger.error(
+        `Failed to roll back player cash after lake save error: ${rollbackResult.message}`,
+      );
+    }
     logger.error(
       `An error occured while processing the fishing attempt: ${err}`,
     );

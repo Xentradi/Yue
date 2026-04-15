@@ -45,6 +45,7 @@ module.exports = async function withdraw(userId, guildId, amount) {
           amount: amount,
           cash: transferResult.cash,
           bank: transferResult.bank,
+          debt: player.debt,
         }
       : transferResult;
   } catch (error) {

@@ -23,7 +23,7 @@ async function logJobResult(jobName, promise) {
   try {
     const result = await promise;
     if (result?.success) {
-      logger.info(result.message);
+      logger.info(`${jobName}: ${result.message}`);
     } else {
       logger.error(`${jobName}: ${result?.message ?? 'Unknown failure.'}`);
     }
@@ -38,23 +38,27 @@ async function runDailyMaintenance() {
     getPlayerGuildIds(),
   ]);
 
-  if (guildIds.length === 0) {
+  if (guildIds.length === 0 && playerGuildIds.length === 0) {
     logger.info('No guilds found for daily maintenance.');
     return;
   }
 
-  for (const guildId of playerGuildIds) {
-    await logJobResult(
-      `Bank interest for guild ${guildId}`,
-      applyBankInterest(guildId),
-    );
+  if (playerGuildIds.length > 0) {
+    for (const guildId of playerGuildIds) {
+      await logJobResult(
+        `Bank interest for guild ${guildId}`,
+        applyBankInterest(guildId),
+      );
+    }
   }
 
-  for (const guildId of guildIds) {
-    await logJobResult(
-      `Lake restock for guild ${guildId}`,
-      restockLake(guildId, 5500),
-    );
+  if (guildIds.length > 0) {
+    for (const guildId of guildIds) {
+      await logJobResult(
+        `Lake restock for guild ${guildId}`,
+        restockLake(guildId, 5500),
+      );
+    }
   }
 }
 
@@ -74,28 +78,35 @@ async function runHourlyMaintenance() {
   }
 }
 
-// Daily
-cron.schedule(
-  '0 12 * * *',
-  () => {
-    void runDailyMaintenance();
-  },
-  {
-    scheduled: true,
-    timezone: 'Etc/UTC',
-  },
-);
+function registerScheduledTasks() {
+  cron.schedule(
+    '0 12 * * *',
+    () => {
+      void runDailyMaintenance();
+    },
+    {
+      scheduled: true,
+      timezone: 'Etc/UTC',
+    },
+  );
 
-// Hourly
-cron.schedule(
-  '0 * * * *',
-  () => {
-    void runHourlyMaintenance();
-  },
-  {
-    scheduled: true,
-    timezone: 'Etc/UTC',
-  },
-);
+  cron.schedule(
+    '0 * * * *',
+    () => {
+      void runHourlyMaintenance();
+    },
+    {
+      scheduled: true,
+      timezone: 'Etc/UTC',
+    },
+  );
+}
 
-// Daily
+module.exports = {
+  getTrackedGuildIds,
+  getPlayerGuildIds,
+  logJobResult,
+  runDailyMaintenance,
+  runHourlyMaintenance,
+  registerScheduledTasks,
+};

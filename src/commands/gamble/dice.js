@@ -1,16 +1,20 @@
 const { SlashCommandBuilder } = require('discord.js');
 const diceRoll = require('../../modules/games/diceRoll');
-const { createEmbed } = require('../../utils/embedUtils');
+const {
+  createBalanceEmbed,
+  createStatusEmbed,
+  formatCurrency,
+} = require('../../utils/economyFeedback');
 const Player = require('../../models/Player');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('dice')
-    .setDescription('Bet on the outcome of a dice roll (1-6)')
+    .setDescription('Bet on a six-sided roll.')
     .addIntegerOption((option) =>
       option
         .setName('guess')
-        .setDescription('Your guessed outcome of the dice roll')
+        .setDescription('Your guessed roll outcome')
         .setRequired(true)
         .addChoices(
           { name: '1', value: 1 },
@@ -22,35 +26,49 @@ module.exports = {
         ),
     )
     .addIntegerOption((option) =>
-      option
-        .setName('bet')
-        .setDescription('The amount you wish to wager')
-        .setRequired(true),
+      option.setName('bet').setDescription('Amount to wager').setRequired(true),
     ),
   cooldown: 3,
   deployGlobal: true,
 
   async execute(interaction) {
+    if (!interaction.inGuild()) {
+      const responseEmbed = createStatusEmbed({
+        title: '❌ Guild Only',
+        description: 'Dice rolls can only be played inside a server.',
+        color: '#FF3333',
+      });
+      return interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+    }
+
     await interaction.deferReply();
 
     const guessedNumber = interaction.options.getInteger('guess');
     const betAmount = interaction.options.getInteger('bet');
 
-    // Fetch the player from the database
     const player = await Player.findOne({
       userId: interaction.user.id,
       guildId: interaction.guildId,
     });
 
-    // Check if the player exists and has sufficient funds
     if (!player) {
-      await interaction.editReply('You do not have an account set up.');
-      return; // Exit early
-    } else if (player.cash < betAmount) {
-      await interaction.editReply(
-        'You do not have sufficient funds for this bet.',
-      );
-      return; // Exit early
+      const responseEmbed = createStatusEmbed({
+        title: '🎲 Dice Roll Unavailable',
+        description: 'You do not have an account set up yet.',
+        color: '#FF3333',
+      });
+      await interaction.editReply({ embeds: [responseEmbed] });
+      return;
+    }
+
+    if (player.cash < betAmount) {
+      const responseEmbed = createStatusEmbed({
+        title: '🎲 Dice Roll Unavailable',
+        description: 'You do not have sufficient funds for this bet.',
+        color: '#FF3333',
+      });
+      await interaction.editReply({ embeds: [responseEmbed] });
+      return;
     }
 
     const data = await diceRoll(
@@ -77,21 +95,27 @@ module.exports = {
       ? victoryMessage[Math.floor(Math.random() * victoryMessage.length)]
       : defeatMessage[Math.floor(Math.random() * defeatMessage.length)];
 
-    const embedOptions = {
-      title: `Dice Roll Result for ${interaction.member.displayName}`,
+    const responseEmbed = createBalanceEmbed({
+      title: `🎲 Dice Roll for ${interaction.member.displayName}`,
       description: `The dice rolled **${data.outcome}**. ${randomMessage}`,
+      cash: data.playerBalanceAfter,
+      bank: 0,
+      debt: 0,
       fields: [
         {
           name: data.win ? '🎉 You Won!' : '😢 You Lost!',
           value: data.win
-            ? `You won $${data.prize}.`
-            : `You lost $${Math.abs(data.prize)}.`,
+            ? `You won ${formatCurrency(data.prize)}.`
+            : `You lost ${formatCurrency(Math.abs(data.prize))}.`,
           inline: false,
         },
+        {
+          name: '🎲 Bet',
+          value: formatCurrency(data.betAmount),
+          inline: true,
+        },
       ],
-    };
-
-    const responseEmbed = createEmbed(embedOptions);
+    });
     interaction.editReply({ embeds: [responseEmbed] });
   },
 };

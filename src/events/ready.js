@@ -6,7 +6,7 @@ module.exports = {
   name: Events.ClientReady,
   once: true,
   execute(client) {
-    require('../modules/scheduledEvents/scheduledTasks');
+    require('../modules/scheduledEvents/scheduledTasks').registerScheduledTasks();
     //reminderMessages.cronJobs(client);
     logger.info(`Ready! Logged in as ${client.user.tag}`);
   },

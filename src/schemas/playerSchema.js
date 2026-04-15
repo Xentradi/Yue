@@ -5,9 +5,40 @@
  * @requires statsSchema
  */
 
-const mongoose = require('mongoose');
 const { Schema } = require('mongoose');
 const statsSchema = require('./statsSchema');
+
+const BALANCE_FIELDS = new Set([
+  'cash',
+  'bank',
+  'debt',
+  'exp',
+  'level',
+  'reputation',
+  'relationship',
+  'expMultiplier',
+  'cashMultiplier',
+  'interestMultiplier',
+]);
+
+function isFiniteNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function isNonNegativeFiniteNumber(value) {
+  return isFiniteNumber(value) && value >= 0;
+}
+
+function snapshotFields(doc, fields) {
+  return fields.reduce((snapshot, field) => {
+    snapshot[field] = doc[field];
+    return snapshot;
+  }, {});
+}
+
+function restoreFields(doc, snapshot) {
+  Object.assign(doc, snapshot);
+}
 
 /**
  * @typedef {Object} Player
@@ -37,22 +68,27 @@ const playerSchema = new Schema({
   exp: {
     type: Number,
     default: 0,
+    min: 0,
   },
   level: {
     type: Number,
     default: 0,
+    min: 0,
   },
   cash: {
     type: Number,
     default: 0,
+    min: 0,
   },
   bank: {
     type: Number,
     default: 0,
+    min: 0,
   },
   debt: {
     type: Number,
     default: 0,
+    min: 0,
   },
   reputation: {
     type: Number,
@@ -65,14 +101,17 @@ const playerSchema = new Schema({
   expMultiplier: {
     type: Number,
     default: 1,
+    min: 0,
   },
   cashMultiplier: {
     type: Number,
     default: 1,
+    min: 0,
   },
   interestMultiplier: {
     type: Number,
     default: 1,
+    min: 0,
   },
   lastDailyBonusClaim: {
     type: Date,
@@ -94,12 +133,92 @@ playerSchema.index({ userId: 1, guildId: 1 });
  * @returns {Promise<Object>} An object indicating success and the new balance or an error message.
  */
 playerSchema.method('updateCash', async function (amount) {
-  if (amount < 0 && Math.abs(amount) > this.cash) {
+  if (!isFiniteNumber(amount)) {
+    return { success: false, error: 'Amount must be a valid number.' };
+  }
+
+  if (!isFiniteNumber(this.cash) || this.cash < 0) {
+    return { success: false, error: 'Player cash balance is invalid.' };
+  }
+
+  if (this.cash + amount < 0) {
     return { success: false, error: 'Insufficient funds.' };
   }
+
+  const previousCash = this.cash;
   this.cash += amount;
-  await this.save();
-  return { success: true, newBalance: this.cash };
+
+  try {
+    await this.save();
+    return { success: true, newBalance: this.cash };
+  } catch (error) {
+    this.cash = previousCash;
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Updates the player's bank by a specified amount.
+ * @async
+ * @function updateBank
+ * @param {number} amount - The amount to update the bank by.
+ * @returns {Promise<Object>} An object indicating success and the new balance or an error message.
+ */
+playerSchema.method('updateBank', async function (amount) {
+  if (!isFiniteNumber(amount)) {
+    return { success: false, error: 'Amount must be a valid number.' };
+  }
+
+  if (!isFiniteNumber(this.bank) || this.bank < 0) {
+    return { success: false, error: 'Player bank balance is invalid.' };
+  }
+
+  if (this.bank + amount < 0) {
+    return { success: false, error: 'Insufficient funds.' };
+  }
+
+  const previousBank = this.bank;
+  this.bank += amount;
+
+  try {
+    await this.save();
+    return { success: true, newBalance: this.bank };
+  } catch (error) {
+    this.bank = previousBank;
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Updates the player's debt by a specified amount.
+ * @async
+ * @function updateDebt
+ * @param {number} amount - The amount to update the debt by.
+ * @returns {Promise<Object>} An object indicating success and the new balance or an error message.
+ */
+playerSchema.method('updateDebt', async function (amount) {
+  if (!isFiniteNumber(amount)) {
+    return { success: false, error: 'Amount must be a valid number.' };
+  }
+
+  if (!isFiniteNumber(this.debt) || this.debt < 0) {
+    return { success: false, error: 'Player debt balance is invalid.' };
+  }
+
+  if (this.debt + amount < 0) {
+    return { success: false, error: 'Debt cannot go below zero.' };
+  }
+
+  const previousDebt = this.debt;
+  this.debt += amount;
+
+  try {
+    await this.save();
+    return { success: true, newBalance: this.debt };
+  } catch (error) {
+    this.debt = previousDebt;
+    return { success: false, error: error.message };
+  }
 });
 
 /**
@@ -110,9 +229,28 @@ playerSchema.method('updateCash', async function (amount) {
  * @returns {Promise<Object>} An object indicating success and the new experience points.
  */
 playerSchema.method('updateExp', async function (amount) {
+  if (!isFiniteNumber(amount)) {
+    return { success: false, error: 'Amount must be a valid number.' };
+  }
+
+  if (!isFiniteNumber(this.exp) || this.exp < 0) {
+    return { success: false, error: 'Player experience is invalid.' };
+  }
+
+  if (this.exp + amount < 0) {
+    return { success: false, error: 'Experience cannot go below zero.' };
+  }
+
+  const previousExp = this.exp;
   this.exp += amount;
-  await this.save();
-  return { success: true, newExp: this.exp };
+
+  try {
+    await this.save();
+    return { success: true, newExp: this.exp };
+  } catch (error) {
+    this.exp = previousExp;
+    return { success: false, error: error.message };
+  }
 });
 
 /**
@@ -123,12 +261,68 @@ playerSchema.method('updateExp', async function (amount) {
  * @returns {Promise<Object>} An object indicating success and the new balance or an error message.
  */
 playerSchema.method('setCash', async function (amount) {
-  if (amount < 0) {
+  if (!isNonNegativeFiniteNumber(amount)) {
     return { success: false, error: 'Amount must be a positive value.' };
   }
+
+  const previousCash = this.cash;
   this.cash = amount;
-  await this.save();
-  return { success: true, newBalance: this.cash };
+
+  try {
+    await this.save();
+    return { success: true, newBalance: this.cash };
+  } catch (error) {
+    this.cash = previousCash;
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Sets the player's bank to a specified amount.
+ * @async
+ * @function setBank
+ * @param {number} amount - The amount to set the bank to.
+ * @returns {Promise<Object>} An object indicating success and the new balance or an error message.
+ */
+playerSchema.method('setBank', async function (amount) {
+  if (!isNonNegativeFiniteNumber(amount)) {
+    return { success: false, error: 'Amount must be a positive value.' };
+  }
+
+  const previousBank = this.bank;
+  this.bank = amount;
+
+  try {
+    await this.save();
+    return { success: true, newBalance: this.bank };
+  } catch (error) {
+    this.bank = previousBank;
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Sets the player's debt to a specified amount.
+ * @async
+ * @function setDebt
+ * @param {number} amount - The amount to set the debt to.
+ * @returns {Promise<Object>} An object indicating success and the new balance or an error message.
+ */
+playerSchema.method('setDebt', async function (amount) {
+  if (!isNonNegativeFiniteNumber(amount)) {
+    return { success: false, error: 'Amount must be a positive value.' };
+  }
+
+  const previousDebt = this.debt;
+  this.debt = amount;
+
+  try {
+    await this.save();
+    return { success: true, newBalance: this.debt };
+  } catch (error) {
+    this.debt = previousDebt;
+    return { success: false, error: error.message };
+  }
 });
 
 /**
@@ -139,12 +333,20 @@ playerSchema.method('setCash', async function (amount) {
  * @returns {Promise<Object>} Success state and the new experience points.
  */
 playerSchema.method('setExp', async function (amount) {
-  if (amount < 0) {
+  if (!isNonNegativeFiniteNumber(amount)) {
     return { success: false, error: 'Amount must be a positive value.' };
   }
+
+  const previousExp = this.exp;
   this.exp = amount;
-  await this.save();
-  return { success: true, newExp: this.exp };
+
+  try {
+    await this.save();
+    return { success: true, newExp: this.exp };
+  } catch (error) {
+    this.exp = previousExp;
+    return { success: false, error: error.message };
+  }
 });
 
 /**
@@ -155,9 +357,58 @@ playerSchema.method('setExp', async function (amount) {
  * @returns {Promise<Object>} An object indicating success and the updated player.
  */
 playerSchema.method('setValues', async function (values) {
+  if (!values || typeof values !== 'object' || Array.isArray(values)) {
+    return { success: false, error: 'Values must be an object.' };
+  }
+
+  for (const [field, value] of Object.entries(values)) {
+    if (
+      field === 'lastDailyBonusClaim' &&
+      value !== null &&
+      !(value instanceof Date)
+    ) {
+      return {
+        success: false,
+        error: `Invalid value for ${field}.`,
+      };
+    }
+
+    if (value instanceof Date && Number.isNaN(value.getTime())) {
+      return {
+        success: false,
+        error: `Invalid value for ${field}.`,
+      };
+    }
+
+    if (BALANCE_FIELDS.has(field) && !isNonNegativeFiniteNumber(value)) {
+      return {
+        success: false,
+        error: `Invalid value for ${field}.`,
+      };
+    }
+
+    if (
+      field !== 'lastDailyBonusClaim' &&
+      typeof value === 'number' &&
+      !isFiniteNumber(value)
+    ) {
+      return {
+        success: false,
+        error: `Invalid value for ${field}.`,
+      };
+    }
+  }
+
+  const snapshot = snapshotFields(this, Object.keys(values));
   Object.assign(this, values);
-  await this.save();
-  return { success: true, updatedPlayer: this };
+
+  try {
+    await this.save();
+    return { success: true, updatedPlayer: this };
+  } catch (error) {
+    restoreFields(this, snapshot);
+    return { success: false, error: error.message };
+  }
 });
 
 /**
@@ -181,37 +432,57 @@ playerSchema.method('hasEnoughCash', function (amount) {
  * @returns {Promise<Object>} Success state and the updated player documents.
  */
 playerSchema.statics.transferCurrency = async function (
-  playerAId,
-  playerBId,
+  guildId,
+  playerAUserId,
+  playerBUserId,
   amount,
 ) {
-  const session = await mongoose.startSession();
+  if (!guildId || !playerAUserId || !playerBUserId) {
+    return { success: false, error: 'Guild and user IDs are required.' };
+  }
+
+  if (!isFiniteNumber(amount) || amount <= 0) {
+    return { success: false, error: 'Invalid transfer amount.' };
+  }
+
   try {
-    session.startTransaction();
     const [playerA, playerB] = await Promise.all([
-      this.findById(playerAId).session(session),
-      this.findById(playerBId).session(session),
+      this.findOne({ userId: playerAUserId, guildId }),
+      this.findOne({ userId: playerBUserId, guildId }),
     ]);
 
-    if (!playerA || !playerB) {
-      throw new Error('One or more players were not found.');
+    if (!playerA) {
+      return { success: false, error: 'Sender not found.' };
+    }
+    if (!playerB) {
+      return { success: false, error: 'Recipient not found.' };
     }
 
-    if (playerA.cash < amount) {
-      throw new Error('Insufficient funds');
+    const senderUpdate = await playerA.updateCash(-amount);
+    if (!senderUpdate.success) {
+      return {
+        success: false,
+        error: senderUpdate.error,
+      };
     }
 
-    playerA.cash -= amount;
-    playerB.cash += amount;
+    const recipientUpdate = await playerB.updateCash(amount);
+    if (!recipientUpdate.success) {
+      await playerA.updateCash(amount);
+      return {
+        success: false,
+        error: recipientUpdate.error,
+      };
+    }
 
-    await Promise.all([playerA.save({ session }), playerB.save({ session })]);
-    await session.commitTransaction();
-    return { success: true, playerA, playerB };
+    return {
+      success: true,
+      playerA,
+      playerB,
+      transferredAmount: amount,
+    };
   } catch (error) {
-    await session.abortTransaction();
-    throw error; // Propagate the error to be handled by calling function
-  } finally {
-    session.endSession();
+    return { success: false, error: error.message };
   }
 };
 
@@ -325,19 +596,19 @@ playerSchema.statics.compareNetWorthToTopInGuild = async function (
 ) {
   // Retrieve the top 10 players by net worth within the specific guild
   const topPlayers = await this.find({ guildId: guildId })
-    .sort({ cash: -1, bank: -1 })
+    .sort({ cash: -1, bank: -1, debt: 1 })
     .limit(30)
     .lean();
 
   // Calculate the total net worth of the top 10 players in the guild
   const totalTopNetWorth = topPlayers.reduce(
-    (acc, player) => acc + player.cash + player.bank,
+    (acc, player) => acc + player.cash + player.bank - player.debt,
     0,
   );
 
   // Determine where the given net worth stands in comparison to the top 10 players
   const sortedNetWorths = topPlayers
-    .map((player) => player.cash + player.bank)
+    .map((player) => player.cash + player.bank - player.debt)
     .concat(netWorth)
     .sort((a, b) => b - a);
   const rank = sortedNetWorths.indexOf(netWorth) + 1; // Add 1 to get the 1-based rank

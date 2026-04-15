@@ -17,7 +17,9 @@ module.exports = async function getTopNetWorth(guildId, limit = 10) {
     {
       $project: {
         userId: 1,
-        netWorth: { $add: ['$cash', '$bank'] }, // Calculate net worth as the sum of cash and bank
+        netWorth: {
+          $subtract: [{ $add: ['$cash', '$bank'] }, '$debt'],
+        }, // Calculate net worth as cash + bank - debt
       },
     },
     { $sort: { netWorth: -1 } }, // Sort in descending order

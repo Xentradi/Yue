@@ -10,10 +10,14 @@ module.exports = async function resetBalance(interaction) {
 
     if (!player) return { success: false, error: 'User not found.' };
 
-    player.cash = 0;
-    player.bank = 0;
-    player.debt = 0;
-    await player.save();
+    const updateResult = await player.setValues({
+      cash: 0,
+      bank: 0,
+      debt: 0,
+    });
+    if (!updateResult.success) {
+      return { success: false, error: updateResult.error };
+    }
 
     return {
       success: true,

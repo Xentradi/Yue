@@ -1,19 +1,26 @@
-// src/commands/utilities/help.js
 const path = require('node:path');
 const fs = require('node:fs');
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { createEmbed } = require('../../utils/embedUtils');
+const { createStatusEmbed } = require('../../utils/economyFeedback');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('help')
-    .setDescription('List all commands or info about a specific command'),
+    .setDescription('List commands or get help for a specific command.'),
   cooldown: '5m',
   deployGlobal: true,
 
   async execute(interaction) {
-    const foldersPath = path.join(__dirname, '../'); // Adjust the path as needed
-    const commandFolders = fs.readdirSync(foldersPath);
+    const foldersPath = path.join(__dirname, '../');
+    const commandFolders = fs
+      .readdirSync(foldersPath, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort(
+        (left, right) =>
+          getFolderOrder(left) - getFolderOrder(right) ||
+          left.localeCompare(right),
+      );
 
     const fields = [];
 
@@ -21,35 +28,30 @@ module.exports = {
       const commandsPath = path.join(foldersPath, folder);
       const commandFiles = fs
         .readdirSync(commandsPath)
-        .filter((file) => file.endsWith('.js'));
+        .filter((file) => file.endsWith('.js'))
+        .sort();
 
-      let commandList = ''; // This will hold the list of commands in the current folder
+      let commandList = '';
 
       for (const file of commandFiles) {
         const command = require(path.join(commandsPath, file));
         const isAdminCommand = folder.toLowerCase() === 'admin';
+        const canViewAdminCommands =
+          interaction.inGuild() &&
+          interaction.member.permissions.has(PermissionFlagsBits.Administrator);
 
         if (command.data) {
-          if (
-            isAdminCommand &&
-            !interaction.member.permissions.has(
-              PermissionFlagsBits.Administrator,
-            )
-          ) {
+          if (isAdminCommand && !canViewAdminCommands) {
             continue; // Skip admin commands for non-admin users
           }
 
-          const commandName = isAdminCommand
-            ? `/${command.data.name} `
-            : `/${command.data.name}`;
-          commandList += `${commandName} - ${command.data.description}\n`;
+          commandList += `${formatUsage(command.data)} - ${command.data.description}\n`;
         }
       }
 
-      // If the commandList is not empty after going through all files, add it as a field
       if (commandList) {
         fields.push({
-          name: folder.charAt(0).toUpperCase() + folder.slice(1),
+          name: getFolderLabel(folder),
           value: commandList,
         });
       }
@@ -57,12 +59,69 @@ module.exports = {
 
     const embedOptions = {
       title: 'Available Commands',
-      description: 'List of all available commands grouped by category:',
+      description:
+        'Commands are grouped by category. Admin commands are hidden unless you have administrator permissions.',
       fields,
     };
 
-    const helpEmbed = createEmbed(embedOptions);
+    const helpEmbed = createStatusEmbed({
+      ...embedOptions,
+      color: '#0099ff',
+    });
 
     await interaction.reply({ embeds: [helpEmbed] });
   },
 };
+
+function formatUsage(commandData) {
+  const options = commandData.options ?? [];
+
+  if (options.length === 0) {
+    return `/${commandData.name}`;
+  }
+
+  const subcommands = options.filter((option) => option.type === 1);
+  if (subcommands.length > 0) {
+    return subcommands
+      .map((subcommand) => {
+        const subcommandOptions = subcommand.options ?? [];
+        const optionText = subcommandOptions.length
+          ? ` ${subcommandOptions
+              .map((option) => formatOption(option))
+              .join(' ')}`
+          : '';
+        return `/${commandData.name} ${subcommand.name}${optionText}`;
+      })
+      .join('\n');
+  }
+
+  return `/${commandData.name} ${options.map((option) => formatOption(option)).join(' ')}`;
+}
+
+function formatOption(option) {
+  const wrapper = option.required ? '<' : '[';
+  const closer = option.required ? '>' : ']';
+  return `${wrapper}${option.name}${closer}`;
+}
+
+function getFolderLabel(folder) {
+  const labels = {
+    admin: 'Admin',
+    economy: 'Economy',
+    gamble: 'Games',
+    utilities: 'Utilities',
+  };
+
+  return labels[folder] ?? folder.charAt(0).toUpperCase() + folder.slice(1);
+}
+
+function getFolderOrder(folder) {
+  const order = {
+    economy: 0,
+    gamble: 1,
+    utilities: 2,
+    admin: 3,
+  };
+
+  return order[folder] ?? 99;
+}
