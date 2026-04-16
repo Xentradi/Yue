@@ -60,7 +60,7 @@ module.exports = {
           { name: 'Members Checked', value: `${players.length}`, inline: true },
         ],
       });
-      interaction.editReply({ embeds: [responseEmbed] });
+      return interaction.editReply({ embeds: [responseEmbed] });
     } catch (err) {
       logger.error(`An error occured while syncing roles: ${err}`);
       const responseEmbed = createStatusEmbed({
@@ -68,7 +68,7 @@ module.exports = {
         description: 'An error occurred while updating roles.',
         color: '#FF0000',
       });
-      interaction.editReply({ embeds: [responseEmbed] });
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
   },
 };

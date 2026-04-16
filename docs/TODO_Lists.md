@@ -16,33 +16,33 @@ Goal: make invalid states impossible or obvious before any user-facing cleanup.
 
 ### Step 1.1: Audit model and helper behavior
 
-- [ ] Review `src/schemas/playerSchema.js`, `src/schemas/lakeSchema.js`, and the economy modules that mutate balances, debt, or stock.
-- [ ] Identify every path that can create negative balances, missing documents, invalid fields, or stale guild data.
-- [ ] Confirm the current transaction and update helpers still match the data model.
+- [x] Review `src/schemas/playerSchema.js`, `src/schemas/lakeSchema.js`, and the economy modules that mutate balances, debt, or stock.
+- [x] Identify every path that can create negative balances, missing documents, invalid fields, or stale guild data.
+- [x] Confirm the current transaction and update helpers still match the data model.
 
 ### Step 1.2: Harden state transitions
 
-- [ ] Add validation for negative balances, invalid state transitions, and missing records.
-- [ ] Make helper methods fail clearly when the requested update cannot be applied.
-- [ ] Keep cash, bank, debt, and fish stock updates internally consistent.
+- [x] Add validation for negative balances, invalid state transitions, and missing records.
+- [x] Make helper methods fail clearly when the requested update cannot be applied.
+- [x] Keep cash, bank, debt, and fish stock updates internally consistent.
 
 ### Step 1.3: Guard scheduled work
 
-- [ ] Verify interest and lake restock jobs only touch the intended guilds and records.
-- [ ] Add or tighten guards for partial data, deleted members, and missing guild resources.
-- [ ] Make scheduled task logging precise enough to diagnose failures quickly.
+- [x] Verify interest and lake restock jobs only touch the intended guilds and records.
+- [x] Add or tighten guards for partial data, deleted members, and missing guild resources.
+- [x] Make scheduled task logging precise enough to diagnose failures quickly.
 
 ### Step 1.4: Lock in safety tests
 
-- [ ] Extend integration coverage for invalid balance changes and missing-document cases.
-- [ ] Add coverage for scheduled jobs that mutate player or lake state.
-- [ ] Add regression tests for any state transition that was changed in this phase.
+- [x] Extend integration coverage for invalid balance changes and missing-document cases.
+- [x] Add coverage for scheduled jobs that mutate player or lake state.
+- [x] Add regression tests for any state transition that was changed in this phase.
 
 ### Phase 1 Done When
 
-- Invalid balance or stock updates are rejected before they corrupt state.
-- Scheduled jobs are deterministic and safe on partial data.
-- The tests cover the failure modes introduced or fixed here.
+- [x] Invalid balance or stock updates are rejected before they corrupt state.
+- [x] Scheduled jobs are deterministic and safe on partial data.
+- [x] The tests cover the failure modes introduced or fixed here.
 
 ## Phase 2: Command Surface And Response Consistency
 
@@ -50,39 +50,39 @@ Goal: make the bot feel like one product instead of a collection of modules.
 
 ### Step 2.1: Freeze the canonical command surface
 
-- [ ] Compare `src/commands/` against `docs/Command_Surface.md`.
-- [ ] Decide which commands belong in economy, games, utilities, or admin.
-- [ ] Remove or re-home leftovers that blur the user mental model.
+- [x] Compare `src/commands/` against `docs/Command_Surface.md`.
+- [x] Decide which commands belong in economy, games, utilities, or admin.
+- [x] Remove or re-home leftovers that blur the user mental model.
 
 ### Step 2.2: Normalize command names and options
 
-- [ ] Keep command names short, stable, and category-appropriate.
-- [ ] Make option names and descriptions consistent across similar commands.
-- [ ] Align the slash command definitions with the help text and docs.
+- [x] Keep command names short, stable, and category-appropriate.
+- [x] Make option names and descriptions consistent across similar commands.
+- [x] Align the slash command definitions with the help text and docs.
 
 ### Step 2.3: Standardize help output
 
-- [ ] Keep help output grouped by user-recognizable product areas.
-- [ ] Make sure the help command reflects the canonical command inventory.
-- [ ] Remove category drift between implementation, docs, and help copy.
+- [x] Keep help output grouped by user-recognizable product areas.
+- [x] Make sure the help command reflects the canonical command inventory.
+- [x] Remove category drift between implementation, docs, and help copy.
 
 ### Step 2.4: Normalize response patterns
 
-- [ ] Route economy and status responses through `src/utils/economyFeedback.js`.
-- [ ] Keep embeds, empty states, and confirmation flows aligned across commands.
-- [ ] Make destructive admin previews explicit before any update is applied.
+- [x] Route economy and status responses through `src/utils/economyFeedback.js`.
+- [x] Keep embeds, empty states, and confirmation flows aligned across commands.
+- [x] Make destructive admin previews explicit before any update is applied.
 
 ### Step 2.5: Rework user-facing economy copy
 
-- [ ] Keep balance, leaderboard, daily reward, transfer, and loan messaging consistent.
-- [ ] Use the same nouns and phrasing for the same economic concepts.
-- [ ] Make failure messages actionable and concise.
+- [x] Keep balance, leaderboard, daily reward, transfer, and loan messaging consistent.
+- [x] Use the same nouns and phrasing for the same economic concepts.
+- [x] Make failure messages actionable and concise.
 
 ### Phase 2 Done When
 
-- Commands are grouped the way users expect them.
-- Help output and command definitions match the canonical surface.
-- Shared embeds and confirmations are used everywhere they should be.
+- [x] Commands are grouped the way users expect them.
+- [x] Help output and command definitions match the canonical surface.
+- [x] Shared embeds and confirmations are used everywhere they should be.
 
 ## Phase 3: Scheduled Jobs And Admin Operations
 
@@ -118,33 +118,33 @@ Goal: turn the current behavior into regression coverage before more cleanup lan
 
 ### Step 4.1: Keep the smoke suite stable
 
-- [ ] Maintain startup and command-registration smoke tests.
-- [ ] Keep the command surface assertion aligned with the canonical command list.
-- [ ] Make the smoke test fail when a command is added, removed, or renamed without intent.
+- [x] Maintain startup and command-registration smoke tests.
+- [x] Keep the command surface assertion aligned with the canonical command list.
+- [x] Make the smoke test fail when a command is added, removed, or renamed without intent.
 
 ### Step 4.2: Expand economy integration coverage
 
-- [ ] Cover balance, loan, transfer, daily reward, and blackjack flows.
-- [ ] Cover leaderboards and other read paths that depend on sorting or guild data.
-- [ ] Add regression cases for any economy helper that changed during earlier phases.
+- [x] Cover balance, loan, transfer, daily reward, and blackjack flows.
+- [x] Cover leaderboards and other read paths that depend on sorting or guild data.
+- [x] Add regression cases for any economy helper that changed during earlier phases.
 
 ### Step 4.3: Add coverage for scheduled and admin flows
 
-- [ ] Add tests for scheduled task behavior and restock paths.
-- [ ] Add tests for stale-member cleanup and deleted-user handling.
-- [ ] Add tests for admin confirmation previews and destructive operations.
+- [x] Add tests for scheduled task behavior and restock paths.
+- [x] Add tests for stale-member cleanup and deleted-user handling.
+- [x] Add tests for admin confirmation previews and destructive operations.
 
 ### Step 4.4: Cover command-surface regressions
 
-- [ ] Add tests that fail if help grouping or command registration drifts.
-- [ ] Add tests for any renamed or re-homed command.
-- [ ] Keep the tests focused on contract behavior, not implementation details.
+- [x] Add tests that fail if help grouping or command registration drifts.
+- [x] Add tests for any renamed or re-homed command.
+- [x] Keep the tests focused on contract behavior, not implementation details.
 
 ### Phase 4 Done When
 
-- The main user journeys are covered.
-- Scheduled jobs and admin actions have regression tests.
-- Command surface changes cannot slip in unnoticed.
+- [x] The main user journeys are covered.
+- [x] Scheduled jobs and admin actions have regression tests.
+- [x] Command surface changes cannot slip in unnoticed.
 
 ## Phase 5: Documentation
 
@@ -152,27 +152,27 @@ Goal: make the docs reflect the shipped behavior, not the other way around.
 
 ### Step 5.1: Sync the primary docs
 
-- [ ] Update `README.md` so setup and command references match the current command set.
-- [ ] Update `docs/Setup_and_Deployment.md` so the operational steps are current.
-- [ ] Update `docs/Feature_Overview.md` so the implemented systems are accurate.
+- [x] Update `README.md` so setup and command references match the current command set.
+- [x] Update `docs/Setup_and_Deployment.md` so the operational steps are current.
+- [x] Update `docs/Feature_Overview.md` so the implemented systems are accurate.
 
 ### Step 5.2: Keep the canonical inventory current
 
-- [ ] Keep `docs/Command_Surface.md` as the source of truth for command grouping.
-- [ ] Keep `docs/Command_Response_Conventions.md` aligned with the shared embed and confirmation helpers.
-- [ ] Make sure the docs match any command moves or renames from earlier phases.
+- [x] Keep `docs/Command_Surface.md` as the source of truth for command grouping.
+- [x] Keep `docs/Command_Response_Conventions.md` aligned with the shared embed and confirmation helpers.
+- [x] Make sure the docs match any command moves or renames from earlier phases.
 
 ### Step 5.3: Add operator notes
 
-- [ ] Add a short operator note covering deployment, logs, backups, and scheduled jobs.
-- [ ] Document the current configuration surface in one place.
-- [ ] Keep the docs short enough that they stay maintainable.
+- [x] Add a short operator note covering deployment, logs, backups, and scheduled jobs.
+- [x] Document the current configuration surface in one place.
+- [x] Keep the docs short enough that they stay maintainable.
 
 ### Phase 5 Done When
 
-- The docs describe the current product accurately.
-- The command inventory is documented in one canonical place.
-- Operators can run and maintain the bot without guessing.
+- [x] The docs describe the current product accurately.
+- [x] The command inventory is documented in one canonical place.
+- [x] Operators can run and maintain the bot without guessing.
 
 ## Phase 6: Backlog Triage
 
@@ -180,20 +180,20 @@ Goal: separate useful future work from ideas that should stay out of the mainten
 
 ### Step 6.1: Review lower-priority items
 
-- [ ] Revisit the P2 items only after the core path is stable.
-- [ ] Decide whether each P3 item is actually worth implementing.
-- [ ] Keep P4 ideas out of the active work queue unless the product direction changes.
+- [x] Revisit the P2 items only after the core path is stable.
+- [x] Decide whether each P3 item is actually worth implementing.
+- [x] Keep P4 ideas out of the active work queue unless the product direction changes.
 
 ### Step 6.2: Preserve the backlog boundary
 
-- [ ] Keep nonessential ideas off the critical path.
-- [ ] Move any newly discovered must-fix issues back into Phases 1 to 5.
-- [ ] Leave a clean separation between maintenance work and future experiments.
+- [x] Keep nonessential ideas off the critical path.
+- [x] Move any newly discovered must-fix issues back into Phases 1 to 5.
+- [x] Leave a clean separation between maintenance work and future experiments.
 
 ### Phase 6 Done When
 
-- The backlog only contains intentional future work.
-- Nothing important is stranded in P3 or P4 by mistake.
+- [x] The backlog only contains intentional future work.
+- [x] Nothing important is stranded in P3 or P4 by mistake.
 
 ## Recommended Execution Order
 

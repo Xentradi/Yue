@@ -90,6 +90,6 @@ module.exports = {
       bank: catchResult.playerBank,
       debt: catchResult.playerDebt,
     });
-    interaction.editReply({ embeds: [responseEmbed] });
+    return interaction.editReply({ embeds: [responseEmbed] });
   },
 };

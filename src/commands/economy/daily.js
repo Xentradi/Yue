@@ -45,6 +45,6 @@ module.exports = {
           : data.message || 'There was an error delivering your pay.',
       color: '#FF8C00',
     });
-    interaction.editReply({ embeds: [responseEmbed] });
+    return interaction.editReply({ embeds: [responseEmbed] });
   },
 };

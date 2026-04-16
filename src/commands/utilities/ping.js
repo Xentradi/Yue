@@ -21,6 +21,6 @@ module.exports = {
       description: `Client latency: ${ping}ms\nWebsocket latency: ${interaction.client.ws.ping}ms`,
       color: '#33CC33',
     });
-    interaction.editReply({ embeds: [responseEmbed] });
+    return interaction.editReply({ embeds: [responseEmbed] });
   },
 };

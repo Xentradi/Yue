@@ -80,7 +80,7 @@ module.exports = {
           description: restockResult.message,
           color: '#FF0000',
         });
-    interaction.editReply({ embeds: [responseEmbed] });
+    return interaction.editReply({ embeds: [responseEmbed] });
   },
 };
 

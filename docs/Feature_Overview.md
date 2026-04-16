@@ -6,6 +6,7 @@
 - Leveling and message-based XP rewards with role assignment
 - Fishing, coin flip, dice, and blackjack mini-games
 - Admin tools for balance management, lake restocking, and role syncing
+- Utility commands for help, ping, support links, and user profiles
 - Scheduled maintenance tasks for interest and lake restocking
 - Logging and embeds shared across commands and modules
 
@@ -13,6 +14,7 @@
 
 - Economy commands are grouped together in help output and cover balance lookup, transfers, daily rewards, and leaderboards
 - Game commands stay separate from economy so gambling and fishing flows are easier to scan
+- Utility commands stay separate so support, latency, and profile lookups are easy to find
 - Admin commands are guild-only and require administrator permissions
 - The canonical command inventory lives in [Command_Surface.md](./Command_Surface.md)
 

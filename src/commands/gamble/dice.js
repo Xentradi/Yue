@@ -57,8 +57,7 @@ module.exports = {
         description: 'You do not have an account set up yet.',
         color: '#FF3333',
       });
-      await interaction.editReply({ embeds: [responseEmbed] });
-      return;
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
 
     if (player.cash < betAmount) {
@@ -67,8 +66,7 @@ module.exports = {
         description: 'You do not have sufficient funds for this bet.',
         color: '#FF3333',
       });
-      await interaction.editReply({ embeds: [responseEmbed] });
-      return;
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
 
     const data = await diceRoll(
@@ -77,6 +75,15 @@ module.exports = {
       guessedNumber,
       betAmount,
     );
+
+    if (!data.success) {
+      const responseEmbed = createStatusEmbed({
+        title: '🎲 Dice Roll Failed',
+        description: data.message || 'We could not complete the dice roll.',
+        color: '#FF3333',
+      });
+      return interaction.editReply({ embeds: [responseEmbed] });
+    }
 
     const victoryMessage = [
       'Bullseye! Right on the mark.',
@@ -116,6 +123,6 @@ module.exports = {
         },
       ],
     });
-    interaction.editReply({ embeds: [responseEmbed] });
+    return interaction.editReply({ embeds: [responseEmbed] });
   },
 };

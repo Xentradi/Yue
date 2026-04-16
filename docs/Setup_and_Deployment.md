@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Node.js 24 LTS
+- Node.js 24.14.1 through 24.x
 - MongoDB 5 or newer
 - Discord bot token
 
@@ -51,6 +51,7 @@ npm start
 ```
 
 The bot ships without optional websocket native addons or remote logging by default.
+Use `npm run dev` for local development and `npm start` for production.
 
 ## Deploy Commands
 
@@ -60,12 +61,20 @@ Deploy slash commands after configuration changes:
 node src/registerCommands/deployCommands.js
 ```
 
+If you need to clear guild-specific commands during a reset, use:
+
+```bash
+node src/registerCommands/deleteGuildCommands.js
+```
+
 ## Tests
 
 `npm test` runs two layers:
 
 - smoke checks for module shape and duplicate command names
 - integration checks against an in-memory MongoDB instance for core economy flows
+
+`npm run lint` checks the repository with ESLint.
 
 ## Notes
 

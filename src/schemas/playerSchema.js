@@ -446,45 +446,137 @@ playerSchema.statics.transferCurrency = async function (
   }
 
   try {
-    const [playerA, playerB] = await Promise.all([
-      this.findOne({ userId: playerAUserId, guildId }),
-      this.findOne({ userId: playerBUserId, guildId }),
-    ]);
+    const topologyType = this.db?.client?.topology?.description?.type;
+    if (topologyType && topologyType !== 'Single') {
+      const session = await this.db.startSession();
+      try {
+        let playerA;
+        let playerB;
 
-    if (!playerA) {
-      return { success: false, error: 'Sender not found.' };
-    }
-    if (!playerB) {
-      return { success: false, error: 'Recipient not found.' };
+        await session.withTransaction(async () => {
+          [playerA, playerB] = await Promise.all([
+            this.findOne({ userId: playerAUserId, guildId }).session(session),
+            this.findOne({ userId: playerBUserId, guildId }).session(session),
+          ]);
+
+          if (!playerA) {
+            throw new Error('Sender not found.');
+          }
+          if (!playerB) {
+            throw new Error('Recipient not found.');
+          }
+
+          const senderCash = playerA.cash;
+          const recipientCash = playerB.cash;
+
+          if (!isNonNegativeFiniteNumber(senderCash)) {
+            throw new Error('Player cash balance is invalid.');
+          }
+          if (!isNonNegativeFiniteNumber(recipientCash)) {
+            throw new Error('Recipient cash balance is invalid.');
+          }
+          if (senderCash < amount) {
+            throw new Error('Insufficient cash.');
+          }
+
+          playerA.cash = senderCash - amount;
+          playerB.cash = recipientCash + amount;
+
+          await Promise.all([
+            playerA.save({ session }),
+            playerB.save({ session }),
+          ]);
+        });
+
+        return {
+          success: true,
+          playerA,
+          playerB,
+          transferredAmount: amount,
+        };
+      } finally {
+        session.endSession();
+      }
     }
 
-    const senderUpdate = await playerA.updateCash(-amount);
-    if (!senderUpdate.success) {
-      return {
-        success: false,
-        error: senderUpdate.error,
-      };
-    }
-
-    const recipientUpdate = await playerB.updateCash(amount);
-    if (!recipientUpdate.success) {
-      await playerA.updateCash(amount);
-      return {
-        success: false,
-        error: recipientUpdate.error,
-      };
-    }
-
-    return {
-      success: true,
-      playerA,
-      playerB,
-      transferredAmount: amount,
-    };
+    return await transferCurrencyWithoutTransaction(
+      this,
+      guildId,
+      playerAUserId,
+      playerBUserId,
+      amount,
+    );
   } catch (error) {
     return { success: false, error: error.message };
   }
 };
+
+async function transferCurrencyWithoutTransaction(
+  model,
+  guildId,
+  playerAUserId,
+  playerBUserId,
+  amount,
+) {
+  const [playerA, playerB] = await Promise.all([
+    model.findOne({ userId: playerAUserId, guildId }),
+    model.findOne({ userId: playerBUserId, guildId }),
+  ]);
+
+  if (!playerA) {
+    return { success: false, error: 'Sender not found.' };
+  }
+
+  if (!playerB) {
+    return { success: false, error: 'Recipient not found.' };
+  }
+
+  const senderCash = playerA.cash;
+  const recipientCash = playerB.cash;
+
+  if (!isNonNegativeFiniteNumber(senderCash)) {
+    return { success: false, error: 'Player cash balance is invalid.' };
+  }
+
+  if (!isNonNegativeFiniteNumber(recipientCash)) {
+    return { success: false, error: 'Recipient cash balance is invalid.' };
+  }
+
+  if (senderCash < amount) {
+    return { success: false, error: 'Insufficient cash.' };
+  }
+
+  const senderUpdate = await model.updateOne(
+    { _id: playerA._id, cash: senderCash },
+    { $set: { cash: senderCash - amount } },
+  );
+
+  if (senderUpdate.modifiedCount !== 1) {
+    return { success: false, error: 'Failed to update sender balance.' };
+  }
+
+  const recipientUpdate = await model.updateOne(
+    { _id: playerB._id, cash: recipientCash },
+    { $set: { cash: recipientCash + amount } },
+  );
+
+  if (recipientUpdate.modifiedCount !== 1) {
+    await model.updateOne({ _id: playerA._id }, { $set: { cash: senderCash } });
+    return { success: false, error: 'Failed to update recipient balance.' };
+  }
+
+  const [updatedSender, updatedRecipient] = await Promise.all([
+    model.findById(playerA._id),
+    model.findById(playerB._id),
+  ]);
+
+  return {
+    success: true,
+    playerA: updatedSender,
+    playerB: updatedRecipient,
+    transferredAmount: amount,
+  };
+}
 
 /**
  * Retrieves a player document by ID.

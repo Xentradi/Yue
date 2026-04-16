@@ -12,6 +12,7 @@ const applyBankInterest = require('../../src/modules/economy/bankOperations/inte
 const airdrop = require('../../src/modules/economy/adminOperations/airdrop');
 const giveBalance = require('../../src/modules/economy/adminOperations/giveBalance');
 const setBalance = require('../../src/modules/economy/adminOperations/setBalance');
+const takeLoan = require('../../src/modules/economy/loans/takeLoan');
 const repayLoan = require('../../src/modules/economy/loans/repayLoan');
 const withdraw = require('../../src/modules/economy/bankOperations/withdraw');
 const giveCash = require('../../src/modules/economy/tranfers/giveCash');
@@ -22,6 +23,9 @@ const getCashLeaderboard = require('../../src/modules/economy/leaderboards/cashL
 const getBankLeaderboard = require('../../src/modules/economy/leaderboards/bankLeaderboard');
 const getDebtLeaderboard = require('../../src/modules/economy/leaderboards/debtLeaderboard');
 const getNetWorthLeaderboard = require('../../src/modules/economy/leaderboards/netWorthLeaderboard');
+const economyBalanceHelpers = require('../../src/modules/economy/balance');
+const balanceCommand = require('../../src/commands/economy/balance');
+const diceCommand = require('../../src/commands/gamble/dice');
 const leaderboardCommand = require('../../src/commands/economy/leaderboard');
 const adminEconomyCommand = require('../../src/commands/admin/economy');
 const adminRestockLakeCommand = require('../../src/commands/admin/restockLake');
@@ -68,6 +72,22 @@ test('daily bonus credits once per day', async () => {
   assert.equal(secondClaim.message, 'Daily bonus already claimed today.');
 });
 
+test('balance command rejects direct messages instead of crashing', async () => {
+  let replyPayload;
+  const interaction = {
+    inGuild: () => false,
+    reply: async (payload) => {
+      replyPayload = payload;
+    },
+  };
+
+  await balanceCommand.execute(interaction);
+
+  assert.ok(replyPayload);
+  assert.equal(replyPayload.ephemeral, true);
+  assert.equal(replyPayload.embeds[0].data.title, '❌ Guild Only');
+});
+
 test('deposit and withdraw move money between cash and bank', async () => {
   const userId = 'user-banking';
   const guildId = 'guild-banking';
@@ -91,6 +111,54 @@ test('deposit and withdraw move money between cash and bank', async () => {
   assert.equal(withdrawResult.bank, 1000);
 });
 
+test('dice command surfaces balance update failures', async () => {
+  const userId = 'dice-user';
+  const guildId = 'guild-dice';
+
+  await Player.create({
+    userId,
+    guildId,
+    cash: 500,
+    bank: 0,
+    debt: 0,
+  });
+
+  const originalUpdatePlayerCash = economyBalanceHelpers.updatePlayerCash;
+  let replyPayload;
+
+  economyBalanceHelpers.updatePlayerCash = async () => ({
+    success: false,
+    message: 'Database write failed.',
+  });
+
+  const interaction = {
+    inGuild: () => true,
+    guildId,
+    user: { id: userId, username: 'DiceUser' },
+    member: { displayName: 'Dice User' },
+    options: {
+      getInteger: (name) => (name === 'guess' ? 1 : 100),
+    },
+    deferReply: async () => {},
+    editReply: async (payload) => {
+      replyPayload = payload;
+    },
+  };
+
+  try {
+    await diceCommand.execute(interaction);
+  } finally {
+    economyBalanceHelpers.updatePlayerCash = originalUpdatePlayerCash;
+  }
+
+  assert.ok(replyPayload);
+  assert.equal(replyPayload.embeds[0].data.title, '🎲 Dice Roll Failed');
+  assert.equal(
+    replyPayload.embeds[0].data.description,
+    'Database write failed.',
+  );
+});
+
 test('cash transfer updates both player balances', async () => {
   const guildId = 'guild-transfer';
   const senderId = 'sender';
@@ -110,6 +178,46 @@ test('cash transfer updates both player balances', async () => {
 
   assert.equal(sender.cash, 700);
   assert.equal(recipient.cash, 450);
+});
+
+test('player transfer helper rolls back cleanly when the recipient update fails', async () => {
+  const guildId = 'guild-transfer-rollback';
+  const senderId = 'rollback-sender';
+  const recipientId = 'rollback-recipient';
+
+  await Player.create([
+    { userId: senderId, guildId, cash: 1000, bank: 0, debt: 0 },
+    { userId: recipientId, guildId, cash: 200, bank: 0, debt: 0 },
+  ]);
+
+  const originalUpdateOne = Player.updateOne;
+  Player.updateOne = async function (filter, update, options) {
+    if (filter._id && update.$set?.cash === 450) {
+      return { modifiedCount: 0 };
+    }
+
+    return originalUpdateOne.call(this, filter, update, options);
+  };
+
+  try {
+    const result = await Player.transferCurrency(
+      guildId,
+      senderId,
+      recipientId,
+      250,
+    );
+
+    assert.equal(result.success, false);
+    assert.equal(result.error, 'Failed to update recipient balance.');
+  } finally {
+    Player.updateOne = originalUpdateOne;
+  }
+
+  const sender = await Player.findOne({ userId: senderId, guildId });
+  const recipient = await Player.findOne({ userId: recipientId, guildId });
+
+  assert.equal(sender.cash, 1000);
+  assert.equal(recipient.cash, 200);
 });
 
 test('player transfer helper uses user and guild identifiers', async () => {
@@ -210,6 +318,28 @@ test('repay loan caps the repayment at the outstanding debt', async () => {
   const player = await Player.findOne({ userId, guildId });
   assert.equal(player.cash, 10);
   assert.equal(player.debt, 0);
+});
+
+test('take loan increases cash and tracks the new debt', async () => {
+  const userId = 'user-take-loan';
+  const guildId = 'guild-take-loan';
+
+  await Player.create({
+    userId,
+    guildId,
+    cash: 100,
+    debt: 0,
+  });
+
+  const result = await takeLoan(userId, guildId, 200);
+  assert.equal(result.success, true);
+  assert.equal(result.loanAmount, 200);
+  assert.equal(result.newBalance, 300);
+  assert.ok(Math.abs(result.newDebt - 220) < 1e-9);
+
+  const player = await Player.findOne({ userId, guildId });
+  assert.equal(player.cash, 300);
+  assert.ok(Math.abs(player.debt - 220) < 1e-9);
 });
 
 test('bank interest only touches the targeted guild', async () => {
@@ -382,6 +512,25 @@ test('scheduled maintenance updates player guilds and lake-only guilds', async (
   );
 });
 
+test('scheduled maintenance skips cleanly when there are no guilds', async () => {
+  const infoMessages = [];
+  const originalInfo = logger.info;
+
+  logger.info = (message) => {
+    infoMessages.push(message);
+  };
+
+  try {
+    await scheduledTasks.runDailyMaintenance();
+    await scheduledTasks.runHourlyMaintenance();
+  } finally {
+    logger.info = originalInfo;
+  }
+
+  assert.ok(infoMessages.includes('No guilds found for daily maintenance.'));
+  assert.ok(infoMessages.includes('No guilds found for hourly maintenance.'));
+});
+
 test('scheduled task logging summarizes successes and failures', async () => {
   const infoMessages = [];
   const errorMessages = [];
@@ -513,6 +662,30 @@ test('leaderboard command skips deleted members and replies with active names on
     '1. Active Member',
   );
   assert.equal(replyPayload.embeds[0].data.fields.length, 1);
+});
+
+test('blackjack command rejects invalid bets before starting a game', async () => {
+  let replyPayload;
+  const interaction = {
+    inGuild: () => true,
+    guildId: 'guild-blackjack-invalid',
+    user: { id: 'blackjack-user', username: 'BlackjackUser' },
+    options: {
+      getInteger: () => 0,
+    },
+    member: {},
+    reply: async (payload) => {
+      replyPayload = payload;
+    },
+  };
+
+  await require('../../src/commands/gamble/blackjack').execute(interaction);
+
+  assert.equal(replyPayload.embeds[0].data.title, '🎲 Invalid Bet');
+  assert.match(
+    replyPayload.embeds[0].data.description,
+    /Please enter a positive wager amount\./,
+  );
 });
 
 test('admin confirmation previews stay explicit for destructive actions', () => {

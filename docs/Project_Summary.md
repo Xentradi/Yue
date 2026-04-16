@@ -6,7 +6,7 @@ Yue is a Discord bot for a server economy and progression system. It combines sl
 
 - Discord.js
 - MongoDB and Mongoose
-- Node.js 24 LTS
+- Node.js 24.14.1 through 24.x
 - Winston logging with optional Logtail transport
 
 ## Current Scope
@@ -14,6 +14,7 @@ Yue is a Discord bot for a server economy and progression system. It combines sl
 - Economy: cash, bank, debt, loans, transfers, daily rewards, and leaderboards
 - Games: fishing, coin flip, dice, blackjack
 - Progression: XP, levels, and level-based roles
+- Utilities: help, ping, support links, and user profiles
 - Admin: balance control, lake restocking, role syncing
 
 ## Operational Notes

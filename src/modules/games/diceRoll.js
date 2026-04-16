@@ -49,17 +49,21 @@ module.exports = async function diceRoll(userId, guildId, choice, betAmount) {
 
   result.playerBalanceBefore = player.cash;
 
-  if (result.outcome === choice) {
-    const { success } = await balance.updatePlayerCash(player, betAmount * 5);
-    result.win = success;
-    result.prize = success ? betAmount * 5 : 0;
-  } else {
-    const { success } = await balance.updatePlayerCash(player, -betAmount);
-    result.prize = success ? -betAmount : 0;
-  }
+  const updateResult =
+    result.outcome === choice
+      ? await balance.updatePlayerCash(player, betAmount * 5)
+      : await balance.updatePlayerCash(player, -betAmount);
 
-  result.playerBalanceAfter = player.cash;
-  result.success = true;
+  if (updateResult.success) {
+    result.win = result.outcome === choice;
+    result.prize = result.win ? betAmount * 5 : -betAmount;
+    result.playerBalanceAfter = player.cash;
+    result.success = true;
+  } else {
+    result.message =
+      updateResult.message ||
+      'An error occurred while processing the dice roll.';
+  }
 
   return result;
 };

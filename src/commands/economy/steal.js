@@ -57,8 +57,7 @@ module.exports = {
           "Your heist didn't go as planned. Maybe the target couldn't be found?",
         color: '#FF8C00',
       });
-      interaction.editReply({ embeds: [responseEmbed] });
-      return;
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
 
     if (
@@ -72,8 +71,7 @@ module.exports = {
           data.message ?? 'The steal attempt could not be processed.',
         color: '#FF8C00',
       });
-      interaction.editReply({ embeds: [responseEmbed] });
-      return;
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
 
     const victoryMessage = [
@@ -111,6 +109,6 @@ module.exports = {
       description: `${randomMessage}\n${thiefName} was caught trying to steal from ${victimName} and faced a fine of ${formatCurrency(data.penalty)}.`,
       color: '#FF3333',
     });
-    interaction.editReply({ embeds: [responseEmbed] });
+    return interaction.editReply({ embeds: [responseEmbed] });
   },
 };

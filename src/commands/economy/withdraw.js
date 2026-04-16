@@ -54,6 +54,6 @@ module.exports = {
         data?.message ?? 'We could not complete the withdrawal request.',
       color: '#FF3333',
     });
-    interaction.editReply({ embeds: [responseEmbed] });
+    return interaction.editReply({ embeds: [responseEmbed] });
   },
 };

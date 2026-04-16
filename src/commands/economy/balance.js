@@ -22,6 +22,15 @@ module.exports = {
    * @throws Will send an error response to the user if there's an issue retrieving the balance.
    */
   async execute(interaction) {
+    if (!interaction.inGuild()) {
+      const responseEmbed = createStatusEmbed({
+        title: '❌ Guild Only',
+        description: 'Balance checks can only be viewed inside a server.',
+        color: '#FF3333',
+      });
+      return interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+    }
+
     await interaction.deferReply();
 
     const playerBalance = await getBalance(
@@ -44,6 +53,6 @@ module.exports = {
       bank: playerBalance.bank,
       debt: playerBalance.debt,
     });
-    interaction.editReply({ embeds: [responseEmbed] });
+    return interaction.editReply({ embeds: [responseEmbed] });
   },
 };
