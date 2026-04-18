@@ -1,4 +1,4 @@
-const Player = require('../../../models/Player');
+const { findPlayer, updatePlayerValues } = require('../playerService');
 
 const ALLOWED_FIELDS = new Set(['cash', 'bank', 'debt']);
 
@@ -22,7 +22,7 @@ module.exports = async function setBalance(interaction) {
   }
 
   try {
-    const player = await Player.findOne({ userId, guildId });
+    const player = await findPlayer(userId, guildId);
 
     if (!player) return { success: false, error: 'User not found.' };
 
@@ -30,7 +30,7 @@ module.exports = async function setBalance(interaction) {
       return { success: false, error: `Current ${field} balance is invalid.` };
     }
 
-    const updateResult = await player.setValues({ [field]: amount });
+    const updateResult = await updatePlayerValues(player, { [field]: amount });
     if (!updateResult.success) {
       return { success: false, error: updateResult.error };
     }

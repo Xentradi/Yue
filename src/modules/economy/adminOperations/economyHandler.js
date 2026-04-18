@@ -38,10 +38,9 @@ module.exports = async function economyHandler(interaction) {
       `An error occurred while handling the economy action. ${error}`,
     );
     return {
-      title: '❌ An error occurred',
-      description:
+      success: false,
+      error:
         'An unexpected error occurred while handling the economy action. Please try again later.',
-      color: '#FF0000',
     };
   }
 };

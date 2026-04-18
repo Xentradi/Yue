@@ -5,6 +5,7 @@ const {
   createStatusEmbed,
   formatCurrency,
 } = require('../../utils/economyFeedback');
+const { deferGuildInteraction } = require('../../utils/interactionHelpers');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -19,25 +20,25 @@ module.exports = {
   cooldown: 2,
   deployGlobal: true,
 
-  async execute(interaction) {
-    if (!interaction.inGuild()) {
-      const responseEmbed = createStatusEmbed({
-        title: '❌ Guild Only',
+  async execute(interaction, commandMetrics) {
+    if (
+      !(await deferGuildInteraction(interaction, {
         description: 'Deposits can only be made inside a server.',
-        color: '#FF3333',
-      });
-      return interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+      }))
+    ) {
+      return;
     }
-
-    await interaction.deferReply();
     const amount = interaction.options.getInteger('amount');
+    const endUpdate = commandMetrics?.step('deposit');
     const data = await deposit(
       interaction.user.id,
       interaction.guildId,
       amount,
     );
+    endUpdate?.();
 
     if (data.success) {
+      const endRender = commandMetrics?.step('response build');
       const responseEmbed = createBalanceEmbed({
         title: `🏦 Deposit Completed for ${interaction.member.displayName}`,
         description: `Deposited ${formatCurrency(data.amount)} into your bank.`,
@@ -45,14 +46,17 @@ module.exports = {
         bank: data.bank,
         debt: data.debt,
       });
-      return interaction.editReply({ embeds: [responseEmbed] });
+      endRender?.();
+      return interaction.reply({ embeds: [responseEmbed] });
     }
 
+    const endRender = commandMetrics?.step('response build');
     const responseEmbed = createStatusEmbed({
       title: '⚠️ Deposit Failed',
       description: data.message || 'We could not complete the deposit request.',
       color: '#FF3333',
     });
-    return interaction.editReply({ embeds: [responseEmbed] });
+    endRender?.();
+    return interaction.reply({ embeds: [responseEmbed] });
   },
 };

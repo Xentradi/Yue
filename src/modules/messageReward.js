@@ -48,7 +48,7 @@ module.exports = async function messageReward(message) {
         player.exp = 0;
         player.level += 1;
         message.channel.send(
-          `:tada: *${message.member} is ** level ${player.level}** *`,
+          `:tada: ${message.member} leveled up to level ${player.level}!`,
         );
         await manageRoles(message.member, player.level);
       }

@@ -123,7 +123,7 @@ module.exports.transferFunds = async function (player, amount, toBank = true) {
     } catch (err) {
       player.cash = previousCash;
       player.bank = previousBank;
-      logger.error(`Error updating transfering funds: ${err}`);
+      logger.error(`Error updating transferring funds: ${err}`);
       return { success: false, message: 'Error transferring funds.' };
     }
   } else {
@@ -140,7 +140,7 @@ module.exports.transferFunds = async function (player, amount, toBank = true) {
     } catch (err) {
       player.bank = previousBank;
       player.cash = previousCash;
-      logger.error(`Error updating transfering funds: ${err}`);
+      logger.error(`Error updating transferring funds: ${err}`);
       return { success: false, message: 'Error transferring funds.' };
     }
   }

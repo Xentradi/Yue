@@ -1,6 +1,7 @@
-const { Events, Collection } = require('discord.js');
+const { Events, Collection, MessageFlags } = require('discord.js');
 const { convertToSeconds } = require('../utils/calculate');
 const logger = require('../utils/logger');
+const { createCommandMetrics } = require('../utils/commandTiming');
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -39,7 +40,7 @@ module.exports = {
           content:
             `Please wait, you are on a cooldown for \`${commandName}\`. ` +
             `You can use it again <t:${expiredTimestamp}:R>.`,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     }
@@ -47,11 +48,14 @@ module.exports = {
     setTimeout(() => timestamps.delete(interaction.user.id), cooldownAmount);
 
     // Try running the command
+    const commandMetrics = createCommandMetrics(interaction);
     try {
       logCommandInvocation(interaction);
-      await command.execute(interaction);
+      await command.execute(interaction, commandMetrics);
+      commandMetrics.finish('completed');
     } catch (err) {
-      handleCommandError(err, interaction);
+      commandMetrics.finish('failed', err.message);
+      await handleCommandError(err, interaction);
     }
   },
 };
@@ -60,7 +64,7 @@ function logCommandInvocation(interaction) {
   const args = flattenCommandOptions(interaction.options.data)
     .map((option) => `${option.name}: ${option.value}`)
     .join(', ');
-  const argsString = args.length > 0 ? ` with arguements ${args}` : '';
+  const argsString = args.length > 0 ? ` with arguments ${args}` : '';
 
   let logMessage;
   if (interaction.guild) {
@@ -103,8 +107,14 @@ async function handleCommandError(err, interaction) {
 
   const errorMessage = 'There was an error while executing this command!';
   if (interaction.replied || interaction.deferred) {
-    await interaction.followUp({ content: errorMessage, ephemeral: true });
+    await interaction.followUp({
+      content: errorMessage,
+      flags: MessageFlags.Ephemeral,
+    });
   } else {
-    await interaction.reply({ content: errorMessage, ephemeral: true });
+    await interaction.reply({
+      content: errorMessage,
+      flags: MessageFlags.Ephemeral,
+    });
   }
 }

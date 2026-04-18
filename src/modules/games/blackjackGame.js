@@ -1,6 +1,12 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  MessageFlags,
+} = require('discord.js');
 const Player = require('../../models/Player');
 const balance = require('../../modules/economy/balance');
+const { findPlayer } = require('../economy/playerService');
 const {
   createBalanceEmbed,
   createStatusEmbed,
@@ -19,7 +25,10 @@ module.exports = async function playBlackjack(interaction) {
       description: 'Blackjack can only be played inside a server.',
       color: '#FF3333',
     });
-    return interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+    return interaction.reply({
+      embeds: [responseEmbed],
+      flags: MessageFlags.Ephemeral,
+    });
   }
 
   const betAmount = interaction.options.getInteger('bet');
@@ -36,7 +45,7 @@ module.exports = async function playBlackjack(interaction) {
     return interaction.reply({ embeds: [responseEmbed] });
   }
 
-  const player = await Player.findOne({ userId, guildId });
+  const player = await findPlayer(userId, guildId);
   if (!player) {
     const responseEmbed = createStatusEmbed({
       title: '🎲 Blackjack Unavailable',

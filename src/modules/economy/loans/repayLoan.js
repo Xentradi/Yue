@@ -1,5 +1,5 @@
-const Player = require('../../../models/Player');
 const logger = require('../../../utils/logger');
+const { findPlayer, updatePlayerValues } = require('../playerService');
 
 /**
  * Allows a player to repay a portion or the entirety of their debt.
@@ -13,7 +13,7 @@ const logger = require('../../../utils/logger');
  * @throws Will log an error if saving to the database fails.
  */
 module.exports = async function repayLoan(userId, guildId, amount) {
-  const player = await Player.findOne({ userId, guildId });
+  const player = await findPlayer(userId, guildId);
 
   if (!player) {
     return {
@@ -58,7 +58,7 @@ module.exports = async function repayLoan(userId, guildId, amount) {
   }
   const refundAmount = amount - repaymentAmount;
 
-  const updateResult = await player.setValues({
+  const updateResult = await updatePlayerValues(player, {
     debt: player.debt - repaymentAmount,
     cash: player.cash - repaymentAmount,
   });

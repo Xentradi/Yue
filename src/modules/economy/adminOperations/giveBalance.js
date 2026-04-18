@@ -1,4 +1,4 @@
-const Player = require('../../../models/Player');
+const { findPlayer, updatePlayerValues } = require('../playerService');
 
 const ALLOWED_FIELDS = new Set(['cash', 'bank', 'debt']);
 
@@ -22,7 +22,7 @@ module.exports = async function giveBalance(interaction) {
   }
 
   try {
-    const player = await Player.findOne({ userId, guildId });
+    const player = await findPlayer(userId, guildId);
 
     if (!player) return { success: false, error: 'User not found.' };
 
@@ -34,7 +34,9 @@ module.exports = async function giveBalance(interaction) {
       field === 'debt'
         ? Math.max(player.debt - amount, 0)
         : player[field] + amount;
-    const updateResult = await player.setValues({ [field]: nextAmount });
+    const updateResult = await updatePlayerValues(player, {
+      [field]: nextAmount,
+    });
     if (!updateResult.success) {
       return { success: false, error: updateResult.error };
     }

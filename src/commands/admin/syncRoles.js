@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const Player = require('../../models/Player');
 const { manageRoles } = require('../../utils/manageRoles');
 const { createStatusEmbed } = require('../../utils/economyFeedback');
+const { deferGuildInteraction } = require('../../utils/interactionHelpers');
 const logger = require('../../utils/logger');
 
 module.exports = {
@@ -12,11 +13,20 @@ module.exports = {
   cooldown: 0,
   deployGlobal: true,
 
-  async execute(interaction) {
-    await interaction.deferReply();
+  async execute(interaction, commandMetrics) {
+    if (
+      !(await deferGuildInteraction(interaction, {
+        description:
+          'You need administrator permissions to execute this command.',
+        title: '❌ Permission Denied',
+        defer: true,
+        deferOptions: {},
+      }))
+    ) {
+      return;
+    }
 
     if (
-      !interaction.inGuild() ||
       !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
     ) {
       const responseEmbed = createStatusEmbed({
@@ -30,17 +40,24 @@ module.exports = {
 
     try {
       const guildId = interaction.guild.id;
-      const players = await Player.find({ guildId });
+      const endFetch = commandMetrics?.step('player fetch');
+      const players = await Player.find({ guildId })
+        .select('userId level -_id')
+        .lean();
+      endFetch?.();
 
       if (!players || players.length === 0) {
+        const endRender = commandMetrics?.step('response build');
         const responseEmbed = createStatusEmbed({
           title: '❌ No Players Found',
           description: 'No players found in the database.',
           color: '#FF0000',
         });
+        endRender?.();
         return interaction.editReply({ embeds: [responseEmbed] });
       }
 
+      const endSync = commandMetrics?.step('role sync');
       await Promise.all(
         players.map(async (player) => {
           const member = await interaction.guild.members
@@ -51,7 +68,9 @@ module.exports = {
           }
         }),
       );
+      endSync?.();
 
+      const endRender = commandMetrics?.step('response build');
       const responseEmbed = createStatusEmbed({
         title: '✅ Roles Updated',
         description: 'Roles were synchronized with stored player levels.',
@@ -60,14 +79,17 @@ module.exports = {
           { name: 'Members Checked', value: `${players.length}`, inline: true },
         ],
       });
+      endRender?.();
       return interaction.editReply({ embeds: [responseEmbed] });
     } catch (err) {
-      logger.error(`An error occured while syncing roles: ${err}`);
+      logger.error(`An error occurred while syncing roles: ${err}`);
+      const endRender = commandMetrics?.step('response build');
       const responseEmbed = createStatusEmbed({
         title: '❌ Error',
         description: 'An error occurred while updating roles.',
         color: '#FF0000',
       });
+      endRender?.();
       return interaction.editReply({ embeds: [responseEmbed] });
     }
   },

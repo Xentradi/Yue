@@ -66,7 +66,7 @@ Here is the tree of the src directory of the bot:
  ┃ ┃ ┃ ┗ 📜takeLoan.js
  ┃ ┃ ┣ 📂playerInfo
  ┃ ┃ ┃ ┗ 📜balance.js
- ┃ ┃ ┣ 📂tranfers
+ ┃ ┃ ┣ 📂transfers
  ┃ ┃ ┃ ┣ 📜giveCash.js
  ┃ ┃ ┃ ┗ 📜stealCash.js
  ┃ ┃ ┗ 📜balance.js

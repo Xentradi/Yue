@@ -14,6 +14,7 @@ module.exports = async function getBankLeaderboard(guildId, topN = 10) {
   const players = await Player.find({ guildId })
     .sort({ bank: -1 })
     .limit(topN)
-    .select('userId bank -_id');
+    .select('userId bank -_id')
+    .lean();
   return players;
 };

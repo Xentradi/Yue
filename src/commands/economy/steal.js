@@ -1,11 +1,12 @@
 const { SlashCommandBuilder } = require('discord.js');
-const stealCash = require('../../modules/economy/tranfers/stealCash');
+const stealCash = require('../../modules/economy/transfers/stealCash');
 const {
   createStatusEmbed,
   createBalanceEmbed,
   getDisplayName,
   formatCurrency,
 } = require('../../utils/economyFeedback');
+const { deferGuildInteraction } = require('../../utils/interactionHelpers');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -26,38 +27,39 @@ module.exports = {
   cooldown: '1h',
   deployGlobal: true,
 
-  async execute(interaction) {
-    if (!interaction.inGuild()) {
-      const responseEmbed = createStatusEmbed({
-        title: '❌ Guild Only',
+  async execute(interaction, commandMetrics) {
+    if (
+      !(await deferGuildInteraction(interaction, {
         description: 'Steals can only be attempted inside a server.',
-        color: '#FF3333',
-      });
-      return interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+      }))
+    ) {
+      return;
     }
-
-    await interaction.deferReply();
 
     const victim = interaction.options.getUser('user');
     const amount = interaction.options.getInteger('amount');
     const victimName = getDisplayName(interaction, victim);
     const thiefName = interaction.member.displayName;
 
+    const endUpdate = commandMetrics?.step('steal attempt');
     const data = await stealCash(
       interaction.user.id,
       victim.id,
       interaction.guildId,
       amount,
     );
+    endUpdate?.();
 
     if (!data) {
+      const endRender = commandMetrics?.step('response build');
       const responseEmbed = createStatusEmbed({
         title: 'Heist Error',
         description:
           "Your heist didn't go as planned. Maybe the target couldn't be found?",
         color: '#FF8C00',
       });
-      return interaction.editReply({ embeds: [responseEmbed] });
+      endRender?.();
+      return interaction.reply({ embeds: [responseEmbed] });
     }
 
     if (
@@ -65,13 +67,15 @@ module.exports = {
       data.amountStolen === 0 &&
       data.penalty === 0
     ) {
+      const endRender = commandMetrics?.step('response build');
       const responseEmbed = createStatusEmbed({
         title: 'Heist Error',
         description:
           data.message ?? 'The steal attempt could not be processed.',
         color: '#FF8C00',
       });
-      return interaction.editReply({ embeds: [responseEmbed] });
+      endRender?.();
+      return interaction.reply({ embeds: [responseEmbed] });
     }
 
     const victoryMessage = [
@@ -93,6 +97,7 @@ module.exports = {
       : defeatMessage[Math.floor(Math.random() * defeatMessage.length)];
 
     if (data.successful) {
+      const endRender = commandMetrics?.step('response build');
       const responseEmbed = createBalanceEmbed({
         title: 'Heist Report: Success!',
         description: `${randomMessage}\n${thiefName} managed to swipe ${formatCurrency(data.amountStolen)} from ${victimName}.`,
@@ -101,14 +106,17 @@ module.exports = {
         debt: data.playerDebt,
         color: '#33CC33',
       });
-      return interaction.editReply({ embeds: [responseEmbed] });
+      endRender?.();
+      return interaction.reply({ embeds: [responseEmbed] });
     }
 
+    const endRender = commandMetrics?.step('response build');
     const responseEmbed = createStatusEmbed({
       title: 'Heist Report: Busted!',
       description: `${randomMessage}\n${thiefName} was caught trying to steal from ${victimName} and faced a fine of ${formatCurrency(data.penalty)}.`,
       color: '#FF3333',
     });
-    return interaction.editReply({ embeds: [responseEmbed] });
+    endRender?.();
+    return interaction.reply({ embeds: [responseEmbed] });
   },
 };

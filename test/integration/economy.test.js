@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const { MessageFlags } = require('discord.js');
 
 const Player = require('../../src/models/Player');
 const Lake = require('../../src/models/Lake');
@@ -15,8 +16,8 @@ const setBalance = require('../../src/modules/economy/adminOperations/setBalance
 const takeLoan = require('../../src/modules/economy/loans/takeLoan');
 const repayLoan = require('../../src/modules/economy/loans/repayLoan');
 const withdraw = require('../../src/modules/economy/bankOperations/withdraw');
-const giveCash = require('../../src/modules/economy/tranfers/giveCash');
-const stealCash = require('../../src/modules/economy/tranfers/stealCash');
+const giveCash = require('../../src/modules/economy/transfers/giveCash');
+const stealCash = require('../../src/modules/economy/transfers/stealCash');
 const scheduledTasks = require('../../src/modules/scheduledEvents/scheduledTasks');
 const restockLake = require('../../src/modules/games/adminOperations/restockLake');
 const getCashLeaderboard = require('../../src/modules/economy/leaderboards/cashLeaderboard');
@@ -84,8 +85,41 @@ test('balance command rejects direct messages instead of crashing', async () => 
   await balanceCommand.execute(interaction);
 
   assert.ok(replyPayload);
-  assert.equal(replyPayload.ephemeral, true);
+  assert.equal(replyPayload.flags, MessageFlags.Ephemeral);
   assert.equal(replyPayload.embeds[0].data.title, '❌ Guild Only');
+});
+
+test('balance command replies directly in guilds', async () => {
+  const userId = 'balance-guild-user';
+  const guildId = 'guild-balance-command';
+
+  await Player.create({
+    userId,
+    guildId,
+    cash: 125,
+    bank: 75,
+    debt: 10,
+  });
+
+  let replyPayload;
+  const interaction = {
+    inGuild: () => true,
+    guildId,
+    user: { id: userId, username: 'BalanceUser' },
+    member: { displayName: 'Balance User' },
+    options: {},
+    reply: async (payload) => {
+      replyPayload = payload;
+    },
+  };
+
+  await balanceCommand.execute(interaction);
+
+  assert.ok(replyPayload);
+  assert.equal(
+    replyPayload.embeds[0].data.title,
+    '💰 Financial Statement for Balance User',
+  );
 });
 
 test('deposit and withdraw move money between cash and bank', async () => {
@@ -139,8 +173,7 @@ test('dice command surfaces balance update failures', async () => {
     options: {
       getInteger: (name) => (name === 'guess' ? 1 : 100),
     },
-    deferReply: async () => {},
-    editReply: async (payload) => {
+    reply: async (payload) => {
       replyPayload = payload;
     },
   };
@@ -619,7 +652,7 @@ test('leaderboard queries return sorted guild rankings', async () => {
   );
 });
 
-test('leaderboard command skips deleted members and replies with active names only', async () => {
+test('leaderboard command skips deleted members and edits the deferred reply', async () => {
   const guildId = 'guild-leaderboard-command';
 
   await Player.create([
@@ -627,41 +660,59 @@ test('leaderboard command skips deleted members and replies with active names on
     { userId: 'stale-member', guildId, cash: 80, bank: 0, debt: 0 },
   ]);
 
-  let replyPayload;
+  let replyCalled = false;
+  let deferCalled = false;
+  let editReplyPayload;
   const interaction = {
     inGuild: () => true,
     guildId,
     options: {
       getSubcommand: () => 'cash',
     },
-    client: {
-      guilds: {
-        fetch: async () => ({
-          members: {
-            fetch: async (userId) => {
-              if (userId === 'active-member') {
-                return { displayName: 'Active Member' };
-              }
-
-              throw new Error('Unknown member');
+    deferReply: async () => {
+      deferCalled = true;
+    },
+    guild: {
+      members: {
+        cache: new Map([
+          [
+            'active-member',
+            {
+              displayName: 'Active Member',
             },
-          },
-        }),
+          ],
+        ]),
+        fetch: async ({ user }) =>
+          new Map(
+            user
+              .filter((userId) => userId === 'active-member')
+              .map((userId) => [
+                userId,
+                {
+                  displayName: 'Active Member',
+                },
+              ]),
+          ),
       },
     },
-    reply: async (payload) => {
-      replyPayload = payload;
+    reply: async () => {
+      replyCalled = true;
+    },
+    editReply: async (payload) => {
+      editReplyPayload = payload;
     },
   };
 
   await leaderboardCommand.execute(interaction);
 
-  assert.equal(replyPayload.embeds[0].data.title, '💵 Cash Leaderboard');
+  assert.equal(deferCalled, true);
+  assert.equal(replyCalled, false);
+  assert.equal(editReplyPayload.embeds[0].data.title, '💵 Cash Leaderboard');
   assert.deepEqual(
-    replyPayload.embeds[0].data.fields[0].name,
+    editReplyPayload.embeds[0].data.fields[0].name,
     '1. Active Member',
   );
-  assert.equal(replyPayload.embeds[0].data.fields.length, 1);
+  assert.equal(editReplyPayload.embeds[0].data.fields.length, 1);
 });
 
 test('blackjack command rejects invalid bets before starting a game', async () => {
@@ -686,6 +737,60 @@ test('blackjack command rejects invalid bets before starting a game', async () =
     replyPayload.embeds[0].data.description,
     /Please enter a positive wager amount\./,
   );
+});
+
+test('admin economy give executes directly without a confirm flag', async () => {
+  const userId = 'admin-give-target';
+  const guildId = 'guild-admin-give';
+
+  await Player.create({
+    userId,
+    guildId,
+    cash: 100,
+    bank: 50,
+    debt: 25,
+  });
+
+  let replyCalled = false;
+  let deferCalled = false;
+  let editReplyPayload;
+  const interaction = {
+    inGuild: () => true,
+    guildId,
+    commandName: 'economy',
+    user: { tag: 'Admin#0001' },
+    member: {
+      permissions: {
+        has: () => true,
+      },
+    },
+    channel: { name: 'general' },
+    options: {
+      getSubcommand: () => 'give',
+      getBoolean: (name) => (name === 'confirm' ? false : undefined),
+      getUser: () => ({ id: userId, username: 'TargetUser' }),
+      getString: (field) => (field === 'field' ? 'cash' : undefined),
+      getInteger: (field) => (field === 'amount' ? 40 : undefined),
+    },
+    deferReply: async () => {
+      deferCalled = true;
+    },
+    reply: async () => {
+      replyCalled = true;
+    },
+    editReply: async (payload) => {
+      editReplyPayload = payload;
+    },
+    followUp: async () => {},
+  };
+
+  await adminEconomyCommand.execute(interaction);
+
+  const player = await Player.findOne({ userId, guildId });
+  assert.equal(deferCalled, true);
+  assert.equal(replyCalled, false);
+  assert.equal(player.cash, 140);
+  assert.equal(editReplyPayload.embeds[0].data.title, '✅ Balance Adjusted');
 });
 
 test('admin confirmation previews stay explicit for destructive actions', () => {
@@ -719,6 +824,30 @@ test('admin confirmation previews stay explicit for destructive actions', () => 
   );
 });
 
+test('admin economy handler returns a structured failure when dispatch throws', async () => {
+  const economyHandler = require('../../src/modules/economy/adminOperations/economyHandler');
+  const originalError = logger.error;
+  logger.error = () => {};
+
+  try {
+    const response = await economyHandler({
+      options: {
+        getSubcommand() {
+          throw new Error('dispatch failed');
+        },
+      },
+    });
+
+    assert.equal(response.success, false);
+    assert.equal(
+      response.error,
+      'An unexpected error occurred while handling the economy action. Please try again later.',
+    );
+  } finally {
+    logger.error = originalError;
+  }
+});
+
 test('lake restock preview makes the target channel and size explicit', () => {
   const preview = adminRestockLakeCommand.buildConfirmationPreview(
     {
@@ -732,6 +861,45 @@ test('lake restock preview makes the target channel and size explicit', () => {
   assert.deepEqual(
     preview.fields.map((field) => field.name),
     ['Target Channel', 'Lake Size'],
+  );
+});
+
+test('interaction error fallback is awaited when a command throws', async () => {
+  const interactionCreate = require('../../src/events/interactionCreate');
+
+  const interaction = {
+    isChatInputCommand: () => true,
+    commandName: 'boom',
+    user: { id: 'user-1', tag: 'user#0001' },
+    guildId: 'guild-1',
+    guild: { id: 'guild-1', name: 'Guild One' },
+    client: {
+      commands: new Map([
+        [
+          'boom',
+          {
+            data: { name: 'boom' },
+            cooldown: 0,
+            async execute() {
+              throw new Error('command failed');
+            },
+          },
+        ],
+      ]),
+      cooldowns: new Map(),
+    },
+    options: { data: [] },
+    reply() {
+      return Promise.reject(new Error('reply failed'));
+    },
+    followUp() {
+      return Promise.reject(new Error('follow up failed'));
+    },
+  };
+
+  await assert.rejects(
+    () => interactionCreate.execute(interaction),
+    /reply failed/,
   );
 });
 

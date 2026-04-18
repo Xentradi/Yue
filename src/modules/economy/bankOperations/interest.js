@@ -1,5 +1,6 @@
 const Player = require('../../../models/Player');
 const logger = require('../../../utils/logger');
+const { updatePlayerValues } = require('../playerService');
 
 /**
  * Applies a variable interest rate to all player's bank balances and debt within a specific guild.
@@ -71,7 +72,7 @@ module.exports = async function applyBankInterest(guildId) {
       nextValues.debt += debtInterest;
     }
 
-    const updateResult = await player.setValues(nextValues);
+    const updateResult = await updatePlayerValues(player, nextValues);
     if (!updateResult.success) {
       skippedCount += 1;
       logger.error(

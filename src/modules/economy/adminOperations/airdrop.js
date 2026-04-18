@@ -1,4 +1,5 @@
-const Player = require('../../../models/Player');
+const { findPlayersByUserIds } = require('../playerService');
+const balance = require('../balance');
 
 module.exports = async function airdrop(interaction) {
   const amount = interaction.options.getInteger('amount');
@@ -29,10 +30,7 @@ module.exports = async function airdrop(interaction) {
       };
     }
 
-    const players = await Player.find({
-      guildId,
-      userId: { $in: activeUserIds },
-    });
+    const players = await findPlayersByUserIds(activeUserIds, guildId);
 
     if (players.length === 0) {
       return {
@@ -51,7 +49,7 @@ module.exports = async function airdrop(interaction) {
         continue;
       }
 
-      const updateResult = await player.updateCash(amount);
+      const updateResult = await balance.updatePlayerCash(player, amount);
       if (!updateResult.success) {
         skippedCount += 1;
         continue;

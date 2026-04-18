@@ -124,6 +124,9 @@ const playerSchema = new Schema({
 });
 
 playerSchema.index({ userId: 1, guildId: 1 });
+playerSchema.index({ guildId: 1, cash: -1 });
+playerSchema.index({ guildId: 1, bank: -1 });
+playerSchema.index({ guildId: 1, debt: -1 });
 
 /**
  * Updates the player's cash by a specified amount.
@@ -454,10 +457,13 @@ playerSchema.statics.transferCurrency = async function (
         let playerB;
 
         await session.withTransaction(async () => {
-          [playerA, playerB] = await Promise.all([
-            this.findOne({ userId: playerAUserId, guildId }).session(session),
-            this.findOne({ userId: playerBUserId, guildId }).session(session),
-          ]);
+          [playerA, playerB] = await loadTransferPlayers(
+            this,
+            guildId,
+            playerAUserId,
+            playerBUserId,
+            session,
+          );
 
           if (!playerA) {
             throw new Error('Sender not found.');
@@ -518,10 +524,12 @@ async function transferCurrencyWithoutTransaction(
   playerBUserId,
   amount,
 ) {
-  const [playerA, playerB] = await Promise.all([
-    model.findOne({ userId: playerAUserId, guildId }),
-    model.findOne({ userId: playerBUserId, guildId }),
-  ]);
+  const [playerA, playerB] = await loadTransferPlayers(
+    model,
+    guildId,
+    playerAUserId,
+    playerBUserId,
+  );
 
   if (!playerA) {
     return { success: false, error: 'Sender not found.' };
@@ -576,6 +584,34 @@ async function transferCurrencyWithoutTransaction(
     playerB: updatedRecipient,
     transferredAmount: amount,
   };
+}
+
+async function loadTransferPlayers(
+  model,
+  guildId,
+  playerAUserId,
+  playerBUserId,
+  session,
+) {
+  if (playerAUserId === playerBUserId) {
+    return Promise.all([
+      model.findOne({ userId: playerAUserId, guildId }).session(session),
+      model.findOne({ userId: playerBUserId, guildId }).session(session),
+    ]);
+  }
+
+  const query = {
+    guildId,
+    userId: { $in: [playerAUserId, playerBUserId] },
+  };
+  const players = session
+    ? await model.find(query).session(session)
+    : await model.find(query);
+
+  return [
+    players.find((player) => player.userId === playerAUserId) ?? null,
+    players.find((player) => player.userId === playerBUserId) ?? null,
+  ];
 }
 
 /**

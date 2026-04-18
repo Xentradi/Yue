@@ -5,6 +5,7 @@ const {
   createStatusEmbed,
   formatCurrency,
 } = require('../../utils/economyFeedback');
+const { deferGuildInteraction } = require('../../utils/interactionHelpers');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -26,25 +27,25 @@ module.exports = {
   cooldown: 3,
   deployGlobal: true,
 
-  async execute(interaction) {
-    if (!interaction.inGuild()) {
-      const responseEmbed = createStatusEmbed({
-        title: '❌ Guild Only',
+  async execute(interaction, commandMetrics) {
+    if (
+      !(await deferGuildInteraction(interaction, {
         description: 'Coin flips can only be played inside a server.',
-        color: '#FF3333',
-      });
-      return interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+      }))
+    ) {
+      return;
     }
 
-    await interaction.deferReply();
     const choice = interaction.options.getString('choice');
     const betAmount = interaction.options.getInteger('bet');
+    const endGame = commandMetrics?.step('coin flip');
     const data = await coinFlip(
       interaction.user.id,
       interaction.guildId,
       choice,
       betAmount,
     );
+    endGame?.();
 
     if (data.success) {
       const victoryMessage = [
@@ -85,14 +86,18 @@ module.exports = {
           },
         ],
       });
-      return interaction.editReply({ embeds: [responseEmbed] });
+      const endRender = commandMetrics?.step('response build');
+      endRender?.();
+      return interaction.reply({ embeds: [responseEmbed] });
     } else {
       const responseEmbed = createStatusEmbed({
         title: '⚠️ Coin Flip Failed',
         description: data.message || 'We could not complete the coin flip.',
         color: '#FF3333',
       });
-      return interaction.editReply({ embeds: [responseEmbed] });
+      const endRender = commandMetrics?.step('response build');
+      endRender?.();
+      return interaction.reply({ embeds: [responseEmbed] });
     }
   },
 };

@@ -1,4 +1,4 @@
-const Player = require('../../../models/Player');
+const { findPlayer, updatePlayerValues } = require('../playerService');
 
 /**
  * Allows a player to take a loan from the bank. The loan incurs a 10% immediate interest.
@@ -12,7 +12,7 @@ const Player = require('../../../models/Player');
  * @throws Will log an error if saving to the database fails.
  */
 module.exports = async function takeLoan(userId, guildId, amount) {
-  const player = await Player.findOne({ userId, guildId });
+  const player = await findPlayer(userId, guildId);
 
   if (!player) {
     return {
@@ -48,7 +48,7 @@ module.exports = async function takeLoan(userId, guildId, amount) {
     };
   }
 
-  const updateResult = await player.setValues({
+  const updateResult = await updatePlayerValues(player, {
     cash: player.cash + amount,
     debt: player.debt + amount * 1.1,
   });

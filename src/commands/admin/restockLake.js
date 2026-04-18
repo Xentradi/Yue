@@ -1,9 +1,14 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  MessageFlags,
+} = require('discord.js');
 const restockLake = require('../../modules/games/adminOperations/restockLake');
 const {
   createConfirmationEmbed,
   createStatusEmbed,
 } = require('../../utils/economyFeedback');
+const { deferGuildInteraction } = require('../../utils/interactionHelpers');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -25,10 +30,20 @@ module.exports = {
   cooldown: 0,
   deployGlobal: true,
 
-  async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+  async execute(interaction, commandMetrics) {
     if (
-      !interaction.inGuild() ||
+      !(await deferGuildInteraction(interaction, {
+        description:
+          'You need administrator permissions to execute this command.',
+        title: '❌ Permission Denied',
+        defer: true,
+        deferOptions: { flags: MessageFlags.Ephemeral },
+      }))
+    ) {
+      return;
+    }
+
+    if (
       !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
     ) {
       const responseEmbed = createStatusEmbed({
@@ -54,14 +69,19 @@ module.exports = {
     if (lakeSize > 1000000) lakeSize = 1000000;
 
     if (!confirm) {
+      const endRender = commandMetrics?.step('response build');
       const responseEmbed = createConfirmationEmbed(
         buildConfirmationPreview(interaction, lakeSize),
       );
+      endRender?.();
       return interaction.editReply({ embeds: [responseEmbed] });
     }
 
+    const endOperation = commandMetrics?.step('restock');
     const restockResult = await restockLake(interaction.guildId, lakeSize);
+    endOperation?.();
 
+    const endRender = commandMetrics?.step('response build');
     const responseEmbed = restockResult.success
       ? createStatusEmbed({
           title: '🐟 Lake Restocked',
@@ -80,6 +100,7 @@ module.exports = {
           description: restockResult.message,
           color: '#FF0000',
         });
+    endRender?.();
     return interaction.editReply({ embeds: [responseEmbed] });
   },
 };

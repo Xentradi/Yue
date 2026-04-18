@@ -1,6 +1,6 @@
-const Player = require('../../../models/Player');
 const balance = require('../../economy/balance');
 const logger = require('../../../utils/logger');
+const { findPlayer } = require('../playerService');
 
 /**
  * Deposits a specified amount of cash into a player's bank account.
@@ -14,7 +14,7 @@ const logger = require('../../../utils/logger');
  * @throws Will log an error if saving to the database fails.
  */
 module.exports = async function deposit(userId, guildId, amount) {
-  const player = await Player.findOne({ userId, guildId });
+  const player = await findPlayer(userId, guildId);
 
   if (!player) {
     return {
@@ -49,7 +49,7 @@ module.exports = async function deposit(userId, guildId, amount) {
         }
       : transferResult;
   } catch (error) {
-    logger.error(`An error occured while processing the deposit: ${error}`);
+    logger.error(`An error occurred while processing the deposit: ${error}`);
     return {
       success: false,
       message: 'An error occurred while processing the deposit.',

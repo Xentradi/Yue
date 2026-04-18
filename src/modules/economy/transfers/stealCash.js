@@ -1,5 +1,5 @@
-const Player = require('../../../models/Player');
 const logger = require('../../../utils/logger');
+const { findPlayersByUserIds } = require('../playerService');
 
 /**
  * Attempt to steal cash from another user.
@@ -19,8 +19,13 @@ module.exports = async function stealCash(
   guildId,
   amount,
 ) {
-  const player = await Player.findOne({ userId, guildId });
-  const target = await Player.findOne({ userId: targetUserId, guildId });
+  const [player, target] = await findPlayersByUserIds(
+    [userId, targetUserId],
+    guildId,
+  ).then((players) => [
+    players.find((entry) => entry.userId === userId) ?? null,
+    players.find((entry) => entry.userId === targetUserId) ?? null,
+  ]);
 
   if (!player) {
     return {

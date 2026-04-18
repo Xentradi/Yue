@@ -14,6 +14,7 @@ module.exports = async function getDebtLeaderboard(guildId, topN = 10) {
   const players = await Player.find({ guildId })
     .sort({ debt: -1 })
     .limit(topN)
-    .select('userId debt -_id');
+    .select('userId debt -_id')
+    .lean();
   return players;
 };

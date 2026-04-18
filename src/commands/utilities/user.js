@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { createStatusEmbed } = require('../../utils/economyFeedback');
 
 module.exports = {
@@ -15,7 +15,10 @@ module.exports = {
         description: 'User profiles are only available inside a server.',
         color: '#FF3333',
       });
-      return interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+      return interaction.reply({
+        embeds: [responseEmbed],
+        flags: MessageFlags.Ephemeral,
+      });
     }
 
     const member = interaction.member;

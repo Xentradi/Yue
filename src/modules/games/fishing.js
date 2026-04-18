@@ -1,7 +1,7 @@
-const Player = require('../../models/Player');
 const Lake = require('../../models/Lake');
 const balance = require('../economy/balance');
 const logger = require('../../utils/logger');
+const { findPlayer } = require('../economy/playerService');
 
 /**
  * Allow a player to fish in the lake and get rewarded based on the fish they catch.
@@ -13,7 +13,7 @@ const logger = require('../../utils/logger');
  */
 
 module.exports = async function fish(userId, guildId) {
-  const player = await Player.findOne({ userId, guildId });
+  const player = await findPlayer(userId, guildId);
   const lake = await Lake.findOne({ guildId });
 
   if (!player) {
@@ -87,7 +87,7 @@ module.exports = async function fish(userId, guildId) {
       );
     }
     logger.error(
-      `An error occured while processing the fishing attempt: ${err}`,
+      `An error occurred while processing the fishing attempt: ${err}`,
     );
     return {
       success: false,
@@ -113,18 +113,15 @@ function lakeHasFish(lake) {
  * @returns {Fish} The type of fish caught.
  */
 function selectFishFromLake(lake) {
-  // Convert the fish array into a weighted array
   const weightedFishes = lake.fishStock.flatMap((fish) =>
     Array(fish.count).fill(fish),
   );
 
   if (weightedFishes.length === 0) return null;
 
-  // Select a random fish from the weighted array
   const randomFish =
     weightedFishes[Math.floor(Math.random() * weightedFishes.length)];
 
-  // Decrement the fish count in the lake
   const fishInLake = lake.fishStock.find((f) => f.type === randomFish.type);
   fishInLake.count -= 1;
 

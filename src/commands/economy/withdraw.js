@@ -5,6 +5,7 @@ const {
   createStatusEmbed,
   formatCurrency,
 } = require('../../utils/economyFeedback');
+const { deferGuildInteraction } = require('../../utils/interactionHelpers');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -19,25 +20,25 @@ module.exports = {
   cooldown: 2,
   deployGlobal: true,
 
-  async execute(interaction) {
-    if (!interaction.inGuild()) {
-      const responseEmbed = createStatusEmbed({
-        title: '❌ Guild Only',
+  async execute(interaction, commandMetrics) {
+    if (
+      !(await deferGuildInteraction(interaction, {
         description: 'Withdrawals can only be made inside a server.',
-        color: '#FF3333',
-      });
-      return interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+      }))
+    ) {
+      return;
     }
-
-    await interaction.deferReply();
     const amount = interaction.options.getInteger('amount');
+    const endUpdate = commandMetrics?.step('withdraw');
     const data = await withdraw(
       interaction.user.id,
       interaction.guildId,
       amount,
     );
+    endUpdate?.();
 
     if (data && data.success) {
+      const endRender = commandMetrics?.step('response build');
       const responseEmbed = createBalanceEmbed({
         title: `🏦 Withdrawal Completed for ${interaction.member.displayName}`,
         description: `Withdrew ${formatCurrency(data.amount)} from your bank.`,
@@ -45,15 +46,18 @@ module.exports = {
         bank: data.bank,
         debt: data.debt,
       });
-      return interaction.editReply({ embeds: [responseEmbed] });
+      endRender?.();
+      return interaction.reply({ embeds: [responseEmbed] });
     }
 
+    const endRender = commandMetrics?.step('response build');
     const responseEmbed = createStatusEmbed({
       title: '⚠️ Withdrawal Failed',
       description:
         data?.message ?? 'We could not complete the withdrawal request.',
       color: '#FF3333',
     });
-    return interaction.editReply({ embeds: [responseEmbed] });
+    endRender?.();
+    return interaction.reply({ embeds: [responseEmbed] });
   },
 };

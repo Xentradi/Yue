@@ -1,5 +1,5 @@
-const Player = require('../../models/Player');
 const balance = require('../economy/balance');
+const { findPlayer } = require('../economy/playerService');
 
 /**
  * Performs a coin flip, updates the player's cash balance based on the result, and returns detailed information about the operation.
@@ -27,7 +27,7 @@ const balance = require('../economy/balance');
  */
 
 module.exports = async function coinFlip(userId, guildId, choice, betAmount) {
-  const player = await Player.findOne({ userId, guildId });
+  const player = await findPlayer(userId, guildId);
 
   const result = {
     success: false,

@@ -1,5 +1,5 @@
-const Player = require('../../../models/Player');
 const logger = require('../../../utils/logger');
+const Player = require('../../../models/Player');
 
 /**
  * Retrieves the balance details (cash, bank, and debt) for a specific player.
@@ -13,8 +13,9 @@ const logger = require('../../../utils/logger');
  */
 module.exports = async function getBalance(userId, guildId) {
   try {
-    const player = await Player.findOne({ userId, guildId });
-    // If the player doesn't exist in the database, return a success value of false with an appropriate message
+    const player = await Player.findOne({ userId, guildId })
+      .select('cash bank debt -_id')
+      .lean();
     if (!player) {
       return {
         success: false,
@@ -22,7 +23,6 @@ module.exports = async function getBalance(userId, guildId) {
       };
     }
 
-    // If everything is okay, return the player's balances with a success value of true
     return {
       success: true,
       cash: player.cash,
@@ -30,8 +30,7 @@ module.exports = async function getBalance(userId, guildId) {
       debt: player.debt,
     };
   } catch (err) {
-    // Log any errors and return a success value of false with a generic error message
-    logger.error(`Error occured while fetching the player's balance: ${err}`);
+    logger.error(`Error occurred while fetching the player's balance: ${err}`);
     return {
       success: false,
       message: 'An error occurred while fetching the balance.',

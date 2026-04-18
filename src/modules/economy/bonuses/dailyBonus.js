@@ -1,6 +1,6 @@
-const Player = require('../../../models/Player');
 const config = require('../../../config.json');
 const logger = require('../../../utils/logger');
+const { findPlayer, updatePlayerValues } = require('../playerService');
 
 /**
  * Provides a daily cash bonus to a player.
@@ -14,7 +14,7 @@ const logger = require('../../../utils/logger');
  */
 
 module.exports = async function dailyBonus(userId, guildId) {
-  const player = await Player.findOne({ userId, guildId });
+  const player = await findPlayer(userId, guildId);
   const now = new Date();
   const claimStart = new Date(now);
   claimStart.setHours(0, 0, 0, 0);
@@ -53,7 +53,7 @@ module.exports = async function dailyBonus(userId, guildId) {
 
   try {
     const nextCash = player.cash + bonusAmount;
-    const updateResult = await player.setValues({
+    const updateResult = await updatePlayerValues(player, {
       cash: nextCash,
       lastDailyBonusClaim: new Date(today),
     });

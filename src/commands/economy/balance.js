@@ -4,7 +4,7 @@ const {
   createBalanceEmbed,
   createStatusEmbed,
 } = require('../../utils/economyFeedback');
-const logger = require('../../utils/logger');
+const { deferGuildInteraction } = require('../../utils/interactionHelpers');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -21,38 +21,38 @@ module.exports = {
    * @param {import('discord.js').BaseInteraction} interaction - The interaction that triggered the command.
    * @throws Will send an error response to the user if there's an issue retrieving the balance.
    */
-  async execute(interaction) {
-    if (!interaction.inGuild()) {
-      const responseEmbed = createStatusEmbed({
-        title: '❌ Guild Only',
+  async execute(interaction, commandMetrics) {
+    if (
+      !(await deferGuildInteraction(interaction, {
         description: 'Balance checks can only be viewed inside a server.',
-        color: '#FF3333',
-      });
-      return interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+      }))
+    ) {
+      return;
     }
 
-    await interaction.deferReply();
-
+    const endLookup = commandMetrics?.step('balance lookup');
     const playerBalance = await getBalance(
       interaction.user.id,
       interaction.guildId,
     );
-    logger.debug(`playerBalance: ${playerBalance}`);
+    endLookup?.();
     if (!playerBalance.success) {
       const responseEmbed = createStatusEmbed({
         title: '💰 Balance Unavailable',
         description: playerBalance.message,
         color: '#FF3333',
       });
-      return interaction.editReply({ embeds: [responseEmbed] });
+      return interaction.reply({ embeds: [responseEmbed] });
     }
 
+    const endRender = commandMetrics?.step('response build');
     const responseEmbed = createBalanceEmbed({
       title: `💰 Financial Statement for ${interaction.member.displayName}`,
       cash: playerBalance.cash,
       bank: playerBalance.bank,
       debt: playerBalance.debt,
     });
-    return interaction.editReply({ embeds: [responseEmbed] });
+    endRender?.();
+    return interaction.reply({ embeds: [responseEmbed] });
   },
 };

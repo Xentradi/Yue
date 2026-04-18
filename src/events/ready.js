@@ -1,5 +1,4 @@
 const { Events } = require('discord.js');
-//const reminderMessages = require('../modules/scheduledEvents/reminderMessages');
 const logger = require('../utils/logger');
 
 module.exports = {
@@ -7,7 +6,6 @@ module.exports = {
   once: true,
   execute(client) {
     require('../modules/scheduledEvents/scheduledTasks').registerScheduledTasks();
-    //reminderMessages.cronJobs(client);
     logger.info(`Ready! Logged in as ${client.user.tag}`);
   },
 };

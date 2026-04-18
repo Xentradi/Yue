@@ -5,7 +5,7 @@ const {
   createStatusEmbed,
   formatCurrency,
 } = require('../../utils/economyFeedback');
-const Player = require('../../models/Player');
+const { deferGuildInteraction } = require('../../utils/interactionHelpers');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -31,58 +31,36 @@ module.exports = {
   cooldown: 3,
   deployGlobal: true,
 
-  async execute(interaction) {
-    if (!interaction.inGuild()) {
-      const responseEmbed = createStatusEmbed({
-        title: '❌ Guild Only',
+  async execute(interaction, commandMetrics) {
+    if (
+      !(await deferGuildInteraction(interaction, {
         description: 'Dice rolls can only be played inside a server.',
-        color: '#FF3333',
-      });
-      return interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+      }))
+    ) {
+      return;
     }
-
-    await interaction.deferReply();
 
     const guessedNumber = interaction.options.getInteger('guess');
     const betAmount = interaction.options.getInteger('bet');
 
-    const player = await Player.findOne({
-      userId: interaction.user.id,
-      guildId: interaction.guildId,
-    });
-
-    if (!player) {
-      const responseEmbed = createStatusEmbed({
-        title: '🎲 Dice Roll Unavailable',
-        description: 'You do not have an account set up yet.',
-        color: '#FF3333',
-      });
-      return interaction.editReply({ embeds: [responseEmbed] });
-    }
-
-    if (player.cash < betAmount) {
-      const responseEmbed = createStatusEmbed({
-        title: '🎲 Dice Roll Unavailable',
-        description: 'You do not have sufficient funds for this bet.',
-        color: '#FF3333',
-      });
-      return interaction.editReply({ embeds: [responseEmbed] });
-    }
-
+    const endGame = commandMetrics?.step('dice roll');
     const data = await diceRoll(
       interaction.user.id,
       interaction.guildId,
       guessedNumber,
       betAmount,
     );
+    endGame?.();
 
     if (!data.success) {
+      const endRender = commandMetrics?.step('response build');
       const responseEmbed = createStatusEmbed({
         title: '🎲 Dice Roll Failed',
         description: data.message || 'We could not complete the dice roll.',
         color: '#FF3333',
       });
-      return interaction.editReply({ embeds: [responseEmbed] });
+      endRender?.();
+      return interaction.reply({ embeds: [responseEmbed] });
     }
 
     const victoryMessage = [
@@ -123,6 +101,8 @@ module.exports = {
         },
       ],
     });
-    return interaction.editReply({ embeds: [responseEmbed] });
+    const endRender = commandMetrics?.step('response build');
+    endRender?.();
+    return interaction.reply({ embeds: [responseEmbed] });
   },
 };

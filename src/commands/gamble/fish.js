@@ -5,6 +5,7 @@ const {
   createStatusEmbed,
   formatCurrency,
 } = require('../../utils/economyFeedback');
+const { deferGuildInteraction } = require('../../utils/interactionHelpers');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -13,27 +14,29 @@ module.exports = {
   cooldown: 3,
   deployGlobal: true,
 
-  async execute(interaction) {
-    if (!interaction.inGuild()) {
-      const responseEmbed = createStatusEmbed({
-        title: '❌ Guild Only',
+  async execute(interaction, commandMetrics) {
+    if (
+      !(await deferGuildInteraction(interaction, {
         description: 'Fishing can only be used inside a server.',
-        color: '#FF3333',
-      });
-      return interaction.reply({ embeds: [responseEmbed], ephemeral: true });
+      }))
+    ) {
+      return;
     }
 
-    await interaction.deferReply();
+    const endGame = commandMetrics?.step('fishing');
     const catchResult = await fishing(interaction.user.id, interaction.guildId);
+    endGame?.();
 
     if (!catchResult.success) {
+      const endRender = commandMetrics?.step('response build');
       const responseEmbed = createStatusEmbed({
         title: '🐟 Fishing Failed',
         description:
           catchResult.description || 'Something went wrong while fishing.',
         color: '#FF3333',
       });
-      return interaction.editReply({ embeds: [responseEmbed] });
+      endRender?.();
+      return interaction.reply({ embeds: [responseEmbed] });
     }
 
     let embedOptions = {};
@@ -90,6 +93,8 @@ module.exports = {
       bank: catchResult.playerBank,
       debt: catchResult.playerDebt,
     });
-    return interaction.editReply({ embeds: [responseEmbed] });
+    const endRender = commandMetrics?.step('response build');
+    endRender?.();
+    return interaction.reply({ embeds: [responseEmbed] });
   },
 };

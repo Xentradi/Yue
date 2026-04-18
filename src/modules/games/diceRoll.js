@@ -1,5 +1,5 @@
-const Player = require('../../models/Player');
 const balance = require('../economy/balance');
+const { findPlayer } = require('../economy/playerService');
 
 /**
  * Performs a dice roll, updates the player's cash balance based on the result, and returns detailed information about the operation.
@@ -24,7 +24,7 @@ const balance = require('../economy/balance');
  * @property {string} [message] - Additional message, e.g., errors or insufficient funds notification.
  */
 module.exports = async function diceRoll(userId, guildId, choice, betAmount) {
-  const player = await Player.findOne({ userId, guildId });
+  const player = await findPlayer(userId, guildId);
 
   const result = {
     success: false,
