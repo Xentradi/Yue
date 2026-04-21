@@ -1,12 +1,15 @@
 const cron = require('node-cron');
 const Player = require('../../models/Player');
 const Lake = require('../../models/Lake');
+const { query } = require('../../storage/postgres');
 const applyBankInterest = require('../economy/bankOperations/interest');
+const loanLifecycleService = require('../economy/loanLifecycleService');
 const restockLake = require('../games/adminOperations/restockLake');
 const logger = require('../../utils/logger');
 
 const DEFAULT_DAILY_MAINTENANCE_CRON = '0 12 * * *';
 const DEFAULT_HOURLY_MAINTENANCE_CRON = '0 * * * *';
+const DEFAULT_HOURLY_LOAN_LIFECYCLE_CRON = '15 * * * *';
 const DEFAULT_MAINTENANCE_TIMEZONE = 'Etc/UTC';
 const DEFAULT_DAILY_LAKE_RESTOCK_SIZE = 5500;
 const DEFAULT_HOURLY_LAKE_RESTOCK_SIZE = 500;
@@ -18,6 +21,10 @@ const DAILY_MAINTENANCE_CRON = readCronExpression(
 const HOURLY_MAINTENANCE_CRON = readCronExpression(
   'HOURLY_MAINTENANCE_CRON',
   DEFAULT_HOURLY_MAINTENANCE_CRON,
+);
+const HOURLY_LOAN_LIFECYCLE_CRON = readCronExpression(
+  'HOURLY_LOAN_LIFECYCLE_CRON',
+  DEFAULT_HOURLY_LOAN_LIFECYCLE_CRON,
 );
 const MAINTENANCE_TIMEZONE =
   process.env.MAINTENANCE_TIMEZONE?.trim() || DEFAULT_MAINTENANCE_TIMEZONE;
@@ -32,16 +39,38 @@ const HOURLY_LAKE_RESTOCK_SIZE = readPositiveIntegerEnv(
 
 async function getTrackedGuildIds() {
   const [playerGuildIds, lakeGuildIds] = await Promise.all([
-    Player.distinct('guildId'),
-    Lake.distinct('guildId'),
+    getTrackedPlayerIds(),
+    getPublicLakeIds(),
   ]);
 
   return [...new Set([...playerGuildIds, ...lakeGuildIds].filter(Boolean))];
 }
 
-async function getPlayerGuildIds() {
+async function getTrackedPlayerIds() {
   const guildIds = await Player.distinct('guildId');
   return [...new Set(guildIds.filter(Boolean))];
+}
+
+async function getPlayerGuildIds() {
+  return await getTrackedPlayerIds();
+}
+
+async function getPublicLakeIds() {
+  const guildIds = await Lake.distinct('guildId', { ownershipType: 'public' });
+  return [...new Set(guildIds.filter(Boolean))];
+}
+
+async function getLakeGuildIds() {
+  return await getPublicLakeIds();
+}
+
+async function countPlayerRecords() {
+  const { rows } = await query(`
+    SELECT COUNT(*)::int AS player_count
+    FROM players;
+  `);
+
+  return rows[0]?.player_count ?? 0;
 }
 
 async function logJobResult(jobName, promise) {
@@ -58,62 +87,68 @@ async function logJobResult(jobName, promise) {
 }
 
 async function runDailyMaintenance() {
-  const [guildIds, playerGuildIds] = await Promise.all([
-    getTrackedGuildIds(),
-    getPlayerGuildIds(),
+  const [publicLakeIds, playerCount] = await Promise.all([
+    getPublicLakeIds(),
+    countPlayerRecords(),
   ]);
 
-  if (guildIds.length === 0 && playerGuildIds.length === 0) {
-    logger.info('No guilds found for daily maintenance.');
+  if (publicLakeIds.length === 0 && playerCount === 0) {
+    logger.info('No players or public lakes found for daily maintenance.');
     return;
   }
 
   logger.info(
-    `Running daily maintenance for ${playerGuildIds.length} guild(s) with bank interest and ${guildIds.length} tracked guild(s) with lake restocks.`,
+    `Running daily maintenance for ${playerCount.toLocaleString()} player record(s) with bank interest and ${publicLakeIds.length.toLocaleString()} public lake(s) with lake restocks.`,
   );
 
-  if (playerGuildIds.length > 0) {
-    for (const guildId of playerGuildIds) {
-      await logJobResult(
-        `Bank interest for guild ${guildId}`,
-        applyBankInterest(guildId),
-      );
-    }
+  if (playerCount > 0) {
+    await logJobResult('Global bank interest', applyBankInterest());
   }
 
-  if (guildIds.length > 0) {
-    for (const guildId of guildIds) {
-      await logJobResult(
-        `Lake restock for guild ${guildId}`,
-        restockLake(guildId, DAILY_LAKE_RESTOCK_SIZE),
-      );
-    }
-  }
+  await runLakeRestockMaintenance(
+    publicLakeIds,
+    DAILY_LAKE_RESTOCK_SIZE,
+    'Public lake restock',
+  );
 }
 
 async function runHourlyMaintenance() {
-  const guildIds = await getTrackedGuildIds();
+  const publicLakeIds = await getPublicLakeIds();
 
-  if (guildIds.length === 0) {
-    logger.info('No guilds found for hourly maintenance.');
+  if (publicLakeIds.length === 0) {
+    logger.info('No public lakes found for hourly maintenance.');
     return;
   }
 
   logger.info(
-    `Running hourly maintenance for ${guildIds.length} guild(s) with lake restock size ${HOURLY_LAKE_RESTOCK_SIZE.toLocaleString()}.`,
+    `Running hourly maintenance for ${publicLakeIds.length} public lake(s) with lake restock size ${HOURLY_LAKE_RESTOCK_SIZE.toLocaleString()}.`,
   );
 
-  for (const guildId of guildIds) {
+  await runLakeRestockMaintenance(
+    publicLakeIds,
+    HOURLY_LAKE_RESTOCK_SIZE,
+    'Hourly public lake restock',
+  );
+}
+
+async function runLoanLifecycleMaintenance() {
+  const result = await loanLifecycleService.runLoanLifecycleMaintenance();
+  await logJobResult('Loan lifecycle maintenance', Promise.resolve(result));
+  return result;
+}
+
+async function runLakeRestockMaintenance(lakeIds, size, jobLabel) {
+  for (const lakeId of lakeIds) {
     await logJobResult(
-      `Hourly lake restock for guild ${guildId}`,
-      restockLake(guildId, HOURLY_LAKE_RESTOCK_SIZE),
+      `${jobLabel} for lake ${lakeId}`,
+      restockLake(lakeId, size),
     );
   }
 }
 
 function registerScheduledTasks() {
   logger.info(
-    `Registering scheduled maintenance jobs: daily=${DAILY_MAINTENANCE_CRON}, hourly=${HOURLY_MAINTENANCE_CRON}, timezone=${MAINTENANCE_TIMEZONE}, dailyRestock=${DAILY_LAKE_RESTOCK_SIZE.toLocaleString()}, hourlyRestock=${HOURLY_LAKE_RESTOCK_SIZE.toLocaleString()}.`,
+    `Registering scheduled maintenance jobs: daily=${DAILY_MAINTENANCE_CRON}, hourly=${HOURLY_MAINTENANCE_CRON}, loanLifecycle=${HOURLY_LOAN_LIFECYCLE_CRON}, timezone=${MAINTENANCE_TIMEZONE}, dailyRestock=${DAILY_LAKE_RESTOCK_SIZE.toLocaleString()}, hourlyRestock=${HOURLY_LAKE_RESTOCK_SIZE.toLocaleString()}.`,
   );
 
   cron.schedule(
@@ -131,6 +166,17 @@ function registerScheduledTasks() {
     HOURLY_MAINTENANCE_CRON,
     () => {
       void runHourlyMaintenance();
+    },
+    {
+      scheduled: true,
+      timezone: MAINTENANCE_TIMEZONE,
+    },
+  );
+
+  cron.schedule(
+    HOURLY_LOAN_LIFECYCLE_CRON,
+    () => {
+      void runLoanLifecycleMaintenance();
     },
     {
       scheduled: true,
@@ -182,14 +228,20 @@ function describeSuccess(result) {
 
 module.exports = {
   getTrackedGuildIds,
+  getTrackedPlayerIds,
   getPlayerGuildIds,
+  getPublicLakeIds,
+  getLakeGuildIds,
   logJobResult,
   DAILY_MAINTENANCE_CRON,
   HOURLY_MAINTENANCE_CRON,
+  HOURLY_LOAN_LIFECYCLE_CRON,
   MAINTENANCE_TIMEZONE,
   DAILY_LAKE_RESTOCK_SIZE,
   HOURLY_LAKE_RESTOCK_SIZE,
   runDailyMaintenance,
+  runLakeRestockMaintenance,
   runHourlyMaintenance,
+  runLoanLifecycleMaintenance,
   registerScheduledTasks,
 };
