@@ -6,6 +6,28 @@ const { createCommandMetrics } = require('../utils/commandTiming');
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction) {
+    if (
+      typeof interaction.isAutocomplete === 'function' &&
+      interaction.isAutocomplete()
+    ) {
+      const command = interaction.client.commands.get(interaction.commandName);
+      if (!command?.autocomplete) {
+        return interaction.respond([]);
+      }
+
+      try {
+        await command.autocomplete(interaction);
+      } catch (err) {
+        logger.error(
+          `Error handling autocomplete for ${interaction.commandName}: ${err.stack}`,
+        );
+        if (typeof interaction.respond === 'function') {
+          await interaction.respond([]).catch(() => {});
+        }
+      }
+      return;
+    }
+
     if (!interaction.isChatInputCommand()) return;
     const command = interaction.client.commands.get(interaction.commandName);
 
@@ -49,6 +71,7 @@ module.exports = {
 
     // Try running the command
     const commandMetrics = createCommandMetrics(interaction);
+    instrumentDiscordTiming(interaction, commandMetrics);
     try {
       logCommandInvocation(interaction);
       await command.execute(interaction, commandMetrics);
@@ -117,4 +140,41 @@ async function handleCommandError(err, interaction) {
       flags: MessageFlags.Ephemeral,
     });
   }
+}
+
+function instrumentDiscordTiming(interaction, commandMetrics) {
+  if (!commandMetrics) {
+    return;
+  }
+
+  wrapAsyncMethod(interaction, 'reply', commandMetrics, 'discord reply');
+  wrapAsyncMethod(
+    interaction,
+    'deferReply',
+    commandMetrics,
+    'discord deferReply',
+  );
+  wrapAsyncMethod(
+    interaction,
+    'editReply',
+    commandMetrics,
+    'discord editReply',
+  );
+  wrapAsyncMethod(interaction, 'followUp', commandMetrics, 'discord followUp');
+}
+
+function wrapAsyncMethod(target, methodName, commandMetrics, label) {
+  if (typeof target?.[methodName] !== 'function') {
+    return;
+  }
+
+  const original = target[methodName].bind(target);
+  target[methodName] = async (...args) => {
+    const endStep = commandMetrics.step(label);
+    try {
+      return await original(...args);
+    } finally {
+      endStep();
+    }
+  };
 }

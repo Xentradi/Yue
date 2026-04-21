@@ -25,6 +25,7 @@ module.exports = {
     if (
       !(await deferGuildInteraction(interaction, {
         description: 'Balance checks can only be viewed inside a server.',
+        defer: true,
       }))
     ) {
       return;
@@ -42,7 +43,7 @@ module.exports = {
         description: playerBalance.message,
         color: '#FF3333',
       });
-      return interaction.reply({ embeds: [responseEmbed] });
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
 
     const endRender = commandMetrics?.step('response build');
@@ -53,6 +54,6 @@ module.exports = {
       debt: playerBalance.debt,
     });
     endRender?.();
-    return interaction.reply({ embeds: [responseEmbed] });
+    return interaction.editReply({ embeds: [responseEmbed] });
   },
 };

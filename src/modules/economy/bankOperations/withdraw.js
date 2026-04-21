@@ -1,6 +1,6 @@
 const balance = require('../../economy/balance');
 const logger = require('../../../utils/logger');
-const { findPlayer } = require('../playerService');
+const { ensurePlayer } = require('../playerService');
 
 /**
  * Withdraws a specified amount of cash from a player's bank account.
@@ -13,15 +13,13 @@ const { findPlayer } = require('../playerService');
  * @returns {Promise<Object>} An object containing the transaction result.
  * @throws Will log an error if there's an issue with database access.
  */
-module.exports = async function withdraw(userId, guildId, amount) {
-  const player = await findPlayer(userId, guildId);
-
-  if (!player) {
-    return {
-      success: false,
-      message: 'User not found.',
-    };
-  }
+module.exports = async function withdraw(
+  userId,
+  guildId,
+  amount,
+  options = {},
+) {
+  const player = await ensurePlayer(userId, guildId, options);
 
   if (amount <= 0) {
     return {
@@ -38,7 +36,12 @@ module.exports = async function withdraw(userId, guildId, amount) {
   }
 
   try {
-    const transferResult = await balance.transferFunds(player, amount, false);
+    const transferResult = await balance.transferFunds(
+      player,
+      amount,
+      false,
+      options,
+    );
     return transferResult.success
       ? {
           success: true,

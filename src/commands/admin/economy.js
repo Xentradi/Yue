@@ -7,11 +7,18 @@ const economyHandler = require('../../modules/economy/adminOperations/economyHan
 const logger = require('../../utils/logger');
 const {
   createBalanceEmbed,
+  createConfirmationEmbed,
   createStatusEmbed,
   getDisplayName,
   formatCurrency,
 } = require('../../utils/economyFeedback');
-const { deferGuildInteraction } = require('../../utils/interactionHelpers');
+const {
+  deferGuildInteraction,
+  getOptionInteger,
+  getOptionString,
+  getOptionUser,
+} = require('../../utils/interactionHelpers');
+const { promptForConfirmation } = require('../../utils/confirmationFlow');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -54,14 +61,6 @@ module.exports = {
             .setName('amount')
             .setDescription('New balance amount')
             .setRequired(true),
-        )
-        .addBooleanOption((option) =>
-          option
-            .setName('confirm')
-            .setDescription(
-              'Confirm this destructive change before applying it',
-            )
-            .setRequired(false),
         ),
     )
     .addSubcommand((subcommand) =>
@@ -90,14 +89,6 @@ module.exports = {
             .setName('amount')
             .setDescription('Adjustment amount')
             .setRequired(true),
-        )
-        .addBooleanOption((option) =>
-          option
-            .setName('confirm')
-            .setDescription(
-              'Confirm this destructive change before applying it',
-            )
-            .setRequired(false),
         ),
     )
     .addSubcommand((subcommand) =>
@@ -109,14 +100,6 @@ module.exports = {
             .setName('user')
             .setDescription('Target user')
             .setRequired(true),
-        )
-        .addBooleanOption((option) =>
-          option
-            .setName('confirm')
-            .setDescription(
-              'Confirm this destructive change before applying it',
-            )
-            .setRequired(false),
         ),
     )
     .addSubcommand((subcommand) =>
@@ -130,14 +113,6 @@ module.exports = {
             .setName('amount')
             .setDescription('Amount to give each active member')
             .setRequired(true),
-        )
-        .addBooleanOption((option) =>
-          option
-            .setName('confirm')
-            .setDescription(
-              'Confirm this destructive change before applying it',
-            )
-            .setRequired(false),
         ),
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
@@ -166,12 +141,25 @@ module.exports = {
           'You need administrator permissions to execute this command.',
         color: '#FF0000',
       });
-      return interaction.editReply({ embeds: [responseEmbed] });
+      return interaction.editReply({ embeds: [responseEmbed], components: [] });
     }
 
     const subcommand = interaction.options.getSubcommand();
 
     try {
+      if (subcommand !== 'get') {
+        const previewEmbed = createConfirmationEmbed(
+          buildConfirmationPreview(interaction),
+        );
+        const confirmed = await promptForConfirmation(
+          interaction,
+          previewEmbed,
+        );
+        if (!confirmed) {
+          return;
+        }
+      }
+
       const endOperation = commandMetrics?.step('economy operation');
       const response = await economyHandler(interaction);
       endOperation?.();
@@ -187,12 +175,15 @@ module.exports = {
           color: '#FF0000',
         });
         endRender?.();
-        return interaction.editReply({ embeds: [responseEmbed] });
+        return interaction.editReply({
+          embeds: [responseEmbed],
+          components: [],
+        });
       }
 
       switch (subcommand) {
         case 'get': {
-          const user = interaction.options.getUser('user');
+          const user = getOptionUser(interaction, 'user', 'target_user');
           const endRender = commandMetrics?.step('response build');
           const responseEmbed = createBalanceEmbed({
             title: `💰 Financial Statement for ${getDisplayName(interaction, user)}`,
@@ -201,10 +192,13 @@ module.exports = {
             debt: response.debt,
           });
           endRender?.();
-          return interaction.editReply({ embeds: [responseEmbed] });
+          return interaction.editReply({
+            embeds: [responseEmbed],
+            components: [],
+          });
         }
         case 'set': {
-          const user = interaction.options.getUser('user');
+          const user = getOptionUser(interaction, 'user', 'target_user');
           const endRender = commandMetrics?.step('response build');
           const responseEmbed = createStatusEmbed({
             title: '✅ Balance Updated',
@@ -212,11 +206,14 @@ module.exports = {
             color: '#33CC33',
           });
           endRender?.();
-          return interaction.editReply({ embeds: [responseEmbed] });
+          return interaction.editReply({
+            embeds: [responseEmbed],
+            components: [],
+          });
         }
         case 'give': {
-          const user = interaction.options.getUser('user');
-          const amount = interaction.options.getInteger('amount');
+          const user = getOptionUser(interaction, 'user', 'target_user');
+          const amount = getOptionInteger(interaction, 'amount', 'cash_amount');
           const endRender = commandMetrics?.step('response build');
           const responseEmbed = createStatusEmbed({
             title: '✅ Balance Adjusted',
@@ -227,10 +224,13 @@ module.exports = {
             color: '#33CC33',
           });
           endRender?.();
-          return interaction.editReply({ embeds: [responseEmbed] });
+          return interaction.editReply({
+            embeds: [responseEmbed],
+            components: [],
+          });
         }
         case 'reset': {
-          const user = interaction.options.getUser('user');
+          const user = getOptionUser(interaction, 'user', 'target_user');
           const endRender = commandMetrics?.step('response build');
           const responseEmbed = createStatusEmbed({
             title: '✅ Balance Reset',
@@ -238,10 +238,13 @@ module.exports = {
             color: '#33CC33',
           });
           endRender?.();
-          return interaction.editReply({ embeds: [responseEmbed] });
+          return interaction.editReply({
+            embeds: [responseEmbed],
+            components: [],
+          });
         }
         case 'airdrop': {
-          const amount = interaction.options.getInteger('amount');
+          const amount = getOptionInteger(interaction, 'amount');
           const endRender = commandMetrics?.step('response build');
           const responseEmbed = createStatusEmbed({
             title: '✅ Airdrop Successful',
@@ -261,7 +264,10 @@ module.exports = {
             content: `${interaction.user} distributed ${formatCurrency(response.total)} among active members in this channel. Check your balance!`,
           });
           endRender?.();
-          return interaction.editReply({ embeds: [responseEmbed] });
+          return interaction.editReply({
+            embeds: [responseEmbed],
+            components: [],
+          });
         }
         default: {
           const endRender = commandMetrics?.step('response build');
@@ -271,7 +277,10 @@ module.exports = {
             color: '#FF0000',
           });
           endRender?.();
-          return interaction.editReply({ embeds: [responseEmbed] });
+          return interaction.editReply({
+            embeds: [responseEmbed],
+            components: [],
+          });
         }
       }
     } catch (error) {
@@ -285,7 +294,7 @@ module.exports = {
         color: '#FF0000',
       });
       endRender?.();
-      return interaction.editReply({ embeds: [responseEmbed] });
+      return interaction.editReply({ embeds: [responseEmbed], components: [] });
     }
   },
 };
@@ -294,15 +303,15 @@ module.exports.buildConfirmationPreview = buildConfirmationPreview;
 
 function buildConfirmationPreview(interaction) {
   const subcommand = interaction.options.getSubcommand();
-  const user = interaction.options.getUser('user');
-  const field = interaction.options.getString('field');
-  const amount = interaction.options.getInteger('amount');
+  const user = getOptionUser(interaction, 'user', 'target_user');
+  const field = getOptionString(interaction, 'field');
+  const amount = getOptionInteger(interaction, 'amount', 'cash_amount');
   const resolvedName = getDisplayName(interaction, user);
 
   switch (subcommand) {
     case 'set':
       return {
-        title: '⚠️ Confirm Balance Set',
+        title: '⚠️ Are you sure?',
         description: `This will set ${resolvedName}'s ${field} balance to ${formatCurrency(amount)}.`,
         fields: [
           { name: 'Target', value: resolvedName, inline: true },
@@ -312,7 +321,7 @@ function buildConfirmationPreview(interaction) {
       };
     case 'give':
       return {
-        title: '⚠️ Confirm Balance Adjustment',
+        title: '⚠️ Are you sure?',
         description:
           field === 'debt'
             ? `This will reduce ${resolvedName}'s debt by ${formatCurrency(amount)}.`
@@ -325,7 +334,7 @@ function buildConfirmationPreview(interaction) {
       };
     case 'reset':
       return {
-        title: '⚠️ Confirm Economy Reset',
+        title: '⚠️ Are you sure?',
         description: `This will reset ${resolvedName}'s cash, bank, and debt to zero.`,
         fields: [
           { name: 'Target User', value: resolvedName, inline: false },
@@ -337,7 +346,7 @@ function buildConfirmationPreview(interaction) {
         ? `#${interaction.channel.name}`
         : 'the current channel';
       return {
-        title: '⚠️ Confirm Airdrop',
+        title: '⚠️ Are you sure?',
         description: `This will give ${formatCurrency(amount)} to every active member currently in ${channelLabel}.`,
         fields: [
           { name: 'Target Channel', value: channelLabel, inline: true },
@@ -347,8 +356,9 @@ function buildConfirmationPreview(interaction) {
     }
     default:
       return {
-        title: '⚠️ Confirm Change',
+        title: '⚠️ Are you sure?',
         description: 'This action will modify economy data.',
+        fields: [],
       };
   }
 }

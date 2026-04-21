@@ -18,6 +18,7 @@ module.exports = {
     if (
       !(await deferGuildInteraction(interaction, {
         description: 'Daily rewards can only be claimed inside a server.',
+        defer: true,
       }))
     ) {
       return;
@@ -36,7 +37,7 @@ module.exports = {
         debt: data.debt,
       });
       endRender?.();
-      return interaction.reply({ embeds: [responseEmbed] });
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
 
     const endRender = commandMetrics?.step('response build');
@@ -49,6 +50,6 @@ module.exports = {
       color: '#FF8C00',
     });
     endRender?.();
-    return interaction.reply({ embeds: [responseEmbed] });
+    return interaction.editReply({ embeds: [responseEmbed] });
   },
 };

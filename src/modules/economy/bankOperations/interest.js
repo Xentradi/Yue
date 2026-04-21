@@ -1,6 +1,6 @@
-const Player = require('../../../models/Player');
 const logger = require('../../../utils/logger');
-const { updatePlayerValues } = require('../playerService');
+const { withTransaction } = require('../../../storage/postgres');
+const { bumpVersion } = require('../../../storage/cache');
 
 /**
  * Applies a variable interest rate to all player's bank balances and debt within a specific guild.
@@ -13,9 +13,70 @@ const { updatePlayerValues } = require('../playerService');
  * @throws Will log an error if there's an issue with database access.
  */
 module.exports = async function applyBankInterest(guildId) {
-  let players;
   try {
-    players = await Player.find(guildId ? { guildId } : {});
+    const result = await withTransaction(async (client) => {
+      const countResult = await countInterestTargets(client, guildId);
+      if (countResult.totalCount === 0) {
+        return {
+          success: false,
+          message: 'No players found.',
+        };
+      }
+
+      // Randomly generate bank and debt interest rates
+      const baseBankInterestRate = 0.001 + Math.random() * 0.002; // 0.1% to 0.3%
+      const debtInterestRate = 0.002 + Math.random() * 0.003; // 0.2% to 0.5%
+      const { rows } = await client.query(
+        `
+          UPDATE players
+          SET bank = CASE
+                WHEN bank > 1000 THEN bank + ROUND(bank::numeric * $1 * interest_multiplier)::bigint
+                ELSE bank
+              END,
+              debt = CASE
+                WHEN debt > 0 THEN debt + ROUND(debt::numeric * $2)::bigint
+                ELSE debt
+              END,
+              updated_at = NOW()
+          ${
+            guildId
+              ? `WHERE guild_id = $3
+                 AND bank >= 0
+                 AND debt >= 0
+                 AND interest_multiplier >= 0`
+              : 'WHERE bank >= 0 AND debt >= 0 AND interest_multiplier >= 0'
+          }
+          RETURNING guild_id;
+        `,
+        guildId
+          ? [baseBankInterestRate, debtInterestRate, guildId]
+          : [baseBankInterestRate, debtInterestRate],
+      );
+
+      return {
+        success: true,
+        message: `Bank and debt interests successfully applied for ${rows.length} player(s). Skipped ${
+          countResult.skippedCount
+        } invalid record(s).`,
+        updatedCount: rows.length,
+        skippedCount: countResult.skippedCount,
+        touchedGuildIds: [
+          ...new Set(rows.map((row) => row.guild_id).filter(Boolean)),
+        ],
+      };
+    });
+
+    if (result.success) {
+      await Promise.all([
+        bumpVersion('tracked'),
+        ...(result.touchedGuildIds ?? []).flatMap((id) => [
+          bumpVersion('player', id),
+          bumpVersion('leaderboard', id),
+        ]),
+      ]);
+    }
+
+    return result;
   } catch (error) {
     logger.error(`An error occurred while fetching players: ${error}`);
     return {
@@ -23,71 +84,28 @@ module.exports = async function applyBankInterest(guildId) {
       message: 'Database error.',
     };
   }
-
-  if (!players || players.length === 0) {
-    return {
-      success: false,
-      message: 'No players found.',
-    };
-  }
-
-  // Randomly generate bank and debt interest rates
-  const baseBankInterestRate = 0.001 + Math.random() * 0.002; // 0.1% to 0.3%
-  const debtInterestRate = 0.002 + Math.random() * 0.003; // 0.2% to 0.5%
-
-  let updatedCount = 0;
-  let skippedCount = 0;
-
-  for (const player of players) {
-    if (
-      !Number.isFinite(player.bank) ||
-      player.bank < 0 ||
-      !Number.isFinite(player.debt) ||
-      player.debt < 0 ||
-      !Number.isFinite(player.interestMultiplier) ||
-      player.interestMultiplier < 0
-    ) {
-      skippedCount += 1;
-      logger.error(
-        `Skipping invalid player record during interest application: guildId=${player.guildId}, userId=${player.userId}`,
-      );
-      continue;
-    }
-
-    const bankInterestRate = baseBankInterestRate * player.interestMultiplier;
-    const nextValues = {
-      bank: player.bank,
-      debt: player.debt,
-    };
-
-    if (player.bank > 1000) {
-      // Minimum balance threshold for bank interest
-      const bankInterest = Math.round(player.bank * bankInterestRate);
-      nextValues.bank += bankInterest;
-    }
-
-    // Assuming debt is a property on the player model and is a negative value
-    if (player.debt && player.debt > 0) {
-      const debtInterest = Math.round(player.debt * debtInterestRate);
-      nextValues.debt += debtInterest;
-    }
-
-    const updateResult = await updatePlayerValues(player, nextValues);
-    if (!updateResult.success) {
-      skippedCount += 1;
-      logger.error(
-        `An error occurred while applying bank and debt interests: ${updateResult.error}`,
-      );
-      continue;
-    }
-
-    updatedCount += 1;
-  }
-
-  return {
-    success: true,
-    message: `Bank and debt interests successfully applied for ${updatedCount} player(s). Skipped ${skippedCount} invalid record(s).`,
-    updatedCount,
-    skippedCount,
-  };
 };
+
+async function countInterestTargets(client, guildId) {
+  const { rows } = await client.query(
+    `
+      SELECT
+        COUNT(*)::int AS total_count,
+        COUNT(*) FILTER (
+          WHERE bank >= 0
+            AND debt >= 0
+            AND interest_multiplier >= 0
+        )::int AS valid_count
+      FROM players
+      ${guildId ? 'WHERE guild_id = $1' : ''}
+    `,
+    guildId ? [guildId] : [],
+  );
+
+  const row = rows[0] ?? { total_count: 0, valid_count: 0 };
+  return {
+    totalCount: row.total_count ?? 0,
+    validCount: row.valid_count ?? 0,
+    skippedCount: Math.max((row.total_count ?? 0) - (row.valid_count ?? 0), 0),
+  };
+}

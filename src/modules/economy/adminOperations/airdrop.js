@@ -1,5 +1,6 @@
-const { findPlayersByUserIds } = require('../playerService');
-const balance = require('../balance');
+const { ensurePlayers } = require('../playerService');
+const { withTransaction } = require('../../../storage/postgres');
+const { bumpVersion } = require('../../../storage/cache');
 
 module.exports = async function airdrop(interaction) {
   const amount = interaction.options.getInteger('amount');
@@ -19,52 +20,61 @@ module.exports = async function airdrop(interaction) {
   }
 
   try {
-    const activeUserIds = [...channelMembers.values()]
-      .filter((member) => !member.user.bot)
-      .map((member) => member.user.id);
+    const result = await withTransaction(async (client) => {
+      const activeUserIds = [
+        ...new Set(
+          [...channelMembers.values()]
+            .filter((member) => !member.user.bot)
+            .map((member) => member.user.id),
+        ),
+      ];
 
-    if (activeUserIds.length === 0) {
-      return {
-        success: false,
-        error: 'No active members were found in the current channel.',
-      };
-    }
-
-    const players = await findPlayersByUserIds(activeUserIds, guildId);
-
-    if (players.length === 0) {
-      return {
-        success: false,
-        error:
-          'No active members in the current channel have economy profiles yet.',
-      };
-    }
-
-    let recipientCount = 0;
-    let skippedCount = 0;
-
-    for (const player of players) {
-      if (!Number.isFinite(player.cash) || player.cash < 0) {
-        skippedCount += 1;
-        continue;
+      if (activeUserIds.length === 0) {
+        return {
+          success: false,
+          error: 'No active members were found in the current channel.',
+        };
       }
 
-      const updateResult = await balance.updatePlayerCash(player, amount);
-      if (!updateResult.success) {
-        skippedCount += 1;
-        continue;
-      }
+      await ensurePlayers(
+        activeUserIds.map((userId) => ({ guildId, userId })),
+        { client },
+      );
 
-      recipientCount += 1;
+      const updateResult = await client.query(
+        `
+          UPDATE players
+          SET cash = cash + $1,
+              updated_at = NOW()
+          WHERE guild_id = $2
+            AND user_id = ANY($3::text[])
+            AND cash >= 0
+          RETURNING user_id;
+        `,
+        [amount, guildId, activeUserIds],
+      );
+
+      const recipientCount = updateResult.rowCount ?? 0;
+      const skippedCount = activeUserIds.length - recipientCount;
+
+      return {
+        success: true,
+        amount,
+        total: recipientCount * amount,
+        recipientCount,
+        skippedCount,
+      };
+    });
+
+    if (result.success) {
+      await Promise.all([
+        bumpVersion('player', guildId),
+        bumpVersion('leaderboard', guildId),
+        bumpVersion('tracked'),
+      ]);
     }
 
-    return {
-      success: true,
-      amount,
-      total: recipientCount * amount,
-      recipientCount,
-      skippedCount,
-    };
+    return result;
   } catch (error) {
     return { success: false, error: error.message };
   }

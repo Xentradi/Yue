@@ -1,7 +1,11 @@
 const { createEmbed } = require('./embedUtils');
 
+function toFiniteNumber(amount) {
+  return Number.isFinite(amount) ? amount : 0;
+}
+
 function formatCurrency(amount) {
-  return `$${Math.trunc(amount).toLocaleString()}`;
+  return `$${Math.trunc(toFiniteNumber(amount)).toLocaleString()}`;
 }
 
 function formatSignedCurrency(amount) {
@@ -21,12 +25,15 @@ function getDisplayName(interaction, user) {
 }
 
 function createBalanceFields({ cash, bank, debt }) {
-  const netWorth = cash + bank - debt;
+  const safeCash = toFiniteNumber(cash);
+  const safeBank = toFiniteNumber(bank);
+  const safeDebt = toFiniteNumber(debt);
+  const netWorth = safeCash + safeBank - safeDebt;
 
   return [
-    { name: '💵 Cash', value: formatCurrency(cash), inline: true },
-    { name: '🏦 Bank', value: formatCurrency(bank), inline: true },
-    { name: '📉 Debt', value: formatCurrency(debt), inline: true },
+    { name: '💵 Cash', value: formatCurrency(safeCash), inline: true },
+    { name: '🏦 Bank', value: formatCurrency(safeBank), inline: true },
+    { name: '📉 Debt', value: formatCurrency(safeDebt), inline: true },
     { name: '🧮 Net Worth', value: formatCurrency(netWorth), inline: true },
   ];
 }
@@ -67,7 +74,7 @@ function createConfirmationEmbed({ title, description, fields = [] }) {
     color: '#f4a261',
     fields,
     footer: {
-      text: 'Re-run with confirm set to true to apply this change.',
+      text: 'Click "Yes, apply" to proceed or "No, cancel" to back out.',
     },
   });
 }

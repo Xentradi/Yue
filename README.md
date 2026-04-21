@@ -1,11 +1,12 @@
 # Yue
 
-Yue is a Discord bot built around a guild economy, mini-games, leveling, and admin tools. It uses Discord.js, MongoDB, and Mongoose.
+Yue is a Discord bot built around a guild economy, mini-games, leveling, and admin tools. It uses Discord.js, PostgreSQL, and Redis.
 
 ## Requirements
 
 - Node.js 24.14.1 through 24.x
-- MongoDB
+- PostgreSQL
+- Redis
 - Discord bot token
 
 ## Setup
@@ -29,11 +30,7 @@ The current command surface is grouped by product area:
 - Utilities: `help`, `ping`, `support`, `user`
 - Admin: `economy`, `restocklake`, `syncroles`
 
-Deploy slash commands after configuration changes with:
-
-```bash
-node src/registerCommands/deployCommands.js
-```
+Slash commands deploy automatically when the bot starts. If the payload is unchanged, the deploy step is skipped. If you need to force a redeploy, run `node src/registerCommands/deployCommands.js --force` or set `FORCE_COMMAND_DEPLOY=1`.
 
 ## Tests
 

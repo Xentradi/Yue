@@ -1,9 +1,9 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const Player = require('../../models/Player');
 const { manageRoles } = require('../../utils/manageRoles');
 const { createStatusEmbed } = require('../../utils/economyFeedback');
 const { deferGuildInteraction } = require('../../utils/interactionHelpers');
 const logger = require('../../utils/logger');
+const { findPlayersByGuild } = require('../../modules/economy/playerService');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -41,9 +41,10 @@ module.exports = {
     try {
       const guildId = interaction.guild.id;
       const endFetch = commandMetrics?.step('player fetch');
-      const players = await Player.find({ guildId })
-        .select('userId level -_id')
-        .lean();
+      const players = await findPlayersByGuild(guildId, {
+        select: 'userId level -_id',
+        lean: true,
+      });
       endFetch?.();
 
       if (!players || players.length === 0) {

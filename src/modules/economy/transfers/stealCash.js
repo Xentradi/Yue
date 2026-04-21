@@ -1,5 +1,7 @@
 const logger = require('../../../utils/logger');
-const { findPlayersByUserIds } = require('../playerService');
+const { ensurePlayers, findPlayer } = require('../playerService');
+const { withTransaction } = require('../../../storage/postgres');
+const { bumpVersion } = require('../../../storage/cache');
 
 /**
  * Attempt to steal cash from another user.
@@ -19,15 +21,177 @@ module.exports = async function stealCash(
   guildId,
   amount,
 ) {
-  const [player, target] = await findPlayersByUserIds(
-    [userId, targetUserId],
-    guildId,
-  ).then((players) => [
-    players.find((entry) => entry.userId === userId) ?? null,
-    players.find((entry) => entry.userId === targetUserId) ?? null,
-  ]);
+  try {
+    const result = await withTransaction(async (client) => {
+      await ensurePlayers(
+        [
+          { guildId, userId },
+          { guildId, userId: targetUserId },
+        ],
+        { client },
+      );
 
-  if (!player) {
+      const [player, target] = await Promise.all([
+        findPlayer(userId, guildId, { client, lock: true }),
+        findPlayer(targetUserId, guildId, { client, lock: true }),
+      ]);
+
+      if (!player || !target) {
+        return {
+          successful: false,
+          amountStolen: 0,
+          penalty: 0,
+          playerCash: 0,
+          playerBank: 0,
+          playerDebt: 0,
+          targetCash: 0,
+          message: 'Failed to initialize steal participants.',
+        };
+      }
+
+      if (
+        !Number.isFinite(player.cash) ||
+        !Number.isFinite(player.bank) ||
+        !Number.isFinite(player.debt) ||
+        player.cash < 0 ||
+        player.bank < 0 ||
+        player.debt < 0 ||
+        !Number.isFinite(target.cash) ||
+        target.cash < 0
+      ) {
+        return {
+          successful: false,
+          amountStolen: 0,
+          penalty: 0,
+          playerCash: player.cash,
+          playerBank: player.bank,
+          playerDebt: player.debt,
+          targetCash: target.cash,
+          message: 'Player balances are invalid.',
+        };
+      }
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return {
+          successful: false,
+          amountStolen: 0,
+          penalty: 0,
+          playerCash: player.cash,
+          playerBank: player.bank,
+          playerDebt: player.debt,
+          targetCash: target.cash,
+          message: 'Invalid steal amount.',
+        };
+      }
+
+      if (target.cash <= 0) {
+        return {
+          successful: false,
+          amountStolen: 0,
+          penalty: 0,
+          playerCash: player.cash,
+          playerBank: player.bank,
+          playerDebt: player.debt,
+          targetCash: target.cash,
+          message: 'Target has no cash to steal.',
+        };
+      }
+
+      const stealAmount = Math.min(amount, target.cash);
+      const percentage = stealAmount / target.cash;
+      const successRate =
+        0.9 / Math.pow(1 + Math.exp(20 * (percentage - 0.1)), 4);
+
+      const successful = Math.random() < successRate;
+      const result = {
+        successful,
+        amountStolen: 0,
+        playerCash: player.cash,
+        playerBank: player.bank,
+        playerDebt: player.debt,
+        targetCash: target.cash,
+      };
+
+      if (successful) {
+        const nextPlayerCash = Math.max(player.cash + stealAmount, 0);
+        const nextTargetCash = Math.max(target.cash - stealAmount, 0);
+
+        const playerUpdate = await player.setCash(nextPlayerCash, { client });
+        const targetUpdate = await target.setCash(nextTargetCash, { client });
+
+        if (!playerUpdate.success || !targetUpdate.success) {
+          return {
+            successful: false,
+            amountStolen: 0,
+            penalty: 0,
+            playerCash: player.cash,
+            playerBank: player.bank,
+            playerDebt: player.debt,
+            targetCash: target.cash,
+            message: 'Failed to persist steal attempt.',
+          };
+        }
+
+        result.amountStolen = stealAmount;
+        result.playerCash = player.cash;
+        result.playerBank = player.bank;
+        result.playerDebt = player.debt;
+        result.targetCash = target.cash;
+        return result;
+      }
+
+      const penalty = Math.ceil(getPenalty(stealAmount));
+      let remainingPenalty = penalty;
+      const cashPenalty = Math.min(player.cash, remainingPenalty);
+      const nextCash = player.cash - cashPenalty;
+      remainingPenalty -= cashPenalty;
+
+      const bankPenalty = Math.min(player.bank, remainingPenalty);
+      const nextBank = player.bank - bankPenalty;
+      remainingPenalty -= bankPenalty;
+
+      const nextDebt = player.debt + Math.max(remainingPenalty, 0);
+
+      const playerUpdate = await player.setValues(
+        {
+          cash: nextCash,
+          bank: nextBank,
+          debt: nextDebt,
+        },
+        { client },
+      );
+
+      if (!playerUpdate.success) {
+        return {
+          successful: false,
+          amountStolen: 0,
+          penalty: 0,
+          playerCash: player.cash,
+          playerBank: player.bank,
+          playerDebt: player.debt,
+          targetCash: target.cash,
+          message: 'Failed to persist steal attempt.',
+        };
+      }
+
+      result.penalty = penalty;
+      result.playerCash = player.cash;
+      result.playerBank = player.bank;
+      result.playerDebt = player.debt;
+      result.targetCash = target.cash;
+      return result;
+    });
+
+    if (result.successful) {
+      await Promise.all([
+        bumpVersion('player', guildId),
+        bumpVersion('leaderboard', guildId),
+      ]);
+    }
+
+    return result;
+  } catch (err) {
+    logger.error(`Error updating balance information: ${err}`);
     return {
       successful: false,
       amountStolen: 0,
@@ -36,158 +200,9 @@ module.exports = async function stealCash(
       playerBank: 0,
       playerDebt: 0,
       targetCash: 0,
-      message: 'Stealing player not found.',
-    };
-  }
-
-  if (!target) {
-    return {
-      successful: false,
-      amountStolen: 0,
-      penalty: 0,
-      playerCash: player.cash,
-      playerBank: player.bank,
-      playerDebt: player.debt,
-      targetCash: 0,
-      message: 'Target player not found.',
-    };
-  }
-
-  if (
-    !Number.isFinite(player.cash) ||
-    !Number.isFinite(player.bank) ||
-    !Number.isFinite(player.debt) ||
-    player.cash < 0 ||
-    player.bank < 0 ||
-    player.debt < 0 ||
-    !Number.isFinite(target.cash) ||
-    target.cash < 0
-  ) {
-    return {
-      successful: false,
-      amountStolen: 0,
-      penalty: 0,
-      playerCash: player.cash,
-      playerBank: player.bank,
-      playerDebt: player.debt,
-      targetCash: target.cash,
-      message: 'Player balances are invalid.',
-    };
-  }
-
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return {
-      successful: false,
-      amountStolen: 0,
-      penalty: 0,
-      playerCash: player.cash,
-      playerBank: player.bank,
-      playerDebt: player.debt,
-      targetCash: target.cash,
-      message: 'Invalid steal amount.',
-    };
-  }
-
-  if (target.cash <= 0) {
-    return {
-      successful: false,
-      amountStolen: 0,
-      penalty: 0,
-      playerCash: player.cash,
-      playerBank: player.bank,
-      playerDebt: player.debt,
-      targetCash: target.cash,
-      message: 'Target has no cash to steal.',
-    };
-  }
-
-  // If the thief tries to steal more than the target has, default the amount to the target's total cash
-  const stealAmount = Math.min(amount, target.cash);
-
-  // Calculate success rate based on the new equation
-  const percentage = stealAmount / target.cash;
-  const successRate = 0.9 / Math.pow(1 + Math.exp(20 * (percentage - 0.1)), 4);
-
-  const successful = Math.random() < successRate;
-  const previousPlayer = {
-    cash: player.cash,
-    bank: player.bank,
-    debt: player.debt,
-  };
-  const previousTargetCash = target.cash;
-
-  const result = {
-    successful: successful,
-    amountStolen: 0,
-    playerCash: player.cash,
-    playerBank: player.bank,
-    playerDebt: player.debt,
-    targetCash: target.cash,
-  };
-
-  if (successful) {
-    player.cash += stealAmount;
-    target.cash -= stealAmount;
-
-    // Ensuring cash doesn't go below zero
-    player.cash = Math.max(player.cash, 0);
-    target.cash = Math.max(target.cash, 0);
-
-    result.amountStolen = stealAmount;
-    result.playerCash = player.cash;
-    result.playerBank = player.bank;
-    result.playerDebt = player.debt;
-    result.targetCash = target.cash;
-  } else {
-    const penalty = Math.ceil(getPenalty(stealAmount));
-
-    let remainingPenalty = penalty;
-    const cashPenalty = Math.min(player.cash, remainingPenalty);
-    player.cash -= cashPenalty;
-    remainingPenalty -= cashPenalty;
-
-    const bankPenalty = Math.min(player.bank, remainingPenalty);
-    player.bank -= bankPenalty;
-    remainingPenalty -= bankPenalty;
-
-    if (remainingPenalty > 0) {
-      player.debt += remainingPenalty;
-    }
-
-    result.penalty = penalty;
-    result.playerBank = player.bank;
-    result.playerDebt = player.debt;
-  }
-  // Ensuring bank doesn't go below zero
-  player.bank = Math.max(player.bank, 0);
-
-  try {
-    await player.save();
-    await target.save();
-  } catch (err) {
-    player.cash = previousPlayer.cash;
-    player.bank = previousPlayer.bank;
-    player.debt = previousPlayer.debt;
-    target.cash = previousTargetCash;
-    try {
-      await Promise.all([player.save(), target.save()]);
-    } catch (rollbackErr) {
-      logger.error(`Failed to roll back steal attempt: ${rollbackErr}`);
-    }
-    logger.error(`Error updating balance information: ${err}`);
-    return {
-      successful: false,
-      amountStolen: 0,
-      penalty: 0,
-      playerCash: player.cash,
-      playerBank: player.bank,
-      playerDebt: player.debt,
-      targetCash: target.cash,
       message: 'Failed to persist steal attempt.',
     };
   }
-
-  return result;
 };
 
 const getPenalty = (amount) => {

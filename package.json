@@ -26,7 +26,6 @@
     "eslint-plugin-n": "^17.24.0",
     "eslint-plugin-prettier": "^5.5.5",
     "globals": "^17.5.0",
-    "mongodb-memory-server": "^11.0.1",
     "prettier": "^3.6.2",
     "typescript": "^6.0.2"
   },
@@ -35,8 +34,9 @@
     "@logtail/winston": "^0.5.8",
     "discord.js": "^14.26.2",
     "dotenv": "^17.4.2",
-    "mongoose": "^9.4.1",
     "node-cron": "^4.2.1",
+    "pg": "^8.20.0",
+    "redis": "^5.12.1",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0"
   }

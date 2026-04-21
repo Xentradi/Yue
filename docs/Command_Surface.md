@@ -7,7 +7,9 @@ This bot keeps command categories aligned with the way users navigate the produc
 - `Economy`
   - `balance`
   - `daily`
+  - `bank`
   - `deposit`
+  - `loan`
   - `leaderboard`
   - `pay`
   - `steal`

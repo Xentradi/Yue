@@ -1,4 +1,10 @@
-const { findPlayer, updatePlayerValues } = require('../playerService');
+const {
+  ensurePlayer,
+  findPlayer,
+  updatePlayerValues,
+} = require('../playerService');
+const { withTransaction } = require('../../../storage/postgres');
+const { bumpVersion } = require('../../../storage/cache');
 
 module.exports = async function resetBalance(interaction) {
   const user = interaction.options.getUser('user');
@@ -10,23 +16,38 @@ module.exports = async function resetBalance(interaction) {
   const guildId = interaction.guildId;
 
   try {
-    const player = await findPlayer(userId, guildId);
+    const result = await withTransaction(async (client) => {
+      await ensurePlayer(userId, guildId, { client });
+      const player = await findPlayer(userId, guildId, { client, lock: true });
 
-    if (!player) return { success: false, error: 'User not found.' };
+      const updateResult = await updatePlayerValues(
+        player,
+        {
+          cash: 0,
+          bank: 0,
+          debt: 0,
+        },
+        { client },
+      );
+      if (!updateResult.success) {
+        throw new Error(updateResult.error);
+      }
 
-    const updateResult = await updatePlayerValues(player, {
-      cash: 0,
-      bank: 0,
-      debt: 0,
+      return {
+        success: true,
+        userId,
+      };
     });
-    if (!updateResult.success) {
-      return { success: false, error: updateResult.error };
+
+    if (result.success) {
+      await Promise.all([
+        bumpVersion('player', guildId),
+        bumpVersion('leaderboard', guildId),
+        bumpVersion('tracked'),
+      ]);
     }
 
-    return {
-      success: true,
-      userId,
-    };
+    return result;
   } catch (error) {
     return { success: false, error: error.message };
   }

@@ -55,6 +55,7 @@ test('command handler registers the current command surface', () => {
 
   const expectedNames = [
     'balance',
+    'bank',
     'blackjack',
     'coin',
     'daily',
@@ -64,6 +65,7 @@ test('command handler registers the current command surface', () => {
     'fish',
     'help',
     'leaderboard',
+    'loan',
     'pay',
     'ping',
     'restocklake',
@@ -76,6 +78,18 @@ test('command handler registers the current command surface', () => {
 
   assert.deepEqual([...client.commands.keys()].sort(), expectedNames);
   assert.equal(client.commands.has('leaderboards'), false);
+});
+
+test('admin commands do not expose stale slash confirm options', () => {
+  const economy = require(
+    path.join(repoRoot, 'src/commands/admin/economy'),
+  ).data.toJSON();
+  const restockLake = require(
+    path.join(repoRoot, 'src/commands/admin/restockLake'),
+  ).data.toJSON();
+
+  assert.equal(hasOptionNamed(economy, 'confirm'), false);
+  assert.equal(hasOptionNamed(restockLake, 'confirm'), false);
 });
 
 test('help groups commands by product area and hides admin commands from non-admin users', async () => {
@@ -103,6 +117,54 @@ test('help groups commands by product area and hides admin commands from non-adm
     replyPayload.embeds[0].data.fields.some((field) => field.name === 'Admin'),
     false,
   );
+});
+
+test('startup config defaults to enabling command deploys unless explicitly disabled', () => {
+  const { isCommandDeployEnabled } = require('../src/utils/startupConfig');
+
+  assert.equal(isCommandDeployEnabled(), true);
+  assert.equal(isCommandDeployEnabled('1'), true);
+  assert.equal(isCommandDeployEnabled('true'), true);
+  assert.equal(isCommandDeployEnabled('0'), false);
+  assert.equal(isCommandDeployEnabled('false'), false);
+});
+
+test('clan service exports a reusable boundary for future membership flows', () => {
+  const clanService = require('../src/modules/clanService');
+
+  assert.deepEqual(clanService.CLAN_ALIGNMENTS, ['righteous', 'demonic']);
+  assert.deepEqual(clanService.CLAN_RECRUITMENT_MODES, ['open', 'closed']);
+
+  const profile = clanService.buildClanProfile({
+    id: 'clan-1',
+    name: 'The First Clan',
+    alignment: 'demonic',
+    virtue: '12',
+    recruitmentMode: 'open',
+    memberCount: '5',
+    treasury: '2500',
+  });
+
+  const membership = clanService.buildMembershipSummary({
+    clanId: 'clan-1',
+    clanName: 'The First Clan',
+  });
+
+  const context = clanService.buildClanContext(
+    { id: 'clan-1', recruitmentMode: 'open' },
+    { clanId: 'clan-1' },
+  );
+
+  const joinCheck = clanService.canJoinClan({}, { id: 'clan-1' });
+
+  assert.equal(profile.alignment, 'demonic');
+  assert.equal(profile.isOpenRecruitment, true);
+  assert.equal(profile.memberCount, 5);
+  assert.equal(profile.treasury, 2500);
+  assert.equal(membership.hasClanMembership, true);
+  assert.equal(membership.isWanderer, false);
+  assert.equal(context.canAccessClanResources, true);
+  assert.equal(joinCheck.allowed, true);
 });
 
 test('event modules export the expected surface', () => {
@@ -146,4 +208,23 @@ function walkJsFiles(dir) {
   }
 
   return files;
+}
+
+function hasOptionNamed(commandJson, optionName) {
+  const options = commandJson?.options ?? [];
+
+  for (const option of options) {
+    if (option.name === optionName) {
+      return true;
+    }
+
+    if (
+      option.options &&
+      hasOptionNamed({ options: option.options }, optionName)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }

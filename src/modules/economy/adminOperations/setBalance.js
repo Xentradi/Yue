@@ -1,4 +1,10 @@
-const { findPlayer, updatePlayerValues } = require('../playerService');
+const {
+  ensurePlayer,
+  findPlayer,
+  updatePlayerValues,
+} = require('../playerService');
+const { withTransaction } = require('../../../storage/postgres');
+const { bumpVersion } = require('../../../storage/cache');
 
 const ALLOWED_FIELDS = new Set(['cash', 'bank', 'debt']);
 
@@ -22,25 +28,43 @@ module.exports = async function setBalance(interaction) {
   }
 
   try {
-    const player = await findPlayer(userId, guildId);
+    const result = await withTransaction(async (client) => {
+      await ensurePlayer(userId, guildId, { client });
+      const player = await findPlayer(userId, guildId, { client, lock: true });
 
-    if (!player) return { success: false, error: 'User not found.' };
+      if (!Number.isFinite(player[field]) || player[field] < 0) {
+        return {
+          success: false,
+          error: `Current ${field} balance is invalid.`,
+        };
+      }
 
-    if (!Number.isFinite(player[field]) || player[field] < 0) {
-      return { success: false, error: `Current ${field} balance is invalid.` };
+      const updateResult = await updatePlayerValues(
+        player,
+        { [field]: amount },
+        { client },
+      );
+      if (!updateResult.success) {
+        throw new Error(updateResult.error);
+      }
+
+      return {
+        success: true,
+        userId,
+        field,
+        newAmount: amount,
+      };
+    });
+
+    if (result.success) {
+      await Promise.all([
+        bumpVersion('player', guildId),
+        bumpVersion('leaderboard', guildId),
+        bumpVersion('tracked'),
+      ]);
     }
 
-    const updateResult = await updatePlayerValues(player, { [field]: amount });
-    if (!updateResult.success) {
-      return { success: false, error: updateResult.error };
-    }
-
-    return {
-      success: true,
-      userId,
-      field,
-      newAmount: amount,
-    };
+    return result;
   } catch (error) {
     return { success: false, error: error.message };
   }

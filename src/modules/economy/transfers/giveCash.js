@@ -17,6 +17,22 @@ module.exports = async function giveCash(
   guildId,
   amount,
 ) {
+  const sender = await Player.ensurePlayer({
+    guildId,
+    userId: fromUserId,
+  });
+  const recipient = await Player.ensurePlayer({
+    guildId,
+    userId: toUserId,
+  });
+
+  if (!sender || !recipient) {
+    return {
+      success: false,
+      error: 'Unable to initialize transfer participants.',
+    };
+  }
+
   const transferResult = await Player.transferCurrency(
     guildId,
     fromUserId,

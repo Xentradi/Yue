@@ -18,10 +18,11 @@ async function replyGuildOnly(interaction, description, options = {}) {
 
 async function deferGuildInteraction(interaction, options = {}) {
   if (!interaction.inGuild()) {
-    return replyGuildOnly(interaction, options.description, {
+    await replyGuildOnly(interaction, options.description, {
       title: options.title,
       flags: options.flags ?? MessageFlags.Ephemeral,
     });
+    return false;
   }
 
   if (options.defer === true && typeof interaction.deferReply === 'function') {
@@ -31,8 +32,39 @@ async function deferGuildInteraction(interaction, options = {}) {
   return true;
 }
 
+function getOptionValue(interaction, methodName, ...names) {
+  for (const name of names) {
+    const value = interaction?.options?.[methodName]?.(name);
+    if (value !== undefined && value !== null) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function getOptionUser(interaction, ...names) {
+  return getOptionValue(interaction, 'getUser', ...names);
+}
+
+function getOptionInteger(interaction, ...names) {
+  return getOptionValue(interaction, 'getInteger', ...names);
+}
+
+function getOptionString(interaction, ...names) {
+  return getOptionValue(interaction, 'getString', ...names);
+}
+
+function getOptionBoolean(interaction, ...names) {
+  return getOptionValue(interaction, 'getBoolean', ...names);
+}
+
 module.exports = {
   createGuildOnlyEmbed,
   deferGuildInteraction,
+  getOptionBoolean,
+  getOptionInteger,
+  getOptionString,
+  getOptionUser,
   replyGuildOnly,
 };

@@ -1,5 +1,7 @@
 const Lake = require('../../models/Lake');
 const balance = require('../economy/balance');
+const { withTransaction } = require('../../storage/postgres');
+const { bumpVersion } = require('../../storage/cache');
 const logger = require('../../utils/logger');
 const { findPlayer } = require('../economy/playerService');
 
@@ -13,79 +15,71 @@ const { findPlayer } = require('../economy/playerService');
  */
 
 module.exports = async function fish(userId, guildId) {
-  const player = await findPlayer(userId, guildId);
-  const lake = await Lake.findOne({ guildId });
-
-  if (!player) {
-    return {
-      success: false,
-      description: 'Player not found in the database.',
-    };
-  }
-
-  if (!lake || !lakeHasFish(lake)) {
-    return {
-      success: false,
-      description: 'The pond has been depleted! Come back later.',
-    };
-  }
-
-  const outcome = selectFishFromLake(lake);
-
-  if (!outcome) {
-    return {
-      success: false,
-      description: 'The pond has been depleted! Come back later.',
-    };
-  }
-
-  const fishInLake = lake.fishStock.find((fish) => fish.type === outcome.type);
-  const previousFishCount = fishInLake ? fishInLake.count : null;
-
-  const updateCashResult = await balance.updatePlayerCash(
-    player,
-    outcome.reward,
-  );
-
-  if (!updateCashResult.success) {
-    if (fishInLake && previousFishCount !== null) {
-      fishInLake.count = previousFishCount;
-    }
-    return {
-      success: false,
-      description: updateCashResult.message,
-    };
-  }
-
   try {
-    await lake.save();
+    const result = await withTransaction(async (client) => {
+      const player = await findPlayer(userId, guildId, { client, lock: true });
+      const lake = await Lake.findOne({ guildId }, { client, lock: true });
 
-    return {
-      success: true,
-      type: outcome.type, // Include the type of fish caught in the return object
-      reward: outcome.reward,
-      playerCash: player.cash,
-      playerBank: player.bank,
-      playerDebt: player.debt,
-      description: `You cast your line and caught a ${outcome.type}!`,
-      message:
-        outcome.reward >= 0
-          ? `You earned $${outcome.reward}.`
-          : `You lost $${Math.abs(outcome.reward)}.`,
-    };
-  } catch (err) {
-    const rollbackResult = await balance.updatePlayerCash(
-      player,
-      -outcome.reward,
-    );
-    if (fishInLake && previousFishCount !== null) {
-      fishInLake.count = previousFishCount;
-    }
-    if (!rollbackResult.success) {
-      logger.error(
-        `Failed to roll back player cash after lake save error: ${rollbackResult.message}`,
+      if (!player) {
+        return {
+          success: false,
+          description: 'Player not found in the database.',
+        };
+      }
+
+      if (!lake || !lakeHasFish(lake)) {
+        return {
+          success: false,
+          description: 'The pond has been depleted! Come back later.',
+        };
+      }
+
+      const outcome = selectFishFromLake(lake);
+      if (!outcome) {
+        return {
+          success: false,
+          description: 'The pond has been depleted! Come back later.',
+        };
+      }
+
+      const updateCashResult = await balance.updatePlayerCash(
+        player,
+        outcome.reward,
+        { client },
       );
+
+      if (!updateCashResult.success) {
+        throw new Error(updateCashResult.message);
+      }
+
+      await lake.save({ client });
+
+      return {
+        success: true,
+        type: outcome.type,
+        reward: outcome.reward,
+        playerCash: player.cash,
+        playerBank: player.bank,
+        playerDebt: player.debt,
+        description: `You cast your line and caught a ${outcome.type}!`,
+        message:
+          outcome.reward >= 0
+            ? `You earned $${outcome.reward}.`
+            : `You lost $${Math.abs(outcome.reward)}.`,
+      };
+    });
+
+    if (result.success) {
+      await Promise.all([
+        bumpVersion('player', guildId),
+        bumpVersion('leaderboard', guildId),
+        bumpVersion('lake', guildId),
+        bumpVersion('tracked'),
+      ]);
     }
+
+    return result;
+  } catch (err) {
     logger.error(
       `An error occurred while processing the fishing attempt: ${err}`,
     );

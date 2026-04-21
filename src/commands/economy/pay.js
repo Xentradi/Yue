@@ -6,7 +6,11 @@ const {
   getDisplayName,
   formatCurrency,
 } = require('../../utils/economyFeedback');
-const { deferGuildInteraction } = require('../../utils/interactionHelpers');
+const {
+  deferGuildInteraction,
+  getOptionInteger,
+  getOptionUser,
+} = require('../../utils/interactionHelpers');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -31,13 +35,38 @@ module.exports = {
     if (
       !(await deferGuildInteraction(interaction, {
         description: 'Payments can only be sent inside a server.',
+        defer: true,
       }))
     ) {
       return;
     }
 
-    const recipient = interaction.options.getUser('user');
-    const amount = interaction.options.getInteger('amount');
+    const recipient = getOptionUser(interaction, 'user', 'target_user');
+    const amount = getOptionInteger(interaction, 'amount', 'cash_amount');
+
+    if (!recipient) {
+      const endRender = commandMetrics?.step('response build');
+      const responseEmbed = createStatusEmbed({
+        title: '❌ Transfer Failed',
+        description:
+          'No recipient was provided. Re-run the command with `user` set to the target member.',
+        color: '#FF3333',
+      });
+      endRender?.();
+      return interaction.editReply({ embeds: [responseEmbed] });
+    }
+
+    if (!Number.isInteger(amount) || amount <= 0) {
+      const endRender = commandMetrics?.step('response build');
+      const responseEmbed = createStatusEmbed({
+        title: '❌ Transfer Failed',
+        description: 'Please provide a positive integer amount to send.',
+        color: '#FF3333',
+      });
+      endRender?.();
+      return interaction.editReply({ embeds: [responseEmbed] });
+    }
+
     const endUpdate = commandMetrics?.step('transfer');
     const data = await giveCash(
       interaction.user.id,
@@ -59,7 +88,7 @@ module.exports = {
         debt: data.debt,
       });
       endRender?.();
-      return interaction.reply({ embeds: [responseEmbed] });
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
 
     const endRender = commandMetrics?.step('response build');
@@ -70,6 +99,6 @@ module.exports = {
       color: '#FF3333',
     });
     endRender?.();
-    return interaction.reply({ embeds: [responseEmbed] });
+    return interaction.editReply({ embeds: [responseEmbed] });
   },
 };

@@ -2,6 +2,8 @@ const config = require('../config.json');
 const Player = require('../models/Player');
 const { levelUp } = require('../utils/calculate');
 const { manageRoles } = require('../utils/manageRoles');
+const { withTransaction } = require('../storage/postgres');
+const { bumpVersion } = require('../storage/cache');
 const logger = require('../utils/logger');
 
 /**
@@ -24,37 +26,53 @@ module.exports = async function messageReward(message) {
   };
 
   try {
-    const player = await Player.findOne(query);
+    const result = await withTransaction(async (client) => {
+      const player = await Player.findOne(query, { client, lock: true });
 
-    let expToGive = getRandomExp() * (player?.expBonus || 1);
-    let cashToGive = config.cashPerMessage * (player?.cashBonus || 1);
+      let expToGive = getRandomExp() * (player?.expBonus || 1);
+      let cashToGive = config.cashPerMessage * (player?.cashBonus || 1);
 
-    if (player) {
       if (message.member.premiumSince) {
         expToGive *= config.boosterExpBonus;
         cashToGive *= config.boosterCashBonus;
       }
-      logger.debug(
-        `Message received from existing player ${message.author.id} in ${message.guild.id}`,
-      );
-      player.exp += expToGive;
-      player.cash += cashToGive;
 
-      logger.debug(`expToGive: ${expToGive}`);
-      logger.debug(`player.exp: ${player.exp}`);
-
-      const toLevelUp = levelUp(player.level);
-      if (player.exp >= toLevelUp) {
-        player.exp = 0;
-        player.level += 1;
-        message.channel.send(
-          `:tada: ${message.member} leveled up to level ${player.level}!`,
+      if (player) {
+        const previousLevel = player.level;
+        logger.debug(
+          `Message received from existing player ${message.author.id} in ${message.guild.id}`,
         );
-        await manageRoles(message.member, player.level);
+
+        logger.debug(`expToGive: ${expToGive}`);
+        logger.debug(`player.exp: ${player.exp}`);
+
+        const nextExp = player.exp + expToGive;
+        const toLevelUp = levelUp(player.level);
+        const nextLevel =
+          nextExp >= toLevelUp ? player.level + 1 : player.level;
+        const normalizedExp = nextExp >= toLevelUp ? 0 : nextExp;
+
+        const updateResult = await player.setValues(
+          {
+            cash: player.cash + cashToGive,
+            exp: normalizedExp,
+            level: nextLevel,
+          },
+          { client },
+        );
+
+        if (!updateResult.success) {
+          throw new Error(updateResult.error || 'Failed to update player.');
+        }
+
+        return {
+          success: true,
+          leveledUp: nextLevel > previousLevel,
+          level: nextLevel,
+          cashToGive,
+        };
       }
 
-      await player.save();
-    } else {
       const newPlayer = new Player({
         userId: message.author.id,
         guildId: message.guild.id,
@@ -64,7 +82,29 @@ module.exports = async function messageReward(message) {
       logger.debug(
         `Message received from new player ${message.author.id} in ${message.guild.id}`,
       );
-      await newPlayer.save();
+      await newPlayer.save({ client });
+
+      return {
+        success: true,
+        leveledUp: false,
+        level: 0,
+        cashToGive,
+      };
+    });
+
+    if (result.success) {
+      await Promise.all([
+        bumpVersion('player', message.guild.id),
+        bumpVersion('leaderboard', message.guild.id),
+        bumpVersion('tracked'),
+      ]);
+    }
+
+    if (result.success && result.leveledUp) {
+      message.channel.send(
+        `:tada: ${message.member} leveled up to level ${result.level}!`,
+      );
+      await manageRoles(message.member, result.level);
     }
   } catch (err) {
     logger.error(`Error processing messageReward: ${err}`);

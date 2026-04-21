@@ -1,9 +1,12 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits } = require('discord.js');
-const mongoose = require('mongoose');
 const eventHandler = require('./handlers/eventHandler');
 const commandHandler = require('./handlers/commandHandler');
+const deployCommands = require('./registerCommands/deployCommands');
 const logger = require('./utils/logger');
+const { ensureSchema } = require('./storage/postgres');
+const cache = require('./storage/cache');
+const { isCommandDeployEnabled } = require('./utils/startupConfig');
 
 const client = new Client({
   intents: [
@@ -16,10 +19,33 @@ const client = new Client({
 (async () => {
   try {
     validateEnvironment();
-    await mongoose.connect(process.env.DB_URL);
-    logger.info('Connected to database.');
+    await ensureSchema();
+    if (cache.isEnabled()) {
+      const redisClient = await cache.getClient();
+      if (redisClient) {
+        logger.info('Redis cache enabled.');
+      } else {
+        logger.warn(
+          'Redis cache connection could not be established. Continuing without cache.',
+        );
+      }
+    } else {
+      logger.info(
+        'Redis cache disabled. Set REDIS_URL to enable versioned cache support.',
+      );
+    }
+    logger.info('Connected to PostgreSQL and ensured schema.');
     eventHandler(client);
     commandHandler(client);
+    if (isCommandDeployEnabled()) {
+      await deployCommands().catch((err) => {
+        logger.error(`Automatic command deployment failed: ${err}`);
+      });
+    } else {
+      logger.info(
+        'Automatic command deployment disabled for this startup. Set DEPLOY_COMMANDS_ON_STARTUP=1 to enable it.',
+      );
+    }
     await client.login(process.env.DISCORD_TOKEN);
   } catch (err) {
     logger.error(err);
@@ -28,8 +54,15 @@ const client = new Client({
 })();
 
 function validateEnvironment() {
-  const requiredVars = ['DB_URL', 'DISCORD_TOKEN'];
-  const missing = requiredVars.filter((name) => !process.env[name]);
+  const missing = [];
+
+  if (!process.env.DB_URL?.trim()) {
+    missing.push('DB_URL');
+  }
+
+  if (!process.env.DISCORD_TOKEN) {
+    missing.push('DISCORD_TOKEN');
+  }
 
   if (missing.length > 0) {
     throw new Error(

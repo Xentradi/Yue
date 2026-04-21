@@ -89,7 +89,7 @@ module.exports = async function playBlackjack(interaction) {
       result = 'blackjack';
       wonAmount = Math.round(betAmount * 1.5);
     } else if (!playerHasNaturalBlackjack && dealerHasNaturalBlackjack) {
-      result = 'lose';
+      result = 'dealer-blackjack';
       wonAmount = -betAmount;
     }
 
@@ -353,6 +353,8 @@ function getResultLabel(result) {
   switch (result) {
     case 'blackjack':
       return 'Natural blackjack';
+    case 'dealer-blackjack':
+      return 'Dealer blackjack';
     case 'win':
       return 'You won';
     case 'lose':
@@ -372,6 +374,10 @@ function getResultDescription(result, betAmount, wonAmount) {
     return `Natural blackjack. You won ${formatCurrency(wonAmount)} on a ${formatCurrency(betAmount)} bet.`;
   }
 
+  if (result === 'dealer-blackjack') {
+    return `The dealer hit a natural blackjack. You lost ${formatCurrency(Math.abs(wonAmount))} on a ${formatCurrency(betAmount)} bet.`;
+  }
+
   if (result === 'win') {
     return `You won ${formatCurrency(wonAmount)} on a ${formatCurrency(betAmount)} bet.`;
   }
@@ -388,7 +394,11 @@ function getResultColor(result) {
     return '#00CC66';
   }
 
-  if (result === 'lose' || result === 'busted') {
+  if (
+    result === 'dealer-blackjack' ||
+    result === 'lose' ||
+    result === 'busted'
+  ) {
     return '#FF3333';
   }
 

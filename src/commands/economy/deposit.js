@@ -1,11 +1,14 @@
 const { SlashCommandBuilder } = require('discord.js');
-const deposit = require('../../modules/economy/bankOperations/deposit');
+const bankService = require('../../modules/economy/bankService');
 const {
   createBalanceEmbed,
   createStatusEmbed,
   formatCurrency,
 } = require('../../utils/economyFeedback');
-const { deferGuildInteraction } = require('../../utils/interactionHelpers');
+const {
+  deferGuildInteraction,
+  getOptionInteger,
+} = require('../../utils/interactionHelpers');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,13 +27,26 @@ module.exports = {
     if (
       !(await deferGuildInteraction(interaction, {
         description: 'Deposits can only be made inside a server.',
+        defer: true,
       }))
     ) {
       return;
     }
-    const amount = interaction.options.getInteger('amount');
+    const amount = getOptionInteger(interaction, 'amount', 'cash_amount');
+
+    if (!Number.isInteger(amount) || amount <= 0) {
+      const endRender = commandMetrics?.step('response build');
+      const responseEmbed = createStatusEmbed({
+        title: '⚠️ Deposit Failed',
+        description: 'Please provide a positive integer amount to deposit.',
+        color: '#FF3333',
+      });
+      endRender?.();
+      return interaction.editReply({ embeds: [responseEmbed] });
+    }
+
     const endUpdate = commandMetrics?.step('deposit');
-    const data = await deposit(
+    const data = await bankService.deposit(
       interaction.user.id,
       interaction.guildId,
       amount,
@@ -47,7 +63,7 @@ module.exports = {
         debt: data.debt,
       });
       endRender?.();
-      return interaction.reply({ embeds: [responseEmbed] });
+      return interaction.editReply({ embeds: [responseEmbed] });
     }
 
     const endRender = commandMetrics?.step('response build');
@@ -57,6 +73,6 @@ module.exports = {
       color: '#FF3333',
     });
     endRender?.();
-    return interaction.reply({ embeds: [responseEmbed] });
+    return interaction.editReply({ embeds: [responseEmbed] });
   },
 };

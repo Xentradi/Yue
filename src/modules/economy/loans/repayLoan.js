@@ -1,5 +1,12 @@
 const logger = require('../../../utils/logger');
-const { findPlayer, updatePlayerValues } = require('../playerService');
+const {
+  ensurePlayer,
+  findPlayer,
+  updatePlayerValues,
+} = require('../playerService');
+const loanLifecycleService = require('../loanLifecycleService');
+const { withTransaction } = require('../../../storage/postgres');
+const { bumpVersion } = require('../../../storage/cache');
 
 /**
  * Allows a player to repay a portion or the entirety of their debt.
@@ -12,28 +19,20 @@ const { findPlayer, updatePlayerValues } = require('../playerService');
  * @returns {Promise<Object>} An object containing the outcome of the repayment.
  * @throws Will log an error if saving to the database fails.
  */
-module.exports = async function repayLoan(userId, guildId, amount) {
-  const player = await findPlayer(userId, guildId);
-
-  if (!player) {
-    return {
-      success: false,
-      message: 'Player not found.',
-    };
-  }
-
-  if (amount <= 0) {
-    return {
-      success: false,
-      message: 'Invalid repayment amount.',
-    };
-  }
+async function processRepayment(client, userId, guildId, amount, options = {}) {
+  await ensurePlayer(userId, guildId, { client });
+  const player = await findPlayer(userId, guildId, { client, lock: true });
+  const loanSnapshot = await loanLifecycleService.getLoanDebtSnapshot(
+    userId,
+    guildId,
+    { client },
+  );
 
   if (
     !Number.isFinite(player.cash) ||
     player.cash < 0 ||
-    !Number.isFinite(player.debt) ||
-    player.debt < 0
+    !Number.isFinite(loanSnapshot.outstandingBalance) ||
+    loanSnapshot.outstandingBalance < 0
   ) {
     return {
       success: false,
@@ -41,14 +40,14 @@ module.exports = async function repayLoan(userId, guildId, amount) {
     };
   }
 
-  if (player.debt <= 0) {
+  if (loanSnapshot.outstandingBalance <= 0) {
     return {
       success: false,
       message: 'No outstanding debt to repay.',
     };
   }
 
-  const repaymentAmount = Math.min(amount, player.debt);
+  const repaymentAmount = Math.min(amount, loanSnapshot.outstandingBalance);
 
   if (player.cash < repaymentAmount) {
     return {
@@ -58,24 +57,84 @@ module.exports = async function repayLoan(userId, guildId, amount) {
   }
   const refundAmount = amount - repaymentAmount;
 
-  const updateResult = await updatePlayerValues(player, {
-    debt: player.debt - repaymentAmount,
-    cash: player.cash - repaymentAmount,
-  });
+  const updateResult = await updatePlayerValues(
+    player,
+    {
+      debt: loanSnapshot.outstandingBalance - repaymentAmount,
+      cash: player.cash - repaymentAmount,
+    },
+    { client },
+  );
 
   if (!updateResult.success) {
     logger.error(`Failed to save changes to database: ${updateResult.error}`);
-    return {
-      success: false,
-      message: 'Failed to save changes to the database.',
-    };
+    throw new Error('Failed to save changes to the database.');
+  }
+
+  const loanContractResult = await loanLifecycleService.recordLoanRepayment(
+    {
+      userId,
+      guildId,
+      bankId: options.bankId ?? 'heavenly-accord',
+      currentBalance: loanSnapshot.outstandingBalance,
+      principal: loanSnapshot.outstandingBalance,
+      metadata: {
+        legacyDebtBalance: loanSnapshot.outstandingBalance,
+      },
+    },
+    repaymentAmount,
+    { client },
+  );
+
+  if (!loanContractResult.success) {
+    logger.error(
+      `Failed to update loan lifecycle record: ${loanContractResult.message}`,
+    );
+    throw new Error('Failed to save changes to the database.');
   }
 
   return {
     success: true,
     repaidAmount: repaymentAmount,
     refundedAmount: refundAmount,
-    remainingDebt: player.debt,
+    remainingDebt: loanSnapshot.outstandingBalance - repaymentAmount,
     newBalance: player.cash,
+    bank: player.bank,
+    loanState:
+      loanContractResult.loanContract?.state ??
+      (loanSnapshot.outstandingBalance - repaymentAmount <= 0
+        ? 'closed'
+        : 'active'),
+    loanContract: loanContractResult.loanContract ?? null,
   };
+}
+
+module.exports = async function repayLoan(
+  userId,
+  guildId,
+  amount,
+  options = {},
+) {
+  if (amount <= 0) {
+    return {
+      success: false,
+      message: 'Invalid repayment amount.',
+    };
+  }
+
+  const result = options.client
+    ? await processRepayment(options.client, userId, guildId, amount, options)
+    : await withTransaction(async (client) => {
+        return await processRepayment(client, userId, guildId, amount, options);
+      });
+
+  if (result.success) {
+    await Promise.all([
+      bumpVersion('player', guildId),
+      bumpVersion('leaderboard', guildId),
+      bumpVersion('tracked'),
+    ]);
+  }
+
+  return result;
 };

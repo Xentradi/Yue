@@ -1,11 +1,11 @@
 # Project Summary
 
-Yue is a Discord bot for a server economy and progression system. It combines slash commands, message rewards, scheduled maintenance, and MongoDB persistence into one bot process.
+Yue is a Discord bot for a server economy and progression system. It combines slash commands, message rewards, scheduled maintenance, and PostgreSQL persistence into one bot process.
 
 ## Stack
 
 - Discord.js
-- MongoDB and Mongoose
+- PostgreSQL and Redis
 - Node.js 24.14.1 through 24.x
 - Winston logging with optional Logtail transport
 
