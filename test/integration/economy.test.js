@@ -1421,9 +1421,7 @@ test('scheduled task logging summarizes successes and failures', async () => {
   assert.deepEqual(infoMessages, [
     'Lake restock for lake lake-log: Restocked 5,500 fish across 10 species.',
   ]);
-  assert.deepEqual(errorMessages, [
-    'Global bank interest: No players found.',
-  ]);
+  assert.deepEqual(errorMessages, ['Global bank interest: No players found.']);
 });
 
 test('hourly maintenance restocks public lakes', async () => {

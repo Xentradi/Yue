@@ -1,4 +1,6 @@
 const Lake = require('../../../models/Lake');
+const { withTransaction } = require('../../../storage/postgres');
+const { bumpVersion } = require('../../../storage/cache');
 const logger = require('../../../utils/logger');
 
 /**
@@ -6,16 +8,17 @@ const logger = require('../../../utils/logger');
  *
  * @async
  * @function
- * @param {string} guildId - The ID of the guild (server).
+ * @param {string} lakeId - The ID of the lake entity.
  * @param {number} [size=1000] - The number of total items to stock in the lake.
+ * @param {Object} [options={}] - Optional lake metadata overrides.
  * @returns {Promise<Object>} The result and status of the restock operation.
  * @throws Will log an error if saving to the database fails.
  */
-module.exports = async function restockLake(guildId, size = 1000) {
-  if (!guildId) {
+module.exports = async function restockLake(lakeId, size = 1000, options = {}) {
+  if (!lakeId) {
     return {
       success: false,
-      message: 'Guild ID is required to restock a lake.',
+      message: 'Lake ID is required to restock a lake.',
     };
   }
 
@@ -48,37 +51,46 @@ module.exports = async function restockLake(guildId, size = 1000) {
     };
   });
 
-  let lake = await Lake.findOne({ guildId });
-  const previousFishStock = lake?.fishStock?.map((fish) => ({ ...fish }));
-  const previousLastStocked = lake?.lastStocked;
-
-  if (!lake) {
-    lake = new Lake({ guildId, fishStock, lastStocked: new Date() });
-  } else {
-    lake.fishStock = fishStock;
-    lake.lastStocked = new Date();
-  }
-
   try {
-    await lake.save();
-    const totalFishCount = fishStock.reduce(
-      (total, fish) => total + fish.count,
-      0,
-    );
-    return {
-      success: true,
-      newFishCount: totalFishCount,
-      speciesCount: fishStock.length,
-      message: `Lake restocked with ${totalFishCount.toLocaleString()} fish across ${fishStock.length} species.`,
-    };
+    const result = await withTransaction(async (client) => {
+      let lake = await Lake.findOne(
+        { guildId: lakeId },
+        { client, lock: true },
+      );
+
+      if (!lake) {
+        lake = new Lake({
+          guildId: lakeId,
+          ownershipType: options.ownershipType ?? 'public',
+          fishStock,
+          lastStocked: new Date(),
+        });
+      } else {
+        lake.fishStock = fishStock;
+        lake.lastStocked = new Date();
+      }
+
+      await lake.save({ client });
+
+      const totalFishCount = fishStock.reduce(
+        (total, fish) => total + fish.count,
+        0,
+      );
+      return {
+        success: true,
+        newFishCount: totalFishCount,
+        speciesCount: fishStock.length,
+        message: `Lake restocked with ${totalFishCount.toLocaleString()} fish across ${fishStock.length} species.`,
+      };
+    });
+
+    if (result.success) {
+      await Promise.all([bumpVersion('lake', lakeId), bumpVersion('tracked')]);
+    }
+
+    return result;
   } catch (err) {
     logger.error(`An error occurred while restocking the lake: ${err}`);
-    if (previousFishStock) {
-      lake.fishStock = previousFishStock;
-    }
-    if (previousLastStocked) {
-      lake.lastStocked = previousLastStocked;
-    }
     return {
       success: false,
       message: 'An error occurred while restocking the lake.',

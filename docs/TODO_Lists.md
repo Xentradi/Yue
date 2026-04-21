@@ -2,6 +2,7 @@
 
 This roadmap is the execution checklist for the remaining cleanup and product work.
 Stability comes first, then command surface cleanup, then docs, then backlog items.
+The long-term game design lives in [Game_Roadmap.md](./Game_Roadmap.md).
 
 ## How To Use This List
 
@@ -9,6 +10,34 @@ Stability comes first, then command surface cleanup, then docs, then backlog ite
 2. Do not start later phases until the earlier phase is complete.
 3. Treat every item as incomplete until the code, docs, and tests all match.
 4. When a phase is done, verify it with `npm test` and `npm run lint`.
+
+## Phase 0: Restart Readiness And Data Verification
+
+Goal: make the bot safe to bring back online after a long offline period and separate test-only work from any legacy data concerns.
+
+### Step 0.1: Verify current data sources
+
+- [x] Confirm whether the legacy Pegasus data for Yue still matters.
+- [x] Identify which datastore is authoritative for the current test-only runtime.
+- [x] Decide whether the legacy data should be treated as read-only history, migrated, or ignored.
+
+### Step 0.2: Protect the current test environment
+
+- [x] Take a fresh backup or export of any data worth preserving before destructive testing.
+- [x] Document the current bootstrap and reset procedure for a test-only restart.
+- [x] Make sure no startup path silently assumes production continuity or user-facing permanence.
+
+### Step 0.3: Make startup behavior explicit
+
+- [x] Keep automatic command registration, but add a guard or change-detection step so restarts do not always do a full Discord REST sync.
+- [x] Separate “boot for testing” from “boot for deployment” so restart behavior is intentional.
+- [x] Document any environment toggle that should be set for the test-only mode.
+
+### Phase 0 Done When
+
+- [x] We know whether the old Pegasus data matters.
+- [x] Test-only restarts are repeatable and documented.
+- [x] Startup behavior is deliberate instead of accidental.
 
 ## Phase 1: Safety And Data Integrity
 
@@ -195,6 +224,34 @@ Goal: separate useful future work from ideas that should stay out of the mainten
 - [x] The backlog only contains intentional future work.
 - [x] Nothing important is stranded in P3 or P4 by mistake.
 
+## Phase 7: Profiling And Layering
+
+Goal: measure real latency first, then keep the command/business/storage split clean.
+
+### Step 7.1: Instrument hot paths
+
+- [x] Capture command-level latency totals and step timings for the slowest real user flows.
+- [x] Profile Postgres query, transaction, and lock wait time under normal and peak usage.
+- [x] Profile Redis cache hits, misses, version bumps, and cache-invalidating writes so cache effectiveness is visible.
+- [x] Revisit scheduled maintenance once the clan roadmap lands so per-guild work becomes the correct per-clan/public split instead of a historical artifact.
+- [x] Split bank, lake, and clan maintenance concerns so scheduler jobs map to game entities instead of Discord servers.
+
+### Step 7.2: Lock the architecture split
+
+- [x] Keep command files thin: parse input, authorize, call a service, format output.
+- [x] Expose bank, lake, and clan logic through reusable service-style modules so a later web UI can reuse the same core API boundary.
+- [x] Move business rules into service modules and all DB access into storage/repository modules.
+- [x] Put transaction boundaries in service or repository layers, not in command handlers.
+- [x] Remove command-layer work that can be batched, shared, or precomputed by the service layer.
+
+### Step 7.3: Use the data
+
+- [x] Profile the slowest commands with production-like traffic before optimizing anything.
+- [x] Prioritize repeated reads, repeated writes, redundant Discord API waits, and startup deploy churn once the numbers are known.
+- [x] Use the metrics to decide whether maintenance loops should be batched or parallelized.
+- [x] Rework the maintenance model only after the game roadmap defines lake-scoped and bank-scoped behavior, so the scheduler stops encoding guild-as-world assumptions.
+- [x] Keep any speed work measured against the profiling output so fixes target the real bottlenecks.
+
 ## Recommended Execution Order
 
 1. Phase 1: Safety and data integrity
@@ -211,3 +268,14 @@ Goal: separate useful future work from ideas that should stay out of the mainten
 - [P2] Good next step after the core path is stable
 - [P3] Backlog
 - [P4] Low-priority idea
+
+## Resolved Banking Notes
+
+- Bank alignment bias now feeds delinquency tolerance and foreclosure harshness through the banking policy layer.
+- Active loan operations now treat the contract ledger as authoritative and repair the compatibility debt mirror during repayment and maintenance.
+- Loan lifecycle progression now runs as its own scheduled maintenance job instead of being folded into daily bank interest.
+- Lake restocks now target lake entities directly instead of every player-bearing guild.
+
+## Deferred Decisions
+
+- None at present.
