@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "src/main.js",
+  "packageManager": "pnpm@10.6.0",
   "scripts": {
     "start": "node src/main.js",
     "dev": "node --watch src/main.js",
