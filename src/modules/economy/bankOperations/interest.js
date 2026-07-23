@@ -28,7 +28,7 @@ module.exports = async function applyBankInterest(guildId) {
       const debtInterestRate = 0.002 + Math.random() * 0.003; // 0.2% to 0.5%
       const { rows } = await client.query(
         `
-          UPDATE players
+          UPDATE player_economy
           SET bank = CASE
                 WHEN bank > 1000 THEN bank + ROUND(bank::numeric * $1 * interest_multiplier)::bigint
                 ELSE bank
@@ -96,7 +96,7 @@ async function countInterestTargets(client, guildId) {
             AND debt >= 0
             AND interest_multiplier >= 0
         )::int AS valid_count
-      FROM players
+      FROM player_economy
       ${guildId ? 'WHERE guild_id = $1' : ''}
     `,
     guildId ? [guildId] : [],

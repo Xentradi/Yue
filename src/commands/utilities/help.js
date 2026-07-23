@@ -1,7 +1,8 @@
 const path = require('node:path');
 const fs = require('node:fs');
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { createStatusEmbed } = require('../../utils/economyFeedback');
+const { canViewAdminCommands } = require('../../utils/adminPermissions');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -21,10 +22,6 @@ module.exports = {
           getFolderOrder(left) - getFolderOrder(right) ||
           left.localeCompare(right),
       );
-    const canViewAdminCommands =
-      interaction.inGuild() &&
-      interaction.member.permissions.has(PermissionFlagsBits.Administrator);
-
     const fields = [];
 
     for (const folder of commandFolders) {
@@ -41,7 +38,11 @@ module.exports = {
         const isAdminCommand = folder.toLowerCase() === 'admin';
 
         if (command.data) {
-          if (isAdminCommand && !canViewAdminCommands) {
+          if (command.hidden) {
+            continue;
+          }
+
+          if (isAdminCommand && !canViewAdminCommands(interaction)) {
             continue; // Skip admin commands for non-admin users
           }
 
@@ -108,6 +109,7 @@ function getFolderLabel(folder) {
   const labels = {
     admin: 'Admin',
     economy: 'Economy',
+    cultivation: 'Cultivation',
     gamble: 'Games',
     utilities: 'Utilities',
   };
@@ -119,8 +121,9 @@ function getFolderOrder(folder) {
   const order = {
     economy: 0,
     gamble: 1,
-    utilities: 2,
-    admin: 3,
+    cultivation: 2,
+    utilities: 3,
+    admin: 4,
   };
 
   return order[folder] ?? 99;

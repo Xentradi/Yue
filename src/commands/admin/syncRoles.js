@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { manageRoles } = require('../../utils/manageRoles');
 const { createStatusEmbed } = require('../../utils/economyFeedback');
 const { deferGuildInteraction } = require('../../utils/interactionHelpers');
+const { canUseAdminCommands } = require('../../utils/adminPermissions');
 const logger = require('../../utils/logger');
 const { findPlayersByGuild } = require('../../modules/economy/playerService');
 
@@ -26,9 +27,7 @@ module.exports = {
       return;
     }
 
-    if (
-      !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
-    ) {
+    if (!canUseAdminCommands(interaction)) {
       const responseEmbed = createStatusEmbed({
         title: '❌ Permission Denied',
         description:

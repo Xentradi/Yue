@@ -43,7 +43,7 @@ module.exports = async function airdrop(interaction) {
 
       const updateResult = await client.query(
         `
-          UPDATE players
+          UPDATE player_economy
           SET cash = cash + $1,
               updated_at = NOW()
           WHERE guild_id = $2

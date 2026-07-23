@@ -426,7 +426,7 @@ async function loadPlayers(
   const { rows } = await runner.query(
     `
       SELECT *
-      FROM players
+      FROM player_economy
       ${clause}
       ${orderBy}
       ${limitClause}
@@ -449,7 +449,7 @@ async function savePlayerRecord(player, client = null) {
   const runner = client ?? { query };
   const result = await runner.query(
     `
-      INSERT INTO players (
+      INSERT INTO player_economy (
         guild_id,
         user_id,
         exp,
@@ -864,11 +864,11 @@ class Player {
     const runner = client ?? { query };
     const { rows } = await runner.query(
       `
-        INSERT INTO players (guild_id, user_id)
-        VALUES ($1, $2)
-        ON CONFLICT (guild_id, user_id) DO UPDATE SET
-          guild_id = players.guild_id
-        RETURNING *;
+      INSERT INTO player_economy (guild_id, user_id)
+      VALUES ($1, $2)
+      ON CONFLICT (guild_id, user_id) DO UPDATE SET
+          guild_id = EXCLUDED.guild_id
+      RETURNING *;
       `,
       [guildId, userId],
     );
@@ -909,11 +909,11 @@ class Player {
     const runner = options.client ?? { query };
     const { rows } = await runner.query(
       `
-        INSERT INTO players (guild_id, user_id)
-        VALUES ${placeholders.join(', ')}
-        ON CONFLICT (guild_id, user_id) DO UPDATE SET
-          guild_id = players.guild_id
-        RETURNING *;
+      INSERT INTO player_economy (guild_id, user_id)
+      VALUES ${placeholders.join(', ')}
+      ON CONFLICT (guild_id, user_id) DO UPDATE SET
+          guild_id = EXCLUDED.guild_id
+      RETURNING *;
       `,
       values,
     );
@@ -932,7 +932,7 @@ class Player {
 
     const { rowCount } = await query(
       `
-        DELETE FROM players
+        DELETE FROM player_economy
         ${clause};
       `,
       values,
@@ -1001,7 +1001,7 @@ class Player {
       values.length + 1,
     );
     const sql = `
-      UPDATE players
+      UPDATE player_economy
       SET ${columns.join(', ')},
           updated_at = NOW()
       ${clause}
@@ -1072,7 +1072,7 @@ class Player {
     const { rows } = await query(
       `
         SELECT DISTINCT guild_id
-        FROM players
+        FROM player_economy
         UNION
         SELECT DISTINCT guild_id
         FROM lakes

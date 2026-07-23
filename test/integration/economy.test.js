@@ -831,7 +831,7 @@ test('repay loan uses the contract balance when compatibility debt drifts', asyn
 
   await query(
     `
-      UPDATE players
+      UPDATE player_economy
       SET debt = 999
       WHERE user_id = $1 AND guild_id = $2;
     `,

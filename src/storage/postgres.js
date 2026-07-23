@@ -1,7 +1,10 @@
 const { Pool, types } = require('pg');
 const { performance } = require('node:perf_hooks');
 const { logDuration } = require('../utils/profiling');
+const { ensureCultivationSchema } = require('./cultivationSchema');
 
+const APP_SCHEMA_NAMESPACE = 'core';
+const APP_SCHEMA_VERSION = 2;
 const INT8_OID = 20;
 const NUMERIC_OID = 1700;
 
@@ -104,6 +107,62 @@ async function query(text, values = []) {
   }
 }
 
+async function schemaVersionTableExists() {
+  const result = await query(
+    `
+      SELECT to_regclass('public.app_schema_versions') IS NOT NULL AS exists;
+    `,
+  );
+
+  return Boolean(result.rows[0]?.exists);
+}
+
+async function getSchemaVersion(namespace) {
+  if (!(await schemaVersionTableExists())) {
+    return null;
+  }
+
+  const result = await query(
+    `
+      SELECT version
+      FROM app_schema_versions
+      WHERE namespace = $1
+      LIMIT 1;
+    `,
+    [namespace],
+  );
+
+  return result.rows[0]?.version ?? null;
+}
+
+async function ensureSchemaVersionTable() {
+  if (await schemaVersionTableExists()) {
+    return;
+  }
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS app_schema_versions (
+      namespace TEXT PRIMARY KEY,
+      version INTEGER NOT NULL DEFAULT 0,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+}
+
+async function setSchemaVersion(namespace, version) {
+  await ensureSchemaVersionTable();
+  await query(
+    `
+      INSERT INTO app_schema_versions (namespace, version, updated_at)
+      VALUES ($1, $2, NOW())
+      ON CONFLICT (namespace) DO UPDATE SET
+        version = EXCLUDED.version,
+        updated_at = NOW();
+    `,
+    [namespace, version],
+  );
+}
+
 async function withTransaction(callback) {
   const startedAt = performance.now();
   const client = await timedConnect('transaction');
@@ -143,53 +202,12 @@ async function withTransaction(callback) {
 async function ensureSchema() {
   if (!schemaReadyPromise) {
     schemaReadyPromise = (async () => {
-      await query(`
-        CREATE TABLE IF NOT EXISTS players (
-          id BIGSERIAL PRIMARY KEY,
-          guild_id TEXT NOT NULL,
-          user_id TEXT NOT NULL,
-          exp INTEGER NOT NULL DEFAULT 0,
-          level INTEGER NOT NULL DEFAULT 0,
-          cash BIGINT NOT NULL DEFAULT 0,
-          bank BIGINT NOT NULL DEFAULT 0,
-          debt BIGINT NOT NULL DEFAULT 0,
-          reputation INTEGER NOT NULL DEFAULT 0,
-          relationship INTEGER NOT NULL DEFAULT 0,
-          exp_multiplier DOUBLE PRECISION NOT NULL DEFAULT 1,
-          cash_multiplier DOUBLE PRECISION NOT NULL DEFAULT 1,
-          interest_multiplier DOUBLE PRECISION NOT NULL DEFAULT 1,
-          last_daily_bonus_claim TIMESTAMPTZ NULL,
-          stats JSONB NOT NULL DEFAULT '{}'::jsonb,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          net_worth BIGINT GENERATED ALWAYS AS ((cash + bank) - debt) STORED,
-          CONSTRAINT players_guild_user_unique UNIQUE (guild_id, user_id),
-          CONSTRAINT players_cash_nonnegative CHECK (cash >= 0),
-          CONSTRAINT players_bank_nonnegative CHECK (bank >= 0),
-          CONSTRAINT players_debt_nonnegative CHECK (debt >= 0)
-        );
-      `);
+      const schemaVersion = await getSchemaVersion(APP_SCHEMA_NAMESPACE);
+      if (schemaVersion !== null && schemaVersion >= APP_SCHEMA_VERSION) {
+        return;
+      }
 
-      await query(`
-        CREATE INDEX IF NOT EXISTS players_guild_user_idx
-          ON players (guild_id, user_id);
-      `);
-      await query(`
-        CREATE INDEX IF NOT EXISTS players_guild_cash_idx
-          ON players (guild_id, cash DESC);
-      `);
-      await query(`
-        CREATE INDEX IF NOT EXISTS players_guild_bank_idx
-          ON players (guild_id, bank DESC);
-      `);
-      await query(`
-        CREATE INDEX IF NOT EXISTS players_guild_debt_idx
-          ON players (guild_id, debt DESC);
-      `);
-      await query(`
-        CREATE INDEX IF NOT EXISTS players_guild_net_worth_idx
-          ON players (guild_id, net_worth DESC);
-      `);
+      await ensureCultivationSchema({ query });
 
       await query(`
         CREATE TABLE IF NOT EXISTS lakes (
@@ -361,6 +379,8 @@ async function ensureSchema() {
             'foreclosure warning'
           );
       `);
+
+      await setSchemaVersion(APP_SCHEMA_NAMESPACE, APP_SCHEMA_VERSION);
     })();
   }
 

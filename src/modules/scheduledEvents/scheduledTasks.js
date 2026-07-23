@@ -67,7 +67,7 @@ async function getLakeGuildIds() {
 async function countPlayerRecords() {
   const { rows } = await query(`
     SELECT COUNT(*)::int AS player_count
-    FROM players;
+    FROM player_economy;
   `);
 
   return rows[0]?.player_count ?? 0;

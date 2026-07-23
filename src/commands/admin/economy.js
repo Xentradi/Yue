@@ -18,6 +18,7 @@ const {
   getOptionString,
   getOptionUser,
 } = require('../../utils/interactionHelpers');
+const { canUseAdminCommands } = require('../../utils/adminPermissions');
 const { promptForConfirmation } = require('../../utils/confirmationFlow');
 
 module.exports = {
@@ -132,9 +133,7 @@ module.exports = {
       return;
     }
 
-    if (
-      !interaction.member.permissions.has(PermissionFlagsBits.Administrator)
-    ) {
+    if (!canUseAdminCommands(interaction)) {
       const responseEmbed = createStatusEmbed({
         title: '❌ Permission Denied',
         description:

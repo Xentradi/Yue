@@ -57,7 +57,11 @@ test('command handler registers the current command surface', () => {
     'balance',
     'bank',
     'blackjack',
+    'breakthrough',
     'coin',
+    'cultivate',
+    'cultivation',
+    'cultivation-rate',
     'daily',
     'deposit',
     'dice',
@@ -66,9 +70,12 @@ test('command handler registers the current command surface', () => {
     'help',
     'leaderboard',
     'loan',
+    'meditate',
     'pay',
     'ping',
+    'profile',
     'restocklake',
+    'start',
     'steal',
     'support',
     'syncroles',
@@ -111,7 +118,7 @@ test('help groups commands by product area and hides admin commands from non-adm
   assert.ok(replyPayload);
   assert.deepEqual(
     replyPayload.embeds[0].data.fields.map((field) => field.name),
-    ['Economy', 'Games', 'Utilities'],
+    ['Economy', 'Games', 'Cultivation', 'Utilities'],
   );
   assert.equal(
     replyPayload.embeds[0].data.fields.some((field) => field.name === 'Admin'),
